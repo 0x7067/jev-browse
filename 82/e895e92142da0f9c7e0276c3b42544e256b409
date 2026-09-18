@@ -1,0 +1,127 @@
+evals/results/v2-warmup-scroll-settle-1789771587129.json
+  s_0503a55d84ed51::t_36471cff05ee7a 1-134
+mcp.json
+  s_b8aea7cd1d4e96::t_952e68eadee5ad 7
+README.md
+  s_b8aea7cd1d4e96::t_f9aeccdacae126 197
+  s_b8aea7cd1d4e96::t_bd791ad1b9e78c 62,68,71-73,101
+  s_b8aea7cd1d4e96::t_715e8347e095fd 5,7,28-31,49-50,54-55,58,64-66,70,74-75,77-79,92-96,108,111-113,115-116,127-130,134-135,144,150-153,168-170,178,182,186-192,198,201,205-207,209,214
+  s_b8aea7cd1d4e96::t_9d00c1c7a6f387 9,11
+evals/results/v3-fixes-1789772903609.json
+  s_0503a55d84ed51::t_dc2f4d8f5b92a5 1-479
+integrations/opencode/jev-browse.ts
+  s_b8aea7cd1d4e96::t_c4f3d4fcd4ce0c 5-8,13
+package.json
+  s_b8aea7cd1d4e96::t_33da283d8e38cc 23
+  s_b8aea7cd1d4e96::t_e1a7b71d52a3b8 33
+  s_b8aea7cd1d4e96::t_b747f076a34842 19-20,24
+  s_b8aea7cd1d4e96::t_e0c16066719646 34
+scripts/record_demo.mjs
+  s_b8aea7cd1d4e96::t_5edcde114c38b4 12-13,26,229
+integrations/pi/index.ts
+  s_b8aea7cd1d4e96::t_97db615d5b66cc 4-6
+evals/tasks.json
+  s_0503a55d84ed51::t_2b1ce2b1737555 5
+  s_0503a55d84ed51::t_d3e2a346d51176 1-4,6-32
+  s_0503a55d84ed51::t_acb6b4a16047cc 33-35
+  s_0503a55d84ed51::t_183be7c7226ebd 36-38
+src/env.ts
+  s_b8aea7cd1d4e96::t_341772978ae2cf 9-11,13-19
+src/agent.ts
+  s_0503a55d84ed51::t_523a8360918c17 70,265,268-272,274-277,282-293
+  s_0503a55d84ed51::t_6b11debad12a2c 209-217
+  s_0503a55d84ed51::t_2b94afd49cfcd5 11-18,91
+  s_0503a55d84ed51::t_f781ef557728f6 294-295
+scripts/eval.mjs
+  s_0503a55d84ed51::t_9ddd1d221e1aea 105-117,129
+  s_b8aea7cd1d4e96::t_ae8669bc293e66 11,80
+  s_0503a55d84ed51::t_9282cb2fe19442 24,26,33,36,38,41,47,50,59,66,68,70,72,93,95,98,101,138,148,151,157,161,167,178,187
+  s_0503a55d84ed51::t_9c20fb3d1d719b 104
+  s_0503a55d84ed51::t_78c4d9f6c20266 15
+  s_0503a55d84ed51::t_7fc5321c5df3d7 1-10,12-14,16-23,25,27-32,34-35,37,39-40,42-46,48-49,51-58,60-65,67,69,71,73-79,81-92,94,96-97,99-100,102-103,118-128,130-137,139-147,149-150,152-156,158-160,162-166,168-177,179-186,188-209
+src/model.ts
+  s_0503a55d84ed51::t_e15494845ad70c 223
+  s_0503a55d84ed51::t_57144a799579c8 14-39,201,205,215,227,243-244,247
+  s_0503a55d84ed51::t_9f5e588556df91 202-204
+  s_0503a55d84ed51::t_57a7e695d7c44e 206-208,212-214
+  s_0503a55d84ed51::t_0d751fd3bd76ad 216
+  s_0503a55d84ed51::t_a7f597aaaa3df3 222
+  s_0503a55d84ed51::t_01c9ff1a9304d5 224-226
+  s_0503a55d84ed51::t_92ff6cd358b9ab 228-230,240-242
+  s_0503a55d84ed51::t_1ce0f72518cd63 245-246
+  s_0503a55d84ed51::t_3d875a32a30dee 248-250
+  s_b8aea7cd1d4e96::t_fcf78fe147f7cb 209-211,231-239,251-253
+plugin.json
+  s_b8aea7cd1d4e96::t_911e18bcaaf096 7-11
+.agents/plugins/marketplace.json
+  s_b8aea7cd1d4e96::t_a87b64278385b2 1-20
+oxlint.config.ts
+  s_b8aea7cd1d4e96::t_187fe3ecc326b2 16
+src/snapshot-loader.ts
+  s_b8aea7cd1d4e96::t_b773e897d0a3e1 1-3,9,11-12,15
+bundled/cli.mjs
+  s_b8aea7cd1d4e96::t_c9d2f7f423c380 344
+  s_0503a55d84ed51::t_c15a8f6b0e1374 4,2146-2147
+  s_b8aea7cd1d4e96::t_49df83deb8a649 1-3,5-343,345-2145,2148-2153
+.claude-plugin/marketplace.json
+  s_b8aea7cd1d4e96::t_1581c28f0a983e 1-27
+src/cdp.ts
+  s_0503a55d84ed51::t_c2377dfa13519a 446
+  s_0503a55d84ed51::t_467821b988894c 455-458
+  s_0503a55d84ed51::t_103b9bf4bbb64b 539-546
+src/snapshot.js
+  s_0503a55d84ed51::t_bf7c9a37e93606 118-120
+  s_0503a55d84ed51::t_d1b8236fbcb243 18-21,36
+src/cli.ts
+  s_0503a55d84ed51::t_85b4c220a6de56 183-201
+  s_b8aea7cd1d4e96::t_ba3aa91deaa2b7 277-281,283
+  s_b8aea7cd1d4e96::t_389f6d8c8a7599 11
+.mcp.json
+  s_b8aea7cd1d4e96::t_97d51f6794fb72 5
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_c15a8f6b0e1374 7,2149-2150
+  s_b8aea7cd1d4e96::t_c9d2f7f423c380 347
+  s_b8aea7cd1d4e96::t_15cd0ae1e4e32c 1-6,8-346,348-2148,2151-2278
+bundled/snapshot.js
+  s_b8aea7cd1d4e96::t_1c4dcee84dcbed 1-214
+evals/results/baseline-1789771427319.json
+  s_94482b458f8ccc::t_a069fd774e2502 1-131
+evals/results/baseline3-1789772036419.json
+  s_0503a55d84ed51::t_3d9f92c49af84b 1-407
+package-lock.json
+  s_b8aea7cd1d4e96::t_e6b3515d25a50f 12-13,16-17
+evals/results/v3-fixes-1789772684534.json
+  s_b8aea7cd1d4e96::t_bb41dbdf596b9d 1-350
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "82e895e92142da0f9c7e0276c3b42544e256b409",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    },
+    "s_94482b458f8ccc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5d6841d6-c6cd-4d5b-b63e-1ff0a45ad61d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    },
+    "s_b8aea7cd1d4e96": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b6b9-4234-71ff-9b45-25f2b5d380ae",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
