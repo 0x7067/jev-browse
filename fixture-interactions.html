@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Interaction Coverage</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:1180px;margin:8px auto;line-height:1.3;font-size:12px}
+main{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+section{border:1px solid #ccc;border-radius:6px;padding:6px 8px}
+h1{font-size:15px;margin:4px 0}
+h2{font-size:12px;margin:0 0 4px}
+.out{display:none;margin-top:4px;padding:3px 6px;background:#e6ffe6;border:1px solid #8c8;border-radius:4px;font-weight:600}
+dialog::backdrop{background:#0006}
+.hover-menu .items{display:none}
+.hover-menu:hover .items{display:block}
+</style></head>
+<body>
+<h1>Interaction coverage fixture</h1>
+<main>
+
+<section><h2>1. Native select</h2>
+<label>Region <select id="sel"><option value="">Choose…</option><option>Coastal</option><option>Urban</option><option>Alpine</option></select></label>
+<output class="out" id="r-select"></output></section>
+
+<section><h2>2. Radio group</h2>
+<fieldset id="radios"><legend>Party size</legend>
+<label><input type="radio" name="party" value="solo">Solo</label>
+<label><input type="radio" name="party" value="pair">Pair</label>
+<label><input type="radio" name="party" value="crew">Crew</label></fieldset>
+<output class="out" id="r-radio"></output></section>
+
+<section><h2>3. Checkbox</h2>
+<label><input type="checkbox" id="newsletter">Subscribe to the tide report</label>
+<output class="out" id="r-check"></output></section>
+
+<section><h2>4. Textarea + submit</h2>
+<textarea id="note" rows="2" placeholder="Leave a note"></textarea>
+<button id="note-btn">Post note</button>
+<output class="out" id="r-note"></output></section>
+
+<section><h2>5. Autocomplete</h2>
+<input id="city" placeholder="Type a city" autocomplete="off">
+<div id="sugg"></div>
+<output class="out" id="r-city"></output></section>
+
+<section><h2>6. Native date input</h2>
+<label>Arrival <input type="date" id="arrive"></label>
+<output class="out" id="r-date"></output></section>
+
+<section><h2>7. Modal confirm</h2>
+<button id="open-modal">Delete draft</button>
+<dialog id="dlg"><p>Really delete the draft?</p><button id="confirm">Confirm delete</button><button id="cancel">Cancel</button></dialog>
+<output class="out" id="r-modal"></output></section>
+
+<section><h2>8. Tabs</h2>
+<div role="tablist"><button role="tab" id="tab-a">Overview</button><button role="tab" id="tab-b">Amenities</button></div>
+<div id="panel"></div></section>
+
+<section><h2>9. Disclosure</h2>
+<details id="det"><summary>House rules</summary><p id="rules">Quiet hours after 22:00.</p></details>
+<output class="out" id="r-details"></output></section>
+
+<section><h2>10. Disabled-until-valid</h2>
+<input id="code" placeholder="Invite code">
+<button id="redeem" disabled>Redeem</button>
+<output class="out" id="r-redeem"></output></section>
+
+<section><h2>11. New-tab link</h2>
+<a id="blank" href="#help" target="_blank">Open the help page in a new tab</a>
+<output class="out" id="r-blank"></output></section>
+
+<section><h2>12. Iframe button</h2>
+<iframe id="frame" title="inner" style="border:1px solid #999;width:100%;height:80px"></iframe></section>
+
+<section><h2>13. Shadow DOM button</h2>
+<div id="shadow-host"></div></section>
+
+<section><h2>14. Hover-only menu</h2>
+<div class="hover-menu"><span id="menu-trigger">Destinations menu (hover)</span>
+<div class="items"><a id="hover-pick" href="#alpine">Alpine stays</a></div></div>
+<output class="out" id="r-hover"></output></section>
+
+<section><h2>15. Range slider</h2>
+<label>Guests <input type="range" id="guests" min="1" max="8" value="1"></label>
+<output class="out" id="r-range"></output></section>
+
+<section><h2>16. Enter-only palette</h2>
+<input id="palette" placeholder="Type then press Enter">
+<output class="out" id="r-palette"></output></section>
+
+<script>
+const show=(id,msg)=>{const e=document.getElementById(id);e.style.display="block";e.textContent=msg;};
+sel.onchange=e=>show("r-select","DONE: region="+e.target.value);
+radios.onchange=e=>e.target.value==="crew"&&show("r-radio","DONE: crew selected");
+newsletter.onchange=e=>e.target.checked&&show("r-check","DONE: subscribed");
+noteBtn=()=>{};
+document.getElementById("note-btn").onclick=()=>note.value.trim()&&show("r-note","DONE: "+note.value.trim());
+const cities=["Lisbon","Lima","London","Ljubljana","Lucerne"];
+city.oninput=e=>{const q=e.target.value.toLowerCase();sugg.innerHTML=q?cities.filter(c=>c.toLowerCase().startsWith(q)).map(c=>`<button class="pick">${c}</button>`).join(" "):"";};
+sugg.onclick=e=>{if(e.target.className==="pick")show("r-city","DONE: "+e.target.textContent);};
+arrive.onchange=e=>e.target.value&&show("r-date","DONE: "+e.target.value);
+document.getElementById("open-modal").onclick=()=>dlg.showModal();
+document.getElementById("confirm").onclick=()=>{dlg.close();show("r-modal","DONE: draft deleted");};
+document.getElementById("cancel").onclick=()=>dlg.close();
+document.getElementById("tab-a").onclick=()=>panel.innerHTML="<p>Overview panel.</p>";
+document.getElementById("tab-b").onclick=()=>panel.innerHTML="<p>DONE: amenities listed — sauna, cedar deck.</p>";
+det.addEventListener("toggle",()=>det.open&&show("r-details","DONE: rules expanded"));
+code.oninput=()=>redeem.disabled=!code.value.trim();
+redeem.onclick=()=>show("r-redeem","DONE: code redeemed");
+blank.onclick=()=>{const w=window.open("","_blank");w&&w.document.write("<h1>Help page</h1><p>DONE: help visible</p>");};
+frame.srcdoc='<button onclick="parent.postMessage(\'x\',\'*\')" style="font-size:16px">Inner frame action</button>';
+window.onmessage=()=>show("r-check", "DONE(frame): inner clicked");
+const sh=document.getElementById("shadow-host").attachShadow({mode:"open"});
+sh.innerHTML='<button id="sb" style="font-size:16px">Shadow action</button>';
+sh.getElementById("sb").onclick=()=>{document.getElementById("r-check").style.display="block";document.getElementById("r-check").textContent="DONE(shadow): clicked";};
+document.getElementById("hover-pick").onclick=e=>{e.preventDefault();show("r-hover","DONE: alpine picked");};
+guests.oninput=e=>e.target.value>=6&&show("r-range","DONE: guests="+e.target.value);
+palette.onkeydown=e=>{if(e.key==="Enter"&&e.target.value.trim())show("r-palette","DONE: "+e.target.value.trim());};
+</script>
+</main>
+</body></html>
