@@ -1,0 +1,36 @@
+.claude-plugin/plugin.json
+  h_29be57c0addd47 2
+README.md
+  h_29be57c0addd47 37,44,86-87,92
+integrations/opencode/jev-browse.ts
+  h_29be57c0addd47 18,46
+integrations/pi/index.ts
+  h_29be57c0addd47 1,63
+package.json
+  h_29be57c0addd47 2,19-20
+plugin.json
+  h_29be57c0addd47 3,13
+scripts/install.mjs
+  h_29be57c0addd47 3,7,15,35,68-69,103-109,122,131,166,169,175,179,184
+src/abrowser.ts
+  h_29be57c0addd47 67
+src/cdp.ts
+  h_29be57c0addd47 229
+src/cli.ts
+  h_29be57c0addd47 26,51,110,146
+src/mcp.ts
+  h_29be57c0addd47 123
+src/snapshot-loader.ts
+  h_29be57c0addd47 14,19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a0dc1012df1bd329122c86ff9357d9c71de67f65",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
