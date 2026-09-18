@@ -340,6 +340,7 @@ async function main() {
             decisions: result.decisions,
             elapsed_ms: result.elapsed_ms,
             final_url: result.final_url,
+            error: result.error,
           }
         : { raw_stdout_tail: stdout.slice(-500) },
     }, null, 2));

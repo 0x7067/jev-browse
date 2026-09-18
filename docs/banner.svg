@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0e14"/>
+      <stop offset="1" stop-color="#141b2d"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd23f"/>
+      <stop offset="1" stop-color="#ff9d2e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="300" rx="18" fill="url(#bg)"/>
+  <g opacity="0.08" stroke="#7ea2ff" stroke-width="1">
+    <line x1="0" y1="75" x2="1200" y2="75"/>
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="225" x2="1200" y2="225"/>
+    <line x1="300" y1="0" x2="300" y2="300"/>
+    <line x1="600" y1="0" x2="600" y2="300"/>
+    <line x1="900" y1="0" x2="900" y2="300"/>
+  </g>
+  <!-- indexed element table -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="19" fill="#8ea4c9">
+    <text x="70" y="118"><tspan fill="#5f7196">[1]</tspan> button    Change ticket type · Round trip</text>
+    <text x="70" y="152"><tspan fill="#5f7196">[2]</tspan> combobox  Where from?        · Zürich</text>
+    <text x="70" y="186"><tspan fill="#5f7196">[3]</tspan> combobox  Where to?          · London</text>
+    <text x="70" y="220"><tspan fill="#5f7196">[4]</tspan> textbox   Departure          · Sep 20, 2026</text>
+  </g>
+  <!-- arrow into decision -->
+  <path d="M 700 150 L 780 150" stroke="#4c5f85" stroke-width="2"/>
+  <path d="M 780 150 L 770 144 L 770 156 Z" fill="#4c5f85"/>
+  <!-- lightning bolt -->
+  <path d="M 872 62 L 818 168 L 856 168 L 826 238 L 926 130 L 884 130 Z" fill="url(#bolt)"/>
+  <!-- title -->
+  <text x="960" y="152" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="56" font-weight="700" fill="#eef3ff" text-anchor="middle">jev-browse</text>
+  <text x="960" y="196" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="19" fill="#7ea2ff" text-anchor="middle">one goal → indexed actions → one request per step</text>
+  <text x="960" y="232" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" fill="#5f7196" text-anchor="middle">TypeScript · TypeSafe Jev · CDP</text>
+</svg>
