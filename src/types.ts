@@ -54,6 +54,8 @@ export interface PageState {
   guards: Record<string, JsonValue>;
   omitted_actions: number;
   fingerprint: string;
+  /** In-flight network requests at observation time (0 or absent when the engine can't tell). */
+  pending_requests?: number;
 }
 
 /** Result of executing one observed action. */

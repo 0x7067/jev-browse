@@ -6,7 +6,7 @@ import { createInterface } from "node:readline";
 // src/cli.ts
 import { mkdirSync, readFileSync as readFileSync3, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { homedir as homedir3 } from "node:os";
-import { join as join4 } from "node:path";
+import { join as join5 } from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 
 // src/questions.ts
@@ -55,60 +55,7 @@ function fingerprint(state) {
   return createHash("sha256").update(JSON.stringify(canonicalize(content))).digest("hex");
 }
 
-// src/model.ts
-var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-function warmModelEndpoints() {
-  const origins = /* @__PURE__ */ new Set();
-  for (const raw of [
-    process.env.TYPESAFE_BASE_URL ?? "https://api.typesafe.ai",
-    process.env.TEXT_MODEL_BASE_URL
-  ]) {
-    try {
-      if (raw) origins.add(new URL(raw).origin);
-    } catch {
-    }
-  }
-  for (const origin of origins) {
-    fetch(origin, { method: "HEAD" }).then((r) => r.arrayBuffer()).catch(() => {
-    });
-  }
-}
-async function postJson(url, key, body) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    let response;
-    try {
-      response = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-        body: JSON.stringify(body)
-      });
-    } catch {
-      throw new Error("Model connection failed; no action executed.");
-    }
-    if ([429, 529, 503].includes(response.status) && attempt < 2) {
-      await sleep(500 * 2 ** attempt);
-      continue;
-    }
-    if (!response.ok) {
-      throw new Error(`Model provider returned HTTP ${response.status}; no action executed.`);
-    }
-    return response.json();
-  }
-  throw new Error("Model unavailable");
-}
-function validateChoice(answer, ids) {
-  const probabilities = answer?.probabilities;
-  const choice = answer?.choice;
-  const values = Object.values(probabilities ?? {});
-  const sum = values.reduce((a, b) => a + (isFiniteNumber(b) ? b : NaN), 0);
-  const chosen = isString(choice) && probabilities !== void 0 ? probabilities[choice] : void 0;
-  const valid = isString(choice) && ids.has(choice) && probabilities !== void 0 && Object.keys(probabilities).length === ids.size && Object.keys(probabilities).every((k) => ids.has(k)) && [...values, answer?.confidence].every(
-    (n) => isFiniteNumber(n) && n >= 0 && n <= 1
-  ) && Math.abs(sum - 1) < 0.02 && isFiniteNumber(chosen) && chosen >= Math.max(...values.map(Number)) - 1e-6;
-  if (!valid) {
-    throw new Error("Invalid TypeSafe response; no action executed.");
-  }
-}
+// src/model/space.ts
 function actionSpace(actions) {
   const elements = [];
   const indices = /* @__PURE__ */ new Map();
@@ -159,6 +106,21 @@ function actionSpace(actions) {
     group[target] = action;
   }
   return { elements, targets, controls };
+}
+
+// src/model/decide.ts
+function validateChoice(answer, ids) {
+  const probabilities = answer?.probabilities;
+  const choice = answer?.choice;
+  const values = Object.values(probabilities ?? {});
+  const sum = values.reduce((a, b) => a + (isFiniteNumber(b) ? b : NaN), 0);
+  const chosen = isString(choice) && probabilities !== void 0 ? probabilities[choice] : void 0;
+  const valid = isString(choice) && ids.has(choice) && probabilities !== void 0 && Object.keys(probabilities).length === ids.size && Object.keys(probabilities).every((k) => ids.has(k)) && [...values, answer?.confidence].every(
+    (n) => isFiniteNumber(n) && n >= 0 && n <= 1
+  ) && Math.abs(sum - 1) < 0.02 && isFiniteNumber(chosen) && chosen >= Math.max(...values.map(Number)) - 1e-6;
+  if (!valid) {
+    throw new Error("Invalid TypeSafe response; no action executed.");
+  }
 }
 function shrunkState(state, textCap, actionCap) {
   const elements = state.actions.filter((a) => a.node !== void 0);
@@ -285,6 +247,50 @@ async function chooseOnce(client, state, goal, history) {
     usage: result.usage,
     latency_ms: Math.round(performance.now() - started)
   };
+}
+
+// src/model/endpoints.ts
+function warmModelEndpoints() {
+  const origins = /* @__PURE__ */ new Set();
+  for (const raw of [
+    process.env.TYPESAFE_BASE_URL ?? "https://api.typesafe.ai",
+    process.env.TEXT_MODEL_BASE_URL
+  ]) {
+    try {
+      if (raw) origins.add(new URL(raw).origin);
+    } catch {
+    }
+  }
+  for (const origin of origins) {
+    fetch(origin, { method: "HEAD" }).then((r) => r.arrayBuffer()).catch(() => {
+    });
+  }
+}
+
+// src/model/text.ts
+var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function postJson(url, key, body) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+        body: JSON.stringify(body)
+      });
+    } catch {
+      throw new Error("Model connection failed; no action executed.");
+    }
+    if ([429, 529, 503].includes(response.status) && attempt < 2) {
+      await sleep(500 * 2 ** attempt);
+      continue;
+    }
+    if (!response.ok) {
+      throw new Error(`Model provider returned HTTP ${response.status}; no action executed.`);
+    }
+    return response.json();
+  }
+  throw new Error("Model unavailable");
 }
 function fieldContext(goal, action, page, history) {
   return {
@@ -632,12 +638,12 @@ var unwrapModels = (wire) => {
 var g = globalThis;
 var isBrowser = () => typeof g.window !== "undefined" && typeof g.window.document !== "undefined" && typeof g.navigator !== "undefined";
 var describeRuntime = () => {
-  const platform2 = g.process?.platform && g.process?.arch ? ` (${g.process.platform}; ${g.process.arch})` : "";
-  if (g.Bun?.version) return `bun/${g.Bun.version}${platform2}`;
-  if (g.Deno?.version?.deno) return `deno/${g.Deno.version.deno}${platform2}`;
+  const platform3 = g.process?.platform && g.process?.arch ? ` (${g.process.platform}; ${g.process.arch})` : "";
+  if (g.Bun?.version) return `bun/${g.Bun.version}${platform3}`;
+  if (g.Deno?.version?.deno) return `deno/${g.Deno.version.deno}${platform3}`;
   if (g.EdgeRuntime !== void 0) return "vercel-edge";
   if (g.navigator?.userAgent === "Cloudflare-Workers") return "cloudflare-workers";
-  if (g.process?.versions?.node) return `node/${g.process.versions.node}${platform2}`;
+  if (g.process?.versions?.node) return `node/${g.process.versions.node}${platform3}`;
   if (isBrowser()) return "browser";
   return "unknown";
 };
@@ -1066,7 +1072,7 @@ var Agent = class _Agent {
         this.status = "ready";
         throw new StalePage("Page changed since the decision. Choose again.");
       }
-      if (selected === "BLOCKED" && this.earlyWaits < 3 && (page.actions.length === 0 || this.history.every((h) => h.kind === "wait"))) {
+      if (selected === "BLOCKED" && this.earlyWaits < 3) {
         this.earlyWaits++;
         const entry2 = this.waitEntry("Wait for the page to update", page);
         await sleep3(700);
@@ -1076,6 +1082,13 @@ var Agent = class _Agent {
         entry2.elapsed_ms = this.elapsed();
         this.status = "ready";
         return;
+      }
+      if (selected === "DONE") {
+        await sleep3(400);
+        if (!await this.browser.fresh(page)) {
+          this.status = "ready";
+          throw new StalePage("Page changed while confirming DONE. Choose again.");
+        }
       }
       this.status = selected === "DONE" ? "done" : "blocked";
       return;
@@ -1215,12 +1228,10 @@ var Agent = class _Agent {
   }
 };
 
-// src/cdp.ts
+// src/cdp/browser.ts
 import { spawn } from "node:child_process";
-import { existsSync as existsSync2 } from "node:fs";
-import { homedir, platform } from "node:os";
-import { createServer } from "node:net";
-import { join as join2 } from "node:path";
+import { homedir, platform as platform2 } from "node:os";
+import { join as join3 } from "node:path";
 
 // src/snapshot-loader.ts
 import { existsSync, readFileSync as readFileSync2 } from "node:fs";
@@ -1233,29 +1244,59 @@ function loadSnapshotJs() {
   return readFileSync2(path, "utf8");
 }
 
-// src/cdp.ts
+// src/cdp/chrome.ts
+import { existsSync as existsSync2 } from "node:fs";
+import { platform } from "node:os";
+import { join as join2 } from "node:path";
+var CHROME_CANDIDATES = {
+  darwin: [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+  ],
+  linux: [
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/microsoft-edge",
+    "/snap/bin/chromium"
+  ],
+  win32: [
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
+  ]
+};
+function findChrome() {
+  if (process.env.CHROME_PATH && existsSync2(process.env.CHROME_PATH)) {
+    return process.env.CHROME_PATH;
+  }
+  if (platform() === "win32" && process.env.LOCALAPPDATA) {
+    const perUser = join2(
+      process.env.LOCALAPPDATA,
+      "Google\\Chrome\\Application\\chrome.exe"
+    );
+    if (existsSync2(perUser)) return perUser;
+  }
+  for (const candidate of CHROME_CANDIDATES[platform()] ?? []) {
+    if (existsSync2(candidate)) return candidate;
+  }
+  for (const name of ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]) {
+    for (const dir of (process.env.PATH ?? "").split(process.platform === "win32" ? ";" : ":")) {
+      const candidate = join2(dir, name);
+      if (existsSync2(candidate)) return candidate;
+    }
+  }
+  throw new Error(
+    `No Chrome/Chromium found. Set CHROME_PATH, or attach to a running browser with --cdp http://host:9222`
+  );
+}
+
+// src/cdp/socket.ts
+import { createServer } from "node:net";
 var sleep4 = (ms) => new Promise((r) => setTimeout(r, ms));
-var READ_STATE = loadSnapshotJs();
-var MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
-var KEYS = new Map(
-  Object.entries({
-    enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" },
-    tab: { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 },
-    escape: { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 },
-    backspace: { key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 },
-    delete: { key: "Delete", code: "Delete", windowsVirtualKeyCode: 46 },
-    arrowup: { key: "ArrowUp", code: "ArrowUp", windowsVirtualKeyCode: 38 },
-    arrowdown: { key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 },
-    arrowleft: { key: "ArrowLeft", code: "ArrowLeft", windowsVirtualKeyCode: 37 },
-    arrowright: { key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 },
-    home: { key: "Home", code: "Home", windowsVirtualKeyCode: 36 },
-    end: { key: "End", code: "End", windowsVirtualKeyCode: 35 },
-    pageup: { key: "PageUp", code: "PageUp", windowsVirtualKeyCode: 33 },
-    pagedown: { key: "PageDown", code: "PageDown", windowsVirtualKeyCode: 34 },
-    space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " }
-  })
-);
-var KEY_TYPED_INPUTS = /* @__PURE__ */ new Set(["date", "time", "datetime-local", "month", "week"]);
 var CdpSocket = class _CdpSocket {
   ws;
   nextId = 1;
@@ -1311,51 +1352,6 @@ var CdpSocket = class _CdpSocket {
     }
   }
 };
-var CHROME_CANDIDATES = {
-  darwin: [
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-  ],
-  linux: [
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/usr/bin/microsoft-edge",
-    "/snap/bin/chromium"
-  ],
-  win32: [
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
-  ]
-};
-function findChrome() {
-  if (process.env.CHROME_PATH && existsSync2(process.env.CHROME_PATH)) {
-    return process.env.CHROME_PATH;
-  }
-  if (platform() === "win32" && process.env.LOCALAPPDATA) {
-    const perUser = join2(
-      process.env.LOCALAPPDATA,
-      "Google\\Chrome\\Application\\chrome.exe"
-    );
-    if (existsSync2(perUser)) return perUser;
-  }
-  for (const candidate of CHROME_CANDIDATES[platform()] ?? []) {
-    if (existsSync2(candidate)) return candidate;
-  }
-  for (const name of ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]) {
-    for (const dir of (process.env.PATH ?? "").split(process.platform === "win32" ? ";" : ":")) {
-      const candidate = join2(dir, name);
-      if (existsSync2(candidate)) return candidate;
-    }
-  }
-  throw new Error(
-    `No Chrome/Chromium found. Set CHROME_PATH, or attach to a running browser with --cdp http://host:9222`
-  );
-}
 function freePort() {
   return new Promise((resolve, reject) => {
     const server = createServer();
@@ -1384,6 +1380,29 @@ async function browserWsUrl(port, timeoutMs = 15e3) {
   }
   throw new Error(`Chrome did not expose CDP on port ${port}`);
 }
+
+// src/cdp/browser.ts
+var READ_STATE = loadSnapshotJs();
+var MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
+var KEYS = new Map(
+  Object.entries({
+    enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" },
+    tab: { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 },
+    escape: { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 },
+    backspace: { key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 },
+    delete: { key: "Delete", code: "Delete", windowsVirtualKeyCode: 46 },
+    arrowup: { key: "ArrowUp", code: "ArrowUp", windowsVirtualKeyCode: 38 },
+    arrowdown: { key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 },
+    arrowleft: { key: "ArrowLeft", code: "ArrowLeft", windowsVirtualKeyCode: 37 },
+    arrowright: { key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 },
+    home: { key: "Home", code: "Home", windowsVirtualKeyCode: 36 },
+    end: { key: "End", code: "End", windowsVirtualKeyCode: 35 },
+    pageup: { key: "PageUp", code: "PageUp", windowsVirtualKeyCode: 33 },
+    pagedown: { key: "PageDown", code: "PageDown", windowsVirtualKeyCode: 34 },
+    space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " }
+  })
+);
+var KEY_TYPED_INPUTS = /* @__PURE__ */ new Set(["date", "time", "datetime-local", "month", "week"]);
 var CdpBrowser = class _CdpBrowser {
   socket;
   session;
@@ -1399,7 +1418,7 @@ var CdpBrowser = class _CdpBrowser {
     let port = null;
     if (!opts.cdpUrl) {
       port = await freePort();
-      const profileDir = opts.profileDir ?? process.env.JEV_PROFILE ?? join2(homedir(), ".jev-browse", "profile");
+      const profileDir = opts.profileDir ?? process.env.JEV_PROFILE ?? join3(homedir(), ".jev-browse", "profile");
       const args = [
         `--remote-debugging-port=${port}`,
         `--user-data-dir=${profileDir}`,
@@ -1510,7 +1529,7 @@ var CdpBrowser = class _CdpBrowser {
             setTimeout(finish,autocomplete ? 200 : 50);
             const ready=()=>{
               if (stopped) return;
-              const ids=(field?.getAttribute('aria-controls')||field?.getAttribute('aria-owns')||'')
+              const ids=(field?.getAttribute('aria-controls')||field.getAttribute('aria-owns')||'')
                 .split(/\\s+/).filter(Boolean);
               const roots=ids.length ? ids.map(id=>document.getElementById(id)).filter(Boolean) : [document];
               const options=roots.flatMap(root=>[...root.querySelectorAll('[role="option"]')]);
@@ -1662,7 +1681,7 @@ var CdpBrowser = class _CdpBrowser {
             await this.call("Input.dispatchKeyEvent", { type: "char", text: ch });
           }
         } else {
-          const modifiers = platform() === "darwin" ? 4 : 2;
+          const modifiers = platform2() === "darwin" ? 4 : 2;
           await this.call("Input.dispatchKeyEvent", {
             type: "keyDown",
             key: "a",
@@ -1708,7 +1727,7 @@ var CdpBrowser = class _CdpBrowser {
 // src/abrowser.ts
 import { execFile } from "node:child_process";
 import { homedir as homedir2 } from "node:os";
-import { join as join3 } from "node:path";
+import { join as join4 } from "node:path";
 import { promisify } from "node:util";
 var execFileAsync = promisify(execFile);
 var sleep5 = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -1728,7 +1747,7 @@ var AgentBrowser = class _AgentBrowser {
   }
   static async open(url, opts = {}) {
     const browser = new _AgentBrowser(opts);
-    const profile = process.env.JEV_AB_PROFILE ?? join3(homedir2(), ".jev-browse", "agent-browser-profile");
+    const profile = process.env.JEV_AB_PROFILE ?? join4(homedir2(), ".jev-browse", "agent-browser-profile");
     try {
       await browser.run(["--profile", profile, ...browser.launchArgs, "open"]);
       browser.opened = true;
@@ -1971,7 +1990,7 @@ function parseOutput(stdout) {
 
 // src/cli.ts
 var sleep6 = (ms) => new Promise((r) => setTimeout(r, ms));
-var LOCK_DIR = join4(homedir3(), ".jev-browse", "run.lock");
+var LOCK_DIR = join5(homedir3(), ".jev-browse", "run.lock");
 function pidAlive(pid) {
   try {
     process.kill(pid, 0);
@@ -1985,12 +2004,12 @@ async function acquireLock(timeoutMs = 3e4) {
   for (; ; ) {
     try {
       mkdirSync(LOCK_DIR, { recursive: true });
-      writeFileSync(join4(LOCK_DIR, "pid"), String(process.pid), { flag: "wx" });
+      writeFileSync(join5(LOCK_DIR, "pid"), String(process.pid), { flag: "wx" });
       return;
     } catch {
-      const holder = Number(readFileSync3(join4(LOCK_DIR, "pid"), "utf8"));
+      const holder = Number(readFileSync3(join5(LOCK_DIR, "pid"), "utf8"));
       if (holder && !pidAlive(holder)) {
-        rmSync(join4(LOCK_DIR, "pid"), { force: true });
+        rmSync(join5(LOCK_DIR, "pid"), { force: true });
         continue;
       }
       if (Date.now() > deadline) {
@@ -2002,7 +2021,7 @@ async function acquireLock(timeoutMs = 3e4) {
 }
 function releaseLock() {
   try {
-    const holder = Number(readFileSync3(join4(LOCK_DIR, "pid"), "utf8"));
+    const holder = Number(readFileSync3(join5(LOCK_DIR, "pid"), "utf8"));
     if (holder === process.pid) rmSync(LOCK_DIR, { recursive: true, force: true });
   } catch {
   }

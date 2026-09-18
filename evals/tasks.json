@@ -30,6 +30,36 @@
     "expect": { "url_match": "httpbin\\.org/post" }
   },
   {
+    "id": "tin-login",
+    "url": "https://the-internet.herokuapp.com/login",
+    "goal": "Log in with username \"tomsmith\" and password \"SuperSecretPassword!\" and stop when the secure area is visible.",
+    "expect": { "url_match": "/secure" }
+  },
+  {
+    "id": "tin-dropdown",
+    "url": "https://the-internet.herokuapp.com/dropdown",
+    "goal": "Select \"Option 2\" from the dropdown and stop.",
+    "expect": {}
+  },
+  {
+    "id": "tin-dynamic-loading",
+    "url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+    "goal": "Click Start, wait for \"Hello World!\" to appear, and stop when it is visible.",
+    "expect": {}
+  },
+  {
+    "id": "tin-dynamic-controls",
+    "url": "https://the-internet.herokuapp.com/dynamic_controls",
+    "goal": "Click the Enable button, wait for the text input to become enabled, type \"hello\" into it, and stop.",
+    "expect": {}
+  },
+  {
+    "id": "github-issues",
+    "url": "https://github.com/nodejs/node",
+    "goal": "Open the Issues tab of this repository.",
+    "expect": { "url_match": "/issues" }
+  },
+  {
     "id": "flights-zurich-london",
     "url": "https://www.google.com/travel/flights?hl=en",
     "goal": "Find one-way flights from Zurich to London on September 20, 2026, for one adult in economy. Stop when matching flight options are visible.",

@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 
 import { Agent, type RunResult } from "./agent.ts";
 import { loadDotEnv } from "./env.ts";
-import { CdpBrowser } from "./cdp.ts";
+import { CdpBrowser } from "./cdp/browser.ts";
 import { AgentBrowser } from "./abrowser.ts";
 import type { BrowserDriver, JsonValue } from "./types.ts";
 

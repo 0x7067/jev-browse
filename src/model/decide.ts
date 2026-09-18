@@ -1,70 +1,16 @@
 /**
- * TypeSafe makes choices; an optional small OpenAI-compatible model writes
- * field values. Ported from jev-ultrafast's model.py.
+ * The decision request: one systemOne call answers the operation and, in
+ * parallel, a speculative target per compatible operation. Retries are
+ * scoped — malformed answers retry once unchanged, context overflow retries
+ * on a shrunken page state.
  */
 
 import type { TypeSafeClient, Questions, ChoiceCriteria } from "@typesafe-ai/sdk";
 
-import { isFiniteNumber, isString } from "./json.ts";
-import { NEXT_ACTION, TARGET, TEXT_VALUE } from "./questions.ts";
-import type { ActionKind, JsonValue, ObservedAction, PageState } from "./types.ts";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-/**
- * Pre-establish TLS/HTTP2 to the model endpoints while the browser still
- * launches and navigates — the first real request then skips the handshake.
- * Fire-and-forget; failures are irrelevant.
- */
-export function warmModelEndpoints(): void {
-  const origins = new Set<string>();
-
-  for (const raw of [
-    process.env.TYPESAFE_BASE_URL ?? "https://api.typesafe.ai",
-    process.env.TEXT_MODEL_BASE_URL,
-  ]) {
-    try {
-      if (raw) origins.add(new URL(raw).origin);
-    } catch {
-      // unparseable env — the real request will surface it
-    }
-  }
-
-  for (const origin of origins) {
-    fetch(origin, { method: "HEAD" })
-      .then((r) => r.arrayBuffer())
-      .catch(() => {});
-  }
-}
-
-async function postJson(url: string, key: string, body: JsonValue): Promise<any> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    let response: Response;
-
-    try {
-      response = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-        body: JSON.stringify(body),
-      });
-    } catch {
-      throw new Error("Model connection failed; no action executed.");
-    }
-
-    if ([429, 529, 503].includes(response.status) && attempt < 2) {
-      await sleep(500 * 2 ** attempt);
-      continue;
-    }
-
-    if (!response.ok) {
-      throw new Error(`Model provider returned HTTP ${response.status}; no action executed.`);
-    }
-
-    return response.json();
-  }
-
-  throw new Error("Model unavailable");
-}
+import { isFiniteNumber, isString } from "../json.ts";
+import { NEXT_ACTION, TARGET } from "../questions.ts";
+import type { JsonValue, PageState } from "../types.ts";
+import { actionSpace } from "./space.ts";
 
 interface RawChoiceAnswer {
   choice?: JsonValue;
@@ -100,87 +46,6 @@ export function validateChoice(answer: RawChoiceAnswer, ids: Set<string>): asser
   if (!valid) {
     throw new Error("Invalid TypeSafe response; no action executed.");
   }
-}
-
-/** One index per observed element; each operation has its own valid target choices. */
-/** One candidate element as presented to the choice model. */
-type ElementChoice = {
-  index: string;
-  label: string;
-  operations: string[];
-  role?: string;
-  value?: string;
-  checked?: string;
-  selected?: string;
-  expanded?: string;
-  options?: { index: string; label: string; value: JsonValue }[];
-};
-
-export function actionSpace(actions: ObservedAction[]) {
-  const elements: any[] = [];
-  const indices = new Map<number, string>();
-  const targets: Record<string, Record<string, ObservedAction>> = {};
-  const controls: Record<string, ObservedAction> = {};
-
-  const operations: Partial<Record<ActionKind, string>> = {
-    click: "CLICK",
-    fill: "TYPE_TEXT",
-    select: "SELECT",
-    hover: "HOVER",
-  };
-
-  for (const action of actions) {
-    const kind = action.kind;
-    const operation = operations[kind];
-
-    if (operation === undefined) {
-      controls[action.id.toUpperCase()] = action;
-      continue;
-    }
-
-    const node = action.node!;
-    let index = indices.get(node);
-
-    if (index === undefined) {
-      index = String(elements.length + 1);
-      indices.set(node, index);
-
-      const element: ElementChoice = {
-        index,
-        label: action.label.split(" → ")[0],
-        operations: [],
-      };
-
-      for (const k of ["role", "value", "checked", "selected", "expanded"] as const) {
-        const v = action[k];
-
-        if (v !== undefined) element[k] = v;
-      }
-
-      if (kind === "select") {
-        element.value = action.current_value ?? "";
-        element.options = [];
-      }
-
-      elements.push(element);
-    }
-
-    const group = (targets[operation] ??= {});
-    const element = elements[Number(index) - 1];
-
-    if (!element.operations.includes(operation)) element.operations.push(operation);
-    let target = index;
-
-    if (kind === "select") {
-      const options = (element.options ??= []);
-      target = `${index}:${options.length + 1}`;
-      options.push({ index: target, label: action.label, value: action.value });
-    }
-
-    group[target] = action;
-  }
-
-  return { elements, targets, controls };
 }
 
 export interface Decision {
@@ -367,81 +232,5 @@ async function chooseOnce(
     model: result.model,
     usage: result.usage,
     latency_ms: Math.round(performance.now() - started),
-  };
-}
-
-export function fieldContext(goal: string, action: ObservedAction, page: PageState, history: any[]) {
-  return {
-    goal,
-    field: { label: action.label, role: action.role, value: action.value },
-    page: { title: page.title, text: page.text.slice(0, 6000) },
-    recent_actions: history
-      .slice(-6)
-      .map((h) =>
-        Object.fromEntries(["action", "text"].flatMap((k) => (k in h ? [[k, h[k]]] : []))),
-      ),
-  };
-}
-
-export async function fieldText(
-  context: JsonValue,
-): Promise<{ text: string; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
-  const key = process.env.TEXT_MODEL_API_KEY;
-
-  if (!key) {
-    throw new Error(
-      "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
-    );
-  }
-
-  const base = (process.env.TEXT_MODEL_BASE_URL ?? "https://api.deepseek.com/v1").replace(/\/+$/, "");
-  const model = process.env.TEXT_MODEL ?? "deepseek-chat";
-
-  const reasoning = base.includes("api.deepseek.com/")
-    ? { thinking: { type: "disabled" } }
-    : { reasoning: { effort: "low" } };
-
-  const reasoningFinal = process.env.TEXT_MODEL_REASONING === "none" ? { reasoning: { enabled: false } } : reasoning;
-
-  const started = performance.now();
-
-  const result = await postJson(`${base}/chat/completions`, key, {
-    model,
-    max_tokens: 1024,
-    response_format: { type: "json_object" },
-    ...reasoningFinal,
-    messages: [
-      { role: "system", content: TEXT_VALUE },
-      { role: "user", content: JSON.stringify(context) },
-    ],
-  });
-
-  let text: string;
-
-  try {
-    const output = JSON.parse(result.choices[0].message.content);
-    const value: JsonValue = output.text;
-
-    if (
-      Object.keys(output).join() !== "text" ||
-      !isString(value) ||
-      !value.trim() ||
-      value.length > 2000
-    ) {
-      throw new Error();
-    }
-
-    text = value;
-  } catch {
-    throw new Error("Text helper returned no valid field value; nothing typed.");
-  }
-
-  return {
-    text,
-    helper: {
-      model,
-      latency_ms: Math.round(performance.now() - started),
-      usage: result.usage ?? {},
-    },
   };
 }

@@ -1,0 +1,268 @@
+{
+  "label": "harder-v1",
+  "started": "2026-09-18T23:16:15.182Z",
+  "tasks": {
+    "tin-login": {
+      "runs": 2,
+      "verified": 2,
+      "median_ms": 5869,
+      "median_decisions": 4,
+      "median_jev_ms": 1500,
+      "median_text_ms": 2616,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5869,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1500,
+          "text_ms": 2616,
+          "final_url": "https://the-internet.herokuapp.com/secure",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@2364",
+            "TYPE_TEXT:Password@3996",
+            "CLICK:Login@5479",
+            "DONE:Login@5869"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4731,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1383,
+          "text_ms": 2423,
+          "final_url": "https://the-internet.herokuapp.com/secure",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@2161",
+            "TYPE_TEXT:Password@3610",
+            "CLICK:Login@4329",
+            "DONE:Login@4731"
+          ]
+        }
+      ]
+    },
+    "tin-dropdown": {
+      "runs": 2,
+      "verified": 2,
+      "median_ms": 1320,
+      "median_decisions": 2,
+      "median_jev_ms": 866,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1320,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 866,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dropdown",
+          "ops": [
+            "SELECT:Please select an option \n     "
+          ],
+          "events": [
+            "SELECT:Please select an option \n     @904",
+            "DONE:Please select an option \n     @1320"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1071,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 695,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dropdown",
+          "ops": [
+            "SELECT:Please select an option \n     "
+          ],
+          "events": [
+            "SELECT:Please select an option \n     @740",
+            "DONE:Please select an option \n     @1071"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-loading": {
+      "runs": 2,
+      "verified": 0,
+      "median_ms": 4148,
+      "median_decisions": 9,
+      "median_jev_ms": 3010,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 3508,
+          "steps": 7,
+          "decisions": 8,
+          "jev_ms": 2462,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@728",
+            "WAIT:Wait for the page to update@1123",
+            "WAIT:Wait for the page to update@1588",
+            "WAIT:Wait for the page to update@1955",
+            "WAIT:Wait for the page to update@2339",
+            "WAIT:Wait for the page to update@2742",
+            "WAIT:Wait for the page to update@3148",
+            "BLOCKED:Wait for the page to update@3508"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4148,
+          "steps": 8,
+          "decisions": 9,
+          "jev_ms": 3010,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@752",
+            "WAIT:Wait for the page to update@1197",
+            "WAIT:Wait for the page to update@1648",
+            "WAIT:Wait for the page to update@2080",
+            "WAIT:Wait for the page to update@2534",
+            "WAIT:Wait for the page to update@3007",
+            "WAIT:Wait for the page to update@3440",
+            "WAIT:Wait for the page to update@3856",
+            "BLOCKED:Wait for the page to update@4148"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-controls": {
+      "runs": 2,
+      "verified": 0,
+      "median_ms": 1815,
+      "median_decisions": 3,
+      "median_jev_ms": 1313,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 1467,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 999,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_controls",
+          "ops": [
+            "CLICK:Enable",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Enable@802",
+            "WAIT:Wait for the page to update@1174",
+            "BLOCKED:Wait for the page to update@1467"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 1815,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1313,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_controls",
+          "ops": [
+            "CLICK:Enable",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Enable@1103",
+            "WAIT:Wait for the page to update@1467",
+            "BLOCKED:Wait for the page to update@1815"
+          ]
+        }
+      ]
+    },
+    "github-issues": {
+      "runs": 2,
+      "verified": 1,
+      "median_ms": 3882,
+      "median_decisions": 5,
+      "median_jev_ms": 939,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 1721,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 914,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node",
+          "ops": [
+            "CLICK:Issues \n           629"
+          ],
+          "events": [
+            "CLICK:Issues \n           629@1197",
+            "DONE:Issues \n           629@1720"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3882,
+          "steps": 1,
+          "decisions": 5,
+          "jev_ms": 939,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node/issues",
+          "ops": [
+            "CLICK:Issues \n           629"
+          ],
+          "events": [
+            "CLICK:Issues \n           629@1380",
+            "DONE:Issues \n           629@2257",
+            "DONE:Issues \n           629@2881",
+            "DONE:Issues \n           629@3407",
+            "DONE:Issues \n           629@3881"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 17034
+}

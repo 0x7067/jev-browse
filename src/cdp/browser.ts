@@ -1,18 +1,15 @@
 /**
- * Self-contained browser engine: a minimal CDP client over the built-in
- * WebSocket, plus Chrome launch/attach. No daemon, no external service —
- * ports jev-ultrafast's browser.py semantics (trusted input, atomic snapshot,
- * semantic freshness guards).
+ * CDP browser driver: launch or attach to Chrome, then expose the shared
+ * observe/fresh/act contract over a page-level session. Trusted input,
+ * atomic snapshots, semantic freshness guards.
  */
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync } from "node:fs";
 import { homedir, platform } from "node:os";
-import { createServer } from "node:net";
 import { join } from "node:path";
 
-import { fingerprint } from "./json.ts";
-import { loadSnapshotJs } from "./snapshot-loader.ts";
+import { fingerprint } from "../json.ts";
+import { loadSnapshotJs } from "../snapshot-loader.ts";
 import {
   StalePage,
   type ActResult,
@@ -21,9 +18,15 @@ import {
   type JsonValue,
   type ObservedAction,
   type PageState,
-} from "./types.ts";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+} from "../types.ts";
+import { findChrome } from "./chrome.ts";
+import {
+  browserWsUrl,
+  CdpSocket,
+  freePort,
+  sleep,
+  type TargetList,
+} from "./socket.ts";
 
 // Atomically read visible content and controls, preserving actual DOM node identity.
 const READ_STATE = loadSnapshotJs();
@@ -60,189 +63,6 @@ const KEYS: ReadonlyMap<string, KeyEventParams> = new Map(
 /** Input types typed via real key events — insertText cannot drive them. */
 const KEY_TYPED_INPUTS = new Set(["date", "time", "datetime-local", "month", "week"]);
 
-/** Minimal CDP JSON-RPC client over a browser-level WebSocket. */
-class CdpSocket {
-  private ws: WebSocket;
-  private nextId = 1;
-  private pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void }>();
-  private closed = false;
-
-  private constructor(ws: WebSocket) {
-    this.ws = ws;
-    ws.addEventListener("message", (event) => {
-      const msg = JSON.parse(String(event.data));
-
-      if (
-        msg.method === "Inspector.targetCrashed" ||
-        msg.method === "Target.targetCrashed"
-      ) {
-        // A dead renderer never answers again — refuse new calls too.
-        this.closed = true;
-
-        for (const p of this.pending.values()) p.reject(new Error("Renderer crashed"));
-        this.pending.clear();
-
-        return;
-      }
-
-      if (msg.id !== undefined) {
-        const p = this.pending.get(msg.id);
-
-        if (!p) return;
-        this.pending.delete(msg.id);
-
-        if (msg.error) p.reject(new Error(`${msg.error.message ?? "CDP error"}`));
-        else p.resolve(msg.result ?? {});
-      }
-    });
-    ws.addEventListener("close", () => {
-      this.closed = true;
-
-      for (const p of this.pending.values()) p.reject(new Error("CDP connection closed"));
-      this.pending.clear();
-    });
-  }
-
-  static async connect(wsUrl: string): Promise<CdpSocket> {
-    const ws = new WebSocket(wsUrl);
-    await new Promise<void>((resolve, reject) => {
-      ws.addEventListener("open", () => resolve(), { once: true });
-      ws.addEventListener("error", () => reject(new Error(`Cannot connect to ${wsUrl}`)), {
-        once: true,
-      });
-    });
-
-    return new CdpSocket(ws);
-  }
-
-  call<T>(method: string, params: JsonObject = {}, sessionId?: string): Promise<T> {
-    if (this.closed) return Promise.reject(new Error("CDP connection closed"));
-    const id = this.nextId++;
-
-    return new Promise<T>((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-      this.ws.send(JSON.stringify({ id, method, params, sessionId }));
-    });
-  }
-
-  close(): void {
-    this.closed = true;
-
-    try {
-      this.ws.close();
-    } catch {
-      // already gone
-    }
-  }
-}
-
-const CHROME_CANDIDATES: Partial<Record<NodeJS.Platform, readonly string[]>> = {
-  darwin: [
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
-  ],
-  linux: [
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/usr/bin/microsoft-edge",
-    "/snap/bin/chromium",
-  ],
-  win32: [
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-  ],
-};
-
-function findChrome(): string {
-  if (process.env.CHROME_PATH && existsSync(process.env.CHROME_PATH)) {
-    return process.env.CHROME_PATH;
-  }
-
-  if (platform() === "win32" && process.env.LOCALAPPDATA) {
-    const perUser = join(
-      process.env.LOCALAPPDATA,
-      "Google\\Chrome\\Application\\chrome.exe",
-    );
-
-    if (existsSync(perUser)) return perUser;
-  }
-
-  for (const candidate of CHROME_CANDIDATES[platform()] ?? []) {
-    if (existsSync(candidate)) return candidate;
-  }
-
-  // PATH fallback: catches flatpak, nix, homebrew-link, and vendor installs.
-  for (const name of ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]) {
-    for (const dir of (process.env.PATH ?? "").split(process.platform === "win32" ? ";" : ":")) {
-      const candidate = join(dir, name);
-
-      if (existsSync(candidate)) return candidate;
-    }
-  }
-
-  throw new Error(
-    `No Chrome/Chromium found. Set CHROME_PATH, or attach to a running browser with --cdp http://host:9222`,
-  );
-}
-
-function freePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = createServer();
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-
-      if (address === null) {
-        server.close(() => reject(new Error("Server closed before reporting a port")));
-
-        return;
-      }
-
-      // SAFETY: a listening TCP server reports AddressInfo; the string form is only for IPC pipes.
-      const port = (address as { port: number }).port;
-      server.close(() => resolve(port));
-    });
-  });
-}
-
-async function browserWsUrl(port: number, timeoutMs = 15000): Promise<string> {
-  const deadline = Date.now() + timeoutMs;
-
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${port}/json/version`);
-
-      // SAFETY: /json/version returns a small JSON object; the only field read is checked below.
-      const info = response.ok
-        ? ((await response.json()) as { webSocketDebuggerUrl?: string })
-        : null;
-
-      if (info?.webSocketDebuggerUrl) return info.webSocketDebuggerUrl;
-    } catch {
-      // not up yet
-    }
-
-    await sleep(100);
-  }
-
-  throw new Error(`Chrome did not expose CDP on port ${port}`);
-}
-
-/** Target.getTargets payload entry (CDP TargetInfo). */
-interface TargetInfo {
-  targetId: string;
-  type: string;
-}
-
-interface TargetList {
-  targetInfos: TargetInfo[];
-}
-
 export interface CdpOptions {
   /** Attach to an existing debug endpoint (http://host:port) instead of launching. */
   cdpUrl?: string;
@@ -260,6 +80,8 @@ export class CdpBrowser implements BrowserDriver {
   private afterInput: ObservedAction | null = null;
   private seen = new Set<string>();
   private adopted: string[] = [];
+  /** In-flight request ids per session — the "is the page actually working" signal. */
+  private pending = new Map<string, Set<string>>();
 
   private constructor() {}
 
@@ -310,6 +132,15 @@ export class CdpBrowser implements BrowserDriver {
       }
 
       browser.socket = await CdpSocket.connect(wsUrl);
+      browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
+        if (sessionId) (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, new Set()).get(sessionId)!).add(p.requestId);
+      });
+      browser.socket.onEvent("Network.loadingFinished", (p, sessionId) => {
+        if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
+      });
+      browser.socket.onEvent("Network.loadingFailed", (p, sessionId) => {
+        if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
+      });
       browser.target = (
         await browser.socket.call<{ targetId: string }>("Target.createTarget", {
           url: "about:blank",
@@ -323,6 +154,7 @@ export class CdpBrowser implements BrowserDriver {
         })
       ).sessionId;
       browser.seen.add(browser.target);
+      await browser.call("Network.enable").catch(() => {});
 
       // Tabs that pre-date the run (e.g. the launch tab) are not adoptable.
       const { targetInfos } = await browser.socket
@@ -397,6 +229,7 @@ export class CdpBrowser implements BrowserDriver {
         this.target = t.targetId;
         this.session = sessionId;
         this.adopted.push(t.targetId);
+        await this.call("Network.enable").catch(() => {});
       } catch {
         // tab raced away
       }
@@ -422,7 +255,7 @@ export class CdpBrowser implements BrowserDriver {
             setTimeout(finish,autocomplete ? 200 : 50);
             const ready=()=>{
               if (stopped) return;
-              const ids=(field?.getAttribute('aria-controls')||field?.getAttribute('aria-owns')||'')
+              const ids=(field?.getAttribute('aria-controls')||field.getAttribute('aria-owns')||'')
                 .split(/\\s+/).filter(Boolean);
               const roots=ids.length ? ids.map(id=>document.getElementById(id)).filter(Boolean) : [document];
               const options=roots.flatMap(root=>[...root.querySelectorAll('[role="option"]')]);
@@ -449,6 +282,7 @@ export class CdpBrowser implements BrowserDriver {
 
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
+        info.pending_requests = this.pending.get(this.session)?.size ?? 0;
 
         return info;
       } catch (error) {

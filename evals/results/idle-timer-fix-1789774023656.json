@@ -1,0 +1,90 @@
+{
+  "label": "idle-timer-fix",
+  "started": "2026-09-18T23:26:46.411Z",
+  "tasks": {
+    "tin-dynamic-loading": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6788,
+      "median_decisions": 12,
+      "median_jev_ms": 3654,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6788,
+          "steps": 10,
+          "decisions": 12,
+          "jev_ms": 3654,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@849",
+            "WAIT:Wait for the page to update@1292",
+            "WAIT:Wait for the page to update@2176",
+            "WAIT:Wait for the page to update@2723",
+            "WAIT:Wait for the page to update@3168",
+            "WAIT:Wait for the page to update@3857",
+            "WAIT:Wait for the page to update@4391",
+            "WAIT:Wait for the page to update@4862",
+            "WAIT:Wait for the page to update@5234",
+            "WAIT:Wait for the page to update@5675",
+            "WAIT:Wait for the page to update@6081",
+            "DONE:Wait for the page to update@6788"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-controls": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6187,
+      "median_decisions": 7,
+      "median_jev_ms": 1370,
+      "median_text_ms": 859,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6187,
+          "steps": 6,
+          "decisions": 7,
+          "jev_ms": 1370,
+          "text_ms": 859,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_controls",
+          "ops": [
+            "CLICK:Enable",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "TYPE_TEXT:textbox"
+          ],
+          "events": [
+            "CLICK:Enable@796",
+            "WAIT:Wait for the page to update@1215",
+            "BLOCKED:Wait for the page to update@2210",
+            "BLOCKED:Wait for the page to update@3255",
+            "BLOCKED:Wait for the page to update@4226",
+            "TYPE_TEXT:textbox@5458",
+            "DONE:textbox@6187"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 12975
+}

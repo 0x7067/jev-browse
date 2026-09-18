@@ -1,0 +1,86 @@
+{
+  "label": "pending-fix",
+  "started": "2026-09-18T23:25:55.427Z",
+  "tasks": {
+    "tin-dynamic-loading": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 4202,
+      "median_decisions": 9,
+      "median_jev_ms": 3266,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4202,
+          "steps": 9,
+          "decisions": 9,
+          "jev_ms": 3266,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@817",
+            "WAIT:Wait for the page to update@1252",
+            "WAIT:Wait for the page to update@1620",
+            "WAIT:Wait for the page to update@2018",
+            "WAIT:Wait for the page to update@2453",
+            "WAIT:Wait for the page to update@2927",
+            "WAIT:Wait for the page to update@3395",
+            "WAIT:Wait for the page to update@3790",
+            "WAIT:Wait for the page to update@4201"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-controls": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 7231,
+      "median_decisions": 7,
+      "median_jev_ms": 1836,
+      "median_text_ms": 1483,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 7231,
+          "steps": 6,
+          "decisions": 7,
+          "jev_ms": 1836,
+          "text_ms": 1483,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_controls",
+          "ops": [
+            "CLICK:Enable",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "TYPE_TEXT:textbox"
+          ],
+          "events": [
+            "CLICK:Enable@1223",
+            "WAIT:Wait for the page to update@1632",
+            "BLOCKED:Wait for the page to update@2638",
+            "BLOCKED:Wait for the page to update@3655",
+            "BLOCKED:Wait for the page to update@4629",
+            "TYPE_TEXT:textbox@6523",
+            "DONE:textbox@7231"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 11433
+}

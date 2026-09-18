@@ -8,14 +8,10 @@ import { MAX_STEPS } from "./questions.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-import {
-  actionSpace,
-  choose,
-  fieldContext,
-  fieldText,
-  warmModelEndpoints,
-  type Decision,
-} from "./model.ts";
+import { choose, type Decision } from "./model/decide.ts";
+import { warmModelEndpoints } from "./model/endpoints.ts";
+import { actionSpace } from "./model/space.ts";
+import { fieldContext, fieldText } from "./model/text.ts";
 import { makeClient } from "./env.ts";
 import { StalePage, type BrowserDriver, type JsonValue, type PageState } from "./types.ts";
 
@@ -45,6 +41,7 @@ export interface HistoryEntry {
   usage: unknown;
   executed_ms: number;
   elapsed_ms: number;
+  pending_requests?: number;
 }
 
 export interface RunResult {
@@ -159,14 +156,10 @@ export class Agent {
         throw new StalePage("Page changed since the decision. Choose again.");
       }
 
-      // A BLOCKED claim before any real action — or on an empty snapshot —
-      // is a give-up we can afford to second-guess: wait, re-observe, ask
-      // again. Bounded by earlyWaits; mutating retries stay forbidden.
-      if (
-        selected === "BLOCKED" &&
-        this.earlyWaits < 3 &&
-        (page.actions.length === 0 || this.history.every((h) => h.kind === "wait"))
-      ) {
+      // Any BLOCKED claim is a give-up worth second-guessing: wait, re-observe,
+      // ask again. A premature blocked ends the task; a probe costs ~1s.
+      // Bounded by earlyWaits; mutating retries stay forbidden.
+      if (selected === "BLOCKED" && this.earlyWaits < 3) {
         this.earlyWaits++;
         const entry = this.waitEntry("Wait for the page to update", page);
         await sleep(700);
@@ -177,6 +170,18 @@ export class Agent {
         this.status = "ready";
 
         return;
+      }
+
+      if (selected === "DONE") {
+        // A DONE claim on a just-clicked link can land before the navigation
+        // it triggered starts. Require the page to stay put across a short
+        // window, not just one freshness check.
+        await sleep(400);
+
+        if (!(await this.browser.fresh(page))) {
+          this.status = "ready";
+          throw new StalePage("Page changed while confirming DONE. Choose again.");
+        }
       }
 
       this.status = selected === "DONE" ? "done" : "blocked";
@@ -260,20 +265,32 @@ export class Agent {
 
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
+    entry.pending_requests = this.page.pending_requests ?? 0;
     entry.url = this.page.url;
     entry.elapsed_ms = this.elapsed();
     this.fingerprints.push(this.page.fingerprint);
 
     const repeated = this.history.slice(-3);
-    const tail = this.history.slice(-8);
 
-    // Stalemate bounds: quick give-up on repeated no-op actions, a longer
-    // fuse for wait-heavy no-change loops, and cycle detection for
-    // back-and-forth loops that evade both (A→B→A→B changes every page).
+    // Stalemate bounds: quick give-up on repeated no-op actions; a
+    // time-based fuse for idle no-change streaks (a client-side timer is
+    // indistinguishable from a stuck page — only patience and a deadline
+    // separate them); and cycle detection for back-and-forth loops that
+    // evade both. In-flight requests reset the streak: the page is working.
+    let idleMs = 0;
+    const last = this.history[this.history.length - 1];
+
+    for (let i = this.history.length - 1; i >= 0; i--) {
+      const h = this.history[i];
+
+      if (h.page_changed !== false || (h.pending_requests ?? 0) > 0) break;
+      idleMs = (last?.elapsed_ms ?? 0) - h.elapsed_ms;
+    }
+
     this.status =
       (repeated.length === 3 &&
         repeated.every((h) => h.page_changed === false && h.kind !== "wait")) ||
-      (tail.length === 8 && tail.every((h) => h.page_changed === false)) ||
+      idleMs >= 10_000 ||
       this.cycling()
         ? "blocked"
         : "ready";

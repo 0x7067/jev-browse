@@ -1,0 +1,115 @@
+{
+  "label": "probe-fix-check",
+  "started": "2026-09-18T23:19:24.491Z",
+  "tasks": {
+    "tin-dynamic-loading": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 4643,
+      "median_decisions": 9,
+      "median_jev_ms": 3635,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4643,
+          "steps": 9,
+          "decisions": 9,
+          "jev_ms": 3635,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@849",
+            "WAIT:Wait for the page to update@1359",
+            "WAIT:Wait for the page to update@1796",
+            "WAIT:Wait for the page to update@2249",
+            "WAIT:Wait for the page to update@2733",
+            "WAIT:Wait for the page to update@3285",
+            "WAIT:Wait for the page to update@3737",
+            "WAIT:Wait for the page to update@4206",
+            "WAIT:Wait for the page to update@4643"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-controls": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 8158,
+      "median_decisions": 7,
+      "median_jev_ms": 2972,
+      "median_text_ms": 1504,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 8158,
+          "steps": 5,
+          "decisions": 7,
+          "jev_ms": 2972,
+          "text_ms": 1504,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_controls",
+          "ops": [
+            "CLICK:Enable",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "TYPE_TEXT:textbox"
+          ],
+          "events": [
+            "CLICK:Enable@2311",
+            "WAIT:Wait for the page to update@2797",
+            "BLOCKED:Wait for the page to update@4044",
+            "BLOCKED:Wait for the page to update@5133",
+            "BLOCKED:Wait for the page to update@5500",
+            "TYPE_TEXT:textbox@7449",
+            "DONE:textbox@8158"
+          ]
+        }
+      ]
+    },
+    "github-issues": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4919,
+      "median_decisions": 5,
+      "median_jev_ms": 1106,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4919,
+          "steps": 1,
+          "decisions": 5,
+          "jev_ms": 1106,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node/issues",
+          "ops": [
+            "CLICK:Issues \n           629"
+          ],
+          "events": [
+            "CLICK:Issues \n           629@1339",
+            "DONE:Issues \n           629@2704",
+            "DONE:Issues \n           629@3510",
+            "DONE:Issues \n           629@4026",
+            "DONE:Issues \n           629@4919"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 17720
+}
