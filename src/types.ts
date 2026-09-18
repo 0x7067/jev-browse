@@ -6,6 +6,7 @@ export type JsonValue =
   | number
   | boolean
   | null
+  | undefined
   | JsonValue[]
   | { [key: string]: JsonValue };
 
@@ -22,7 +23,7 @@ export type ActionKind =
   | "back"
   | "forward";
 
-export interface ObservedAction {
+export type ObservedAction = {
   id: string; // "e1".."e250", "scroll_down", "scroll_up", "wait"
   kind: ActionKind;
   label: string;
@@ -37,8 +38,8 @@ export interface ObservedAction {
   checked?: string;
   selected?: string;
   expanded?: string;
-  [extra: string]: JsonValue | undefined;
-}
+  [extra: string]: JsonValue;
+};
 
 export interface PageState {
   url: string;

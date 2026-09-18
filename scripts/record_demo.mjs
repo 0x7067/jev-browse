@@ -28,13 +28,16 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function parseArgs(argv) {
   const args = { goals: [], out: join(ROOT, "docs"), name: "demo", maxSteps: 60 };
+
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     const val = () => argv[++i];
+
     switch (arg) {
       case "--url": args.url = val(); break;
       case "--goal": args.goals.push(val()); break;
@@ -44,19 +47,25 @@ function parseArgs(argv) {
       default: throw new Error(`Unknown argument: ${arg}`);
     }
   }
+
   if (!args.url || !args.goals.length) {
     throw new Error("Usage: record_demo.mjs --url URL --goal GOAL [--goal ...] [--out dir] [--name demo]");
   }
+
   return args;
 }
 
 function loadEnvFile(path, env) {
   if (!existsSync(path)) return env;
+
   for (const line of readFileSync(path, "utf8").split("\n")) {
     const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+
     if (!m || line.trim().startsWith("#")) continue;
+
     if (env[m[1]] === undefined) env[m[1]] = m[2].replace(/^["']|["']$/g, "");
   }
+
   return env;
 }
 
@@ -68,6 +77,7 @@ function findChrome() {
     "/usr/bin/google-chrome",
     "/usr/bin/chromium",
   ].filter(Boolean);
+
   for (const c of candidates) if (existsSync(c)) return c;
   throw new Error("Chrome not found — set CHROME_PATH");
 }
@@ -85,11 +95,14 @@ function freePort() {
 
 async function waitHttp(url, timeoutMs = 15000) {
   const deadline = Date.now() + timeoutMs;
+
   for (;;) {
     try {
       const res = await fetch(url);
+
       if (res.ok) return await res.json();
     } catch {}
+
     if (Date.now() > deadline) throw new Error(`Timed out waiting for ${url}`);
     await sleep(100);
   }
@@ -105,6 +118,7 @@ async function screencast(wsUrl, onFrame) {
 
   let id = 0;
   const pending = new Map();
+
   const send = (method, params = {}) =>
     new Promise((resolve, reject) => {
       const msgId = ++id;
@@ -115,14 +129,18 @@ async function screencast(wsUrl, onFrame) {
   let stopped = false;
   ws.addEventListener("message", async (event) => {
     const msg = JSON.parse(String(event.data));
+
     if (msg.id !== undefined) {
       const p = pending.get(msg.id);
+
       if (p) {
         pending.delete(msg.id);
         msg.error ? p.reject(new Error(msg.error.message)) : p.resolve(msg.result ?? {});
       }
+
       return;
     }
+
     if (msg.method === "Page.screencastFrame") {
       const { data, metadata, sessionId } = msg.params;
       await onFrame(data, metadata);
@@ -162,6 +180,7 @@ async function main() {
   mkdirSync(args.out, { recursive: true });
 
   const port = await freePort();
+
   const chrome = spawn(
     findChrome(),
     [
@@ -176,15 +195,18 @@ async function main() {
     ],
     { stdio: "ignore" },
   );
+
   chrome.on("error", () => {});
 
   const cleanup = async () => {
     try { chrome.kill("SIGKILL"); } catch {}
+
     rmSync(work, { recursive: true, force: true });
   };
 
   try {
     await waitHttp(`http://127.0.0.1:${port}/json/version`);
+
     const initial = new Set(
       (await waitHttp(`http://127.0.0.1:${port}/json/list`))
         .filter((t) => t.type === "page")
@@ -219,12 +241,15 @@ async function main() {
     let frameIndex = 0;
     const stamps = [];
     const deadline = Date.now() + 30000;
+
     while (!cast && Date.now() < deadline) {
       const list = await waitHttp(`http://127.0.0.1:${port}/json/list`).catch(() => []);
       const target = (list ?? []).find((t) => t.type === "page" && !initial.has(t.id));
+
       if (target) {
         cast = await screencast(target.webSocketDebuggerUrl, async (data, metadata) => {
           const ts = metadata?.timestamp ?? Date.now() / 1000;
+
           if (t0 === null) t0 = ts;
           stamps.push(ts);
           writeFileSync(
@@ -234,8 +259,10 @@ async function main() {
         });
         break;
       }
+
       await sleep(50);
     }
+
     if (!cast) throw new Error("Never saw the agent's tab appear on CDP");
 
     const exitCode = await cliDone;
@@ -244,24 +271,29 @@ async function main() {
     chrome.kill("SIGKILL");
 
     let result = null;
+
     try { result = JSON.parse(stdout.trim()); } catch {}
 
     if (!frameIndex) throw new Error("Screencast captured zero frames");
 
     // Assemble at 1× from CDP frame timestamps; ~0.8 s hold on the last frame.
     const rel = stamps.map((t) => Math.max(0, t - t0));
+
     const concat = rel
       .map((t, i) => {
         const next = i + 1 < rel.length ? rel[i + 1] : t + 0.8;
         const dur = Math.max(0.016, next - t);
+
         return `file frames/f_${String(i + 1).padStart(6, "0")}.jpg\nduration ${dur.toFixed(3)}`;
       })
       .join("\n");
+
     const concatPath = join(work, "frames.txt");
     writeFileSync(concatPath, concat + `\nfile frames/f_${String(frameIndex).padStart(6, "0")}.jpg\n`);
 
     const mp4 = join(args.out, `${args.name}.mp4`);
     const gif = join(args.out, `${args.name}.gif`);
+
     const ffmpeg = (argv) =>
       new Promise((res, rej) => {
         const p = spawn("ffmpeg", argv, { stdio: ["ignore", "ignore", "pipe"] });

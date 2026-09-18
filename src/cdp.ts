@@ -6,17 +6,19 @@
  */
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { createServer } from "node:net";
 import { join } from "node:path";
 
+import { fingerprint } from "./json.ts";
 import { loadSnapshotJs } from "./snapshot-loader.ts";
 import {
   StalePage,
   type ActResult,
   type BrowserDriver,
+  type JsonObject,
+  type JsonValue,
   type ObservedAction,
   type PageState,
 } from "./types.ts";
@@ -57,25 +59,6 @@ const KEYS: ReadonlyMap<string, KeyEventParams> = new Map(
 
 /** Input types typed via real key events — insertText cannot drive them. */
 const KEY_TYPED_INPUTS = new Set(["date", "time", "datetime-local", "month", "week"]);
-
-function fingerprint(state: Record<string, unknown>): string {
-  const content: Record<string, unknown> = {};
-
-  for (const k of ["url", "text", "actions", "scroll"]) content[k] = state[k];
-
-  const canonical = (v: unknown): unknown =>
-    Array.isArray(v)
-      ? v.map(canonical)
-      : v && typeof v === "object"
-        ? Object.fromEntries(
-            Object.keys(v as object)
-              .sort()
-              .map((k) => [k, canonical((v as Record<string, unknown>)[k])]),
-          )
-        : v;
-
-  return createHash("sha256").update(JSON.stringify(canonical(content))).digest("hex");
-}
 
 /** Minimal CDP JSON-RPC client over a browser-level WebSocket. */
 class CdpSocket {
@@ -132,7 +115,7 @@ class CdpSocket {
     return new CdpSocket(ws);
   }
 
-  call<T = any>(method: string, params: Record<string, unknown> = {}, sessionId?: string): Promise<T> {
+  call<T>(method: string, params: JsonObject = {}, sessionId?: string): Promise<T> {
     if (this.closed) return Promise.reject(new Error("CDP connection closed"));
     const id = this.nextId++;
 
@@ -212,7 +195,16 @@ function freePort(): Promise<number> {
     const server = createServer();
     server.once("error", reject);
     server.listen(0, "127.0.0.1", () => {
-      const port = (server.address() as { port: number }).port;
+      const address = server.address();
+
+      if (address === null) {
+        server.close(() => reject(new Error("Server closed before reporting a port")));
+
+        return;
+      }
+
+      // SAFETY: a listening TCP server reports AddressInfo; the string form is only for IPC pipes.
+      const port = (address as { port: number }).port;
       server.close(() => resolve(port));
     });
   });
@@ -225,6 +217,7 @@ async function browserWsUrl(port: number, timeoutMs = 15000): Promise<string> {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/version`);
 
+      // SAFETY: /json/version returns a small JSON object; the only field read is checked below.
       const info = response.ok
         ? ((await response.json()) as { webSocketDebuggerUrl?: string })
         : null;
@@ -238,6 +231,16 @@ async function browserWsUrl(port: number, timeoutMs = 15000): Promise<string> {
   }
 
   throw new Error(`Chrome did not expose CDP on port ${port}`);
+}
+
+/** Target.getTargets payload entry (CDP TargetInfo). */
+interface TargetInfo {
+  targetId: string;
+  type: string;
+}
+
+interface TargetList {
+  targetInfos: TargetInfo[];
 }
 
 export interface CdpOptions {
@@ -292,6 +295,7 @@ export class CdpBrowser implements BrowserDriver {
       if (opts.cdpUrl) {
         const base = opts.cdpUrl.replace(/\/+$/, "");
 
+        // SAFETY: /json/version returns a small JSON object; the only field read is checked below.
         const info = (await (await fetch(`${base}/json/version`)).json()) as {
           webSocketDebuggerUrl?: string;
         };
@@ -307,19 +311,25 @@ export class CdpBrowser implements BrowserDriver {
 
       browser.socket = await CdpSocket.connect(wsUrl);
       browser.target = (
-        await browser.socket.call("Target.createTarget", { url: "about:blank", background: true })
+        await browser.socket.call<{ targetId: string }>("Target.createTarget", {
+          url: "about:blank",
+          background: true,
+        })
       ).targetId;
       browser.session = (
-        await browser.socket.call("Target.attachToTarget", {
+        await browser.socket.call<{ sessionId: string }>("Target.attachToTarget", {
           targetId: browser.target,
           flatten: true,
         })
       ).sessionId;
       browser.seen.add(browser.target);
-      // Tabs that pre-date the run (e.g. the launch tab) are not adoptable.
-      const { targetInfos } = await browser.socket.call("Target.getTargets").catch(() => ({ targetInfos: [] }));
 
-      for (const t of (targetInfos ?? []) as { targetId: string }[]) browser.seen.add(t.targetId);
+      // Tabs that pre-date the run (e.g. the launch tab) are not adoptable.
+      const { targetInfos } = await browser.socket
+        .call<TargetList>("Target.getTargets")
+        .catch((): TargetList => ({ targetInfos: [] }));
+
+      for (const t of targetInfos) browser.seen.add(t.targetId);
       await browser.call("Emulation.setDeviceMetricsOverride", {
         width: 1120,
         height: 780,
@@ -343,16 +353,19 @@ export class CdpBrowser implements BrowserDriver {
     }
   }
 
-  private call<T = any>(method: string, params: Record<string, unknown> = {}): Promise<T> {
+  private call<T>(method: string, params: JsonObject = {}): Promise<T> {
     return this.socket.call<T>(method, params, this.session);
   }
 
-  private async evaluate(expression: string, awaitPromise = false): Promise<any> {
-    const response = await this.call("Runtime.evaluate", {
-      expression,
-      returnByValue: true,
-      awaitPromise,
-    });
+  private async evaluate<T>(expression: string, awaitPromise = false): Promise<T | undefined> {
+    const response = await this.call<{ exceptionDetails?: JsonValue; result?: { value?: T } }>(
+      "Runtime.evaluate",
+      {
+        expression,
+        returnByValue: true,
+        awaitPromise,
+      },
+    );
 
     if (response.exceptionDetails) {
       throw new StalePage("Document changed during evaluation");
@@ -364,21 +377,22 @@ export class CdpBrowser implements BrowserDriver {
   /** Follow newly opened tabs — the driver observes what the user would see. */
   private async adoptNewTarget(): Promise<void> {
     const { targetInfos } = await this.socket
-      .call("Target.getTargets")
-      .catch(() => ({ targetInfos: [] as { targetId: string; type: string }[] }));
+      .call<TargetList>("Target.getTargets")
+      .catch((): TargetList => ({ targetInfos: [] }));
 
-    const fresh = ((targetInfos ?? []) as { targetId: string; type: string }[]).filter(
-      (t) => t.type === "page" && !this.seen.has(t.targetId),
-    );
+    const fresh = targetInfos.filter((t) => t.type === "page" && !this.seen.has(t.targetId));
 
     for (const t of fresh) {
       this.seen.add(t.targetId);
 
       try {
-        const { sessionId } = await this.socket.call("Target.attachToTarget", {
-          targetId: t.targetId,
-          flatten: true,
-        });
+        const { sessionId } = await this.socket.call<{ sessionId: string }>(
+          "Target.attachToTarget",
+          {
+            targetId: t.targetId,
+            flatten: true,
+          },
+        );
 
         this.target = t.targetId;
         this.session = sessionId;
@@ -431,12 +445,12 @@ export class CdpBrowser implements BrowserDriver {
 
     for (let attempt = 0; attempt < 10; attempt++) {
       try {
-        const info = await this.evaluate(READ_STATE);
+        const info = await this.evaluate<PageState | null>(READ_STATE);
 
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
 
-        return info as PageState;
+        return info;
       } catch (error) {
         if (!(error instanceof StalePage) || attempt === 9) throw error;
         await sleep(20);
@@ -450,7 +464,7 @@ export class CdpBrowser implements BrowserDriver {
     if (action && (action.kind === "click" || action.kind === "select")) {
       const node = action.node;
 
-      if (typeof node !== "number") return false;
+      if (node === undefined) return false;
 
       const current = await this.evaluate(
         `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`,
@@ -507,11 +521,11 @@ export class CdpBrowser implements BrowserDriver {
       return { executed: action.id };
     }
 
-    if (typeof action.node !== "number") throw new Error("Invalid observed node");
+    if (action.node === undefined) throw new Error("Invalid observed node");
     // Code-owned node IDs refer to actual observed elements, never model-generated selectors.
     // Hit-testing is frame/shadow aware: iframe elements use owner-document
     // local coords; shadow elements accept hits on the host or root siblings.
-    let target: { x: number; y: number; type?: string } | null;
+    let target: { x: number; y: number; type?: string } | null | undefined;
 
     try {
       target = await this.evaluate(`(action => {
@@ -555,9 +569,9 @@ export class CdpBrowser implements BrowserDriver {
 
     // File inputs: setFileInputFiles — never click (it opens a native dialog).
     if (kind === "fill" && target.type === "file") {
-      const doc = await this.call("DOM.getDocument", { depth: 1 });
+      const doc = await this.call<{ root: { nodeId: number } }>("DOM.getDocument", { depth: 1 });
 
-      const found = await this.call("DOM.querySelector", {
+      const found = await this.call<{ nodeId: number }>("DOM.querySelector", {
         nodeId: doc.root.nodeId,
         selector: `input[data-jev-node="${action.node}"]`,
       });
