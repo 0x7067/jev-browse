@@ -42,9 +42,11 @@ export const jev_browse = async () => ({
           },
           { signal: context?.abort },
         );
+
         if (result.status === "error") {
           throw new Error(result.error ?? "jev-browse run failed");
         }
+
         return JSON.stringify(result, null, 2);
       },
     }),

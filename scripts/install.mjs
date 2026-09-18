@@ -32,7 +32,9 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DRIVE = fileURLToPath(new URL("..", import.meta.url));
+
 const INSTALL = join(homedir(), ".jev-browse", "install");
+
 const ESBUILD = join(DRIVE, "node_modules", ".bin", "esbuild");
 
 const targets = process.argv.length > 2 ? process.argv.slice(2) : ["pi", "claude", "opencode", "codex"];
@@ -68,6 +70,7 @@ function materialize() {
     join(DRIVE, "integrations", "opencode", "jev-browse.ts"),
     join(INSTALL, "integrations", "opencode", "jev-browse.ts"),
   );
+
   // Each bundle reads ./snapshot.js beside itself at runtime.
   for (const dir of [
     join(INSTALL, "src"),
@@ -76,6 +79,7 @@ function materialize() {
   ]) {
     cpSync(join(DRIVE, "src", "snapshot.js"), join(dir, "snapshot.js"));
   }
+
   for (const f of [
     "plugin.json",
     "mcp.json",
@@ -86,6 +90,7 @@ function materialize() {
   ]) {
     cpSync(join(DRIVE, f), join(INSTALL, f));
   }
+
   cpSync(join(DRIVE, ".claude-plugin"), join(INSTALL, ".claude-plugin"), { recursive: true });
   cpSync(join(DRIVE, "skills"), join(INSTALL, "skills"), { recursive: true });
 }
@@ -93,13 +98,17 @@ function materialize() {
 function installPi() {
   // Register the standalone dir as a pi package; drop any prior drive entry.
   const settingsPath = join(homedir(), ".pi", "agent", "settings.json");
+
   if (!existsSync(settingsPath)) {
     console.log(`pi: no ${settingsPath}; run \`pi install ${INSTALL}\` manually`);
+
     return;
   }
+
   const settings = JSON.parse(readFileSync(settingsPath, "utf8"));
   settings.packages = (settings.packages ?? []).filter((p) => {
     const source = typeof p === "string" ? p : p?.source;
+
     return !(
       source &&
       (source.includes(".jev-drive") ||
@@ -109,6 +118,7 @@ function installPi() {
     );
   });
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
+
   try {
     execFileSync("pi", ["install", INSTALL], { stdio: "inherit" });
   } catch {
@@ -131,6 +141,7 @@ function installOpencode() {
     rmSync(join(homedir(), ".config", "opencode", dir, "jev-browse.ts"), { force: true });
     rmSync(join(homedir(), ".config", "opencode", dir, "snapshot.js"), { force: true });
   }
+
   try {
     execFileSync(
       "opencode",
@@ -150,20 +161,26 @@ function installCodex() {
   // Personal marketplace: ~/.agents/plugins/marketplace.json, root = ~/.
   const home = homedir();
   const rel = relative(home, INSTALL).split("\\").join("/");
+
   if (rel.startsWith("..") || rel === "") {
     console.log(`codex: install dir must live under ${home}`);
+
     return;
   }
+
   const marketplaceDir = join(home, ".agents", "plugins");
   const marketplacePath = join(marketplaceDir, "marketplace.json");
   mkdirSync(marketplaceDir, { recursive: true });
+
   const marketplace = existsSync(marketplacePath)
     ? JSON.parse(readFileSync(marketplacePath, "utf8"))
     : { name: "personal", interface: { displayName: "Personal" }, plugins: [] };
+
   marketplace.plugins ??= [];
   const name = marketplace.name ?? "personal";
   const path = `./${rel}`;
   const entry = marketplace.plugins.find((p) => p.name === "jev-browse");
+
   if (!entry) {
     marketplace.plugins.push({
       name: "jev-browse",
@@ -180,18 +197,22 @@ function installCodex() {
   } else {
     console.log("codex: marketplace entry already present");
   }
+
   const configPath = join(home, ".codex", "config.toml");
   const key = `[plugins."jev-browse@${name}"]`;
   const existing = existsSync(configPath) ? readFileSync(configPath, "utf8") : "";
   mkdirSync(dirname(configPath), { recursive: true });
+
   if (!existing.includes(key)) {
     writeFileSync(configPath, `${existing}\n${key}\nenabled = true\n`);
     console.log(`codex: enabled in ${configPath}`);
   }
+
   console.log("codex: restart the app, then /plugins to verify jev_browse");
 }
 
 materialize();
+
 for (const target of targets) {
   if (target === "all") {
     for (const fn of [installPi, installClaude, installOpencode, installCodex]) fn();

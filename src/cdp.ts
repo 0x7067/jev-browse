@@ -19,6 +19,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Atomically read visible content and controls, preserving actual DOM node identity.
 const READ_STATE = loadSnapshotJs();
+
 const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
 
 /** Input.dispatchKeyEvent params per key name (press actions). */
@@ -44,7 +45,9 @@ const KEY_TYPED_INPUTS = new Set(["date", "time", "datetime-local", "month", "we
 
 function fingerprint(state: Record<string, unknown>): string {
   const content: Record<string, unknown> = {};
+
   for (const k of ["url", "text", "actions", "scroll"]) content[k] = state[k];
+
   const canonical = (v: unknown): unknown =>
     Array.isArray(v)
       ? v.map(canonical)
@@ -55,6 +58,7 @@ function fingerprint(state: Record<string, unknown>): string {
               .map((k) => [k, canonical((v as Record<string, unknown>)[k])]),
           )
         : v;
+
   return createHash("sha256").update(JSON.stringify(canonical(content))).digest("hex");
 }
 
@@ -69,26 +73,33 @@ class CdpSocket {
     this.ws = ws;
     ws.addEventListener("message", (event) => {
       const msg = JSON.parse(String(event.data));
+
       if (
         msg.method === "Inspector.targetCrashed" ||
         msg.method === "Target.targetCrashed"
       ) {
         // A dead renderer never answers again — refuse new calls too.
         this.closed = true;
+
         for (const p of this.pending.values()) p.reject(new Error("Renderer crashed"));
         this.pending.clear();
+
         return;
       }
+
       if (msg.id !== undefined) {
         const p = this.pending.get(msg.id);
+
         if (!p) return;
         this.pending.delete(msg.id);
+
         if (msg.error) p.reject(new Error(`${msg.error.message ?? "CDP error"}`));
         else p.resolve(msg.result ?? {});
       }
     });
     ws.addEventListener("close", () => {
       this.closed = true;
+
       for (const p of this.pending.values()) p.reject(new Error("CDP connection closed"));
       this.pending.clear();
     });
@@ -102,12 +113,14 @@ class CdpSocket {
         once: true,
       });
     });
+
     return new CdpSocket(ws);
   }
 
   call<T = any>(method: string, params: Record<string, unknown> = {}, sessionId?: string): Promise<T> {
     if (this.closed) return Promise.reject(new Error("CDP connection closed"));
     const id = this.nextId++;
+
     return new Promise<T>((resolve, reject) => {
       this.pending.set(id, { resolve, reject });
       this.ws.send(JSON.stringify({ id, method, params, sessionId }));
@@ -116,6 +129,7 @@ class CdpSocket {
 
   close(): void {
     this.closed = true;
+
     try {
       this.ws.close();
     } catch {
@@ -150,23 +164,29 @@ function findChrome(): string {
   if (process.env.CHROME_PATH && existsSync(process.env.CHROME_PATH)) {
     return process.env.CHROME_PATH;
   }
+
   if (platform() === "win32" && process.env.LOCALAPPDATA) {
     const perUser = join(
       process.env.LOCALAPPDATA,
       "Google\\Chrome\\Application\\chrome.exe",
     );
+
     if (existsSync(perUser)) return perUser;
   }
+
   for (const candidate of CHROME_CANDIDATES[platform()] ?? []) {
     if (existsSync(candidate)) return candidate;
   }
+
   // PATH fallback: catches flatpak, nix, homebrew-link, and vendor installs.
   for (const name of ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]) {
     for (const dir of (process.env.PATH ?? "").split(process.platform === "win32" ? ";" : ":")) {
       const candidate = join(dir, name);
+
       if (existsSync(candidate)) return candidate;
     }
   }
+
   throw new Error(
     `No Chrome/Chromium found. Set CHROME_PATH, or attach to a running browser with --cdp http://host:9222`,
   );
@@ -185,18 +205,23 @@ function freePort(): Promise<number> {
 
 async function browserWsUrl(port: number, timeoutMs = 15000): Promise<string> {
   const deadline = Date.now() + timeoutMs;
+
   while (Date.now() < deadline) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/version`);
+
       const info = response.ok
         ? ((await response.json()) as { webSocketDebuggerUrl?: string })
         : null;
+
       if (info?.webSocketDebuggerUrl) return info.webSocketDebuggerUrl;
     } catch {
       // not up yet
     }
+
     await sleep(100);
   }
+
   throw new Error(`Chrome did not expose CDP on port ${port}`);
 }
 
@@ -223,10 +248,13 @@ export class CdpBrowser implements BrowserDriver {
   static async open(url: string, opts: CdpOptions = {}): Promise<CdpBrowser> {
     const browser = new CdpBrowser();
     let port: number | null = null;
+
     if (!opts.cdpUrl) {
       port = await freePort();
+
       const profileDir =
         opts.profileDir ?? process.env.JEV_PROFILE ?? join(homedir(), ".jev-browse", "profile");
+
       const args = [
         `--remote-debugging-port=${port}`,
         `--user-data-dir=${profileDir}`,
@@ -235,26 +263,33 @@ export class CdpBrowser implements BrowserDriver {
         "--disable-session-crashed-bubble",
         "--hide-crash-restore-bubble",
       ];
+
       if (!opts.headed) args.push("--headless=new");
       else args.push("--window-size=1120,900", "--window-position=40,40");
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
       browser.proc.on("error", () => {});
     }
+
     try {
       // Attach or launch: either way, everything past this point cleans up via close().
       let wsUrl: string;
+
       if (opts.cdpUrl) {
         const base = opts.cdpUrl.replace(/\/+$/, "");
+
         const info = (await (await fetch(`${base}/json/version`)).json()) as {
           webSocketDebuggerUrl?: string;
         };
+
         if (!info.webSocketDebuggerUrl) {
           throw new Error(`${base} did not report a webSocketDebuggerUrl`);
         }
+
         wsUrl = info.webSocketDebuggerUrl;
       } else {
         wsUrl = await browserWsUrl(port!);
       }
+
       browser.socket = await CdpSocket.connect(wsUrl);
       browser.target = (
         await browser.socket.call("Target.createTarget", { url: "about:blank", background: true })
@@ -268,6 +303,7 @@ export class CdpBrowser implements BrowserDriver {
       browser.seen.add(browser.target);
       // Tabs that pre-date the run (e.g. the launch tab) are not adoptable.
       const { targetInfos } = await browser.socket.call("Target.getTargets").catch(() => ({ targetInfos: [] }));
+
       for (const t of (targetInfos ?? []) as { targetId: string }[]) browser.seen.add(t.targetId);
       await browser.call("Emulation.setDeviceMetricsOverride", {
         width: 1120,
@@ -279,10 +315,12 @@ export class CdpBrowser implements BrowserDriver {
       await browser.call("Emulation.setFocusEmulationEnabled", { enabled: true });
       await browser.call("Page.navigate", { url });
       const deadline = Date.now() + 15000;
+
       while (Date.now() < deadline) {
         if ((await browser.evaluate("document.readyState").catch(() => null)) === "complete") break;
         await sleep(20);
       }
+
       return browser;
     } catch (error) {
       await browser.close();
@@ -300,9 +338,11 @@ export class CdpBrowser implements BrowserDriver {
       returnByValue: true,
       awaitPromise,
     });
+
     if (response.exceptionDetails) {
       throw new StalePage("Document changed during evaluation");
     }
+
     return response.result?.value;
   }
 
@@ -311,16 +351,20 @@ export class CdpBrowser implements BrowserDriver {
     const { targetInfos } = await this.socket
       .call("Target.getTargets")
       .catch(() => ({ targetInfos: [] as { targetId: string; type: string }[] }));
+
     const fresh = ((targetInfos ?? []) as { targetId: string; type: string }[]).filter(
       (t) => t.type === "page" && !this.seen.has(t.targetId),
     );
+
     for (const t of fresh) {
       this.seen.add(t.targetId);
+
       try {
         const { sessionId } = await this.socket.call("Target.attachToTarget", {
           targetId: t.targetId,
           flatten: true,
         });
+
         this.target = t.targetId;
         this.session = sessionId;
         this.adopted.push(t.targetId);
@@ -332,9 +376,11 @@ export class CdpBrowser implements BrowserDriver {
 
   async observe(): Promise<PageState> {
     await this.adoptNewTarget();
+
     if (this.afterInput) {
       const action = this.afterInput;
       this.afterInput = null;
+
       // Read-only settle wait; runs after execution was logged, so an
       // interrupted evaluation cannot erase the action.
       try {
@@ -367,31 +413,39 @@ export class CdpBrowser implements BrowserDriver {
         // settle wait is best-effort; the snapshot below is the real read
       }
     }
+
     for (let attempt = 0; attempt < 10; attempt++) {
       try {
         const info = await this.evaluate(READ_STATE);
+
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
+
         return info as PageState;
       } catch (error) {
         if (!(error instanceof StalePage) || attempt === 9) throw error;
         await sleep(20);
       }
     }
+
     throw new StalePage("Page did not settle");
   }
 
   async fresh(page: PageState, action?: ObservedAction): Promise<boolean> {
     if (action && (action.kind === "click" || action.kind === "select")) {
       const node = action.node;
+
       if (typeof node !== "number") return false;
+
       const current = await this.evaluate(
         `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`,
       );
+
       return (
         JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]])
       );
     }
+
     return JSON.stringify(await this.evaluate(MARKER)) === JSON.stringify(page.marker);
   }
 
@@ -399,11 +453,15 @@ export class CdpBrowser implements BrowserDriver {
     if (!(await this.fresh(page, action))) {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
+
     const kind = action.kind;
+
     if (kind === "wait") {
       await sleep(100);
+
       return { executed: action.id };
     }
+
     if (kind === "scroll") {
       await this.call("Input.dispatchMouseEvent", {
         type: "mouseWheel",
@@ -413,25 +471,33 @@ export class CdpBrowser implements BrowserDriver {
         deltaY: action.delta ?? 560,
       });
       this.afterInput = action;
+
       return { executed: action.id };
     }
+
     if (kind === "back" || kind === "forward") {
       await this.evaluate(`history.${kind === "back" ? "back" : "forward"}()`);
+
       return { executed: action.id };
     }
+
     if (kind === "press") {
       const key = KEYS[String(action.key)];
+
       if (!key) throw new Error(`Unknown key ${action.key}`);
       await this.call("Input.dispatchKeyEvent", { type: "keyDown", ...key });
       await this.call("Input.dispatchKeyEvent", { type: "keyUp", ...key });
       this.afterInput = action;
+
       return { executed: action.id };
     }
+
     if (typeof action.node !== "number") throw new Error("Invalid observed node");
     // Code-owned node IDs refer to actual observed elements, never model-generated selectors.
     // Hit-testing is frame/shadow aware: iframe elements use owner-document
     // local coords; shadow elements accept hits on the host or root siblings.
     let target: { x: number; y: number; type?: string } | null;
+
     try {
       target = await this.evaluate(`(action => {
         const e=window.__jevFast?.nodes.get(action.node);
@@ -460,31 +526,41 @@ export class CdpBrowser implements BrowserDriver {
       if (kind === "select") {
         throw new Error("Dropdown execution was interrupted; inspect before retrying.");
       }
+
       throw error;
     }
+
     if (target === null || target === undefined) {
       if (kind === "select") {
         throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
       }
+
       throw new StalePage("Target changed or is covered. Observe again.");
     }
+
     // File inputs: setFileInputFiles — never click (it opens a native dialog).
     if (kind === "fill" && target.type === "file") {
       const doc = await this.call("DOM.getDocument", { depth: 1 });
+
       const found = await this.call("DOM.querySelector", {
         nodeId: doc.root.nodeId,
         selector: `input[data-jev-node="${action.node}"]`,
       });
+
       if (!found.nodeId) throw new StalePage("File input no longer addressable. Observe again.");
       await this.call("DOM.setFileInputFiles", { files: [text ?? ""], nodeId: found.nodeId });
       this.afterInput = action;
+
       return { executed: action.id };
     }
+
     if (kind === "hover") {
       await this.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: target.x, y: target.y });
       this.afterInput = action;
+
       return { executed: action.id };
     }
+
     if (kind !== "select") {
       for (const type of ["mousePressed", "mouseReleased"]) {
         await this.call("Input.dispatchMouseEvent", {
@@ -495,6 +571,7 @@ export class CdpBrowser implements BrowserDriver {
           clickCount: 1,
         });
       }
+
       if (kind === "fill") {
         if (target.type && KEY_TYPED_INPUTS.has(target.type)) {
           // Date/time inputs ignore insertText; drive them with real key events.
@@ -520,7 +597,9 @@ export class CdpBrowser implements BrowserDriver {
         }
       }
     }
+
     this.afterInput = action;
+
     return { executed: action.id };
   }
 
@@ -529,19 +608,23 @@ export class CdpBrowser implements BrowserDriver {
       for (const t of this.adopted) {
         await this.socket.call("Target.closeTarget", { targetId: t }).catch(() => {});
       }
+
       if (this.target && !this.adopted.includes(this.target)) {
         await this.socket.call("Target.closeTarget", { targetId: this.target });
       }
     } catch {
       // target already gone
     }
+
     this.socket?.close();
+
     if (this.proc) {
       try {
         this.proc.kill("SIGTERM");
       } catch {
         // already exited
       }
+
       this.proc = null;
     }
   }

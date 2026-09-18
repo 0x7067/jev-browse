@@ -17,6 +17,7 @@ import { runOnce } from "./cli.ts";
 import { loadDotEnv } from "./env.ts";
 
 const PROTOCOL_VERSION = "2024-11-05";
+
 const ALLOWED_ARGS = new Set(["goal", "url", "engine", "max_steps"]);
 
 const TOOL = {
@@ -71,25 +72,32 @@ function toolResult(id: unknown, text: string, isError = false): void {
 
 // Serialize tool calls: one browser run at a time per server process.
 let queue: Promise<void> = Promise.resolve();
+
 function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   const next = queue.then(fn, fn);
   queue = next.then(
     () => undefined,
     () => undefined,
   );
+
   return next;
 }
 
 async function callJevBrowse(id: unknown, args: Record<string, unknown>): Promise<void> {
   const unknown = Object.keys(args).filter((k) => !ALLOWED_ARGS.has(k));
+
   if (unknown.length) {
     respondError(id, -32602, `jev_browse: unknown arguments: ${unknown.join(", ")}`);
+
     return;
   }
+
   if (typeof args.goal !== "string" || typeof args.url !== "string") {
     respondError(id, -32602, "jev_browse requires { goal: string, url: string }");
+
     return;
   }
+
   try {
     const result = await runOnce(
       {
@@ -103,6 +111,7 @@ async function callJevBrowse(id: unknown, args: Record<string, unknown>): Promis
       (event) =>
         process.stderr.write(JSON.stringify({ call: id, ...event }) + "\n"),
     );
+
     toolResult(id, JSON.stringify(result), result.status === "error");
   } catch (error) {
     toolResult(
@@ -115,6 +124,7 @@ async function callJevBrowse(id: unknown, args: Record<string, unknown>): Promis
 
 async function handle(request: { id?: unknown; method?: string; params?: any }): Promise<void> {
   const { id, method, params } = request;
+
   switch (method) {
     case "initialize":
       respond(id, {
@@ -122,40 +132,52 @@ async function handle(request: { id?: unknown; method?: string; params?: any }):
         capabilities: { tools: {} },
         serverInfo: { name: "jev-browse", version: "0.1.0" },
       });
+
       return;
     case "notifications/initialized":
     case "initialized":
       return;
     case "ping":
       respond(id, {});
+
       return;
     case "tools/list":
       respond(id, { tools: [TOOL] });
+
       return;
     case "tools/call": {
       if (params?.name !== "jev_browse") {
         respondError(id, -32602, `Unknown tool: ${params?.name}`);
+
         return;
       }
+
       await enqueue(() => callJevBrowse(id, params?.arguments ?? {}));
+
       return;
     }
+
     default:
       if (id !== undefined) respondError(id, -32601, `Method not found: ${method}`);
   }
 }
 
 loadDotEnv();
+
 const rl = createInterface({ input: process.stdin, terminal: false });
+
 rl.on("line", (line) => {
   if (!line.trim()) return;
   let request: { id?: unknown; method?: string; params?: any };
+
   try {
     request = JSON.parse(line);
   } catch {
     respondError(null, -32700, "Parse error");
+
     return;
   }
+
   handle(request).catch((error) =>
     respondError(request.id ?? null, -32603, error instanceof Error ? error.message : String(error)),
   );

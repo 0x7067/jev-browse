@@ -13,8 +13,10 @@ export function loadSnapshotJs(): string {
     fileURLToPath(new URL("./snapshot.js", import.meta.url)),
     join(homedir(), ".jev-browse", "install", "src", "snapshot.js"),
   ];
+
   for (const path of candidates) {
     if (existsSync(path)) return readFileSync(path, "utf8");
   }
+
   throw new Error(`jev-browse: snapshot.js not found (tried ${candidates.join(", ")})`);
 }

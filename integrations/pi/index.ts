@@ -58,10 +58,12 @@ export default function (pi: ExtensionAPI) {
             }),
         },
       );
+
       if (result.status === "error") {
         // Throw so the call is marked as a tool error, not a prose result.
         throw new Error(result.error ?? "jev-browse run failed");
       }
+
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
         details: result,

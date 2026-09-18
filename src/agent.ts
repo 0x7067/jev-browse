@@ -7,6 +7,7 @@
 import { MAX_STEPS } from "./questions.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 import { actionSpace, choose, fieldContext, fieldText, type Decision } from "./model.ts";
 import { makeClient } from "./env.ts";
 import { StalePage, type BrowserDriver, type ObservedAction, type PageState } from "./types.ts";
@@ -70,6 +71,7 @@ export class Agent {
 
   private constructor(opts: AgentOptions) {
     const task = Array.isArray(opts.goal) ? opts.goal.join("\n").trim() : opts.goal.trim();
+
     if (!task) throw new Error("Supply a task");
     this.goal = task;
     this.startUrl = opts.url;
@@ -80,12 +82,14 @@ export class Agent {
   static async start(opts: AgentOptions): Promise<Agent> {
     const agent = new Agent(opts);
     agent.browser = await agent.openDriver(opts.url);
+
     try {
       agent.page = await agent.browser.observe();
     } catch (error) {
       await agent.browser.close();
       throw error;
     }
+
     return agent;
   }
 
@@ -104,22 +108,29 @@ export class Agent {
         this.decision = null;
         this.status = "ready";
         this.page = await this.browser.observe();
+
         return;
       }
+
       throw error;
     }
   }
 
   private async predict(): Promise<void> {
     if (!this.startedAt) this.startedAt = performance.now();
+
     if (!(await this.browser.fresh(this.page))) {
       this.page = await this.browser.observe();
     }
+
     this.decision = null;
+
     if (this.status !== "ready") return;
+
     if (this.decisions.length >= this.maxSteps * 2) {
       throw new Error("Reached the model-call budget");
     }
+
     this.decision = await choose(this.client, this.page, this.goal, this.history);
     this.decisions.push(this.decision);
   }
@@ -127,6 +138,7 @@ export class Agent {
   private async act(): Promise<void> {
     const decision = this.decision;
     const page = this.page;
+
     if (!decision) throw new Error("Choose before acting");
     // Consume once, before any mutation or model call. A retry cannot double-click.
     this.decision = null;
@@ -137,6 +149,7 @@ export class Agent {
         this.status = "ready";
         throw new StalePage("Page changed since the decision. Choose again.");
       }
+
       // A BLOCKED claim before any real action — or on an empty snapshot —
       // is a give-up we can afford to second-guess: wait, re-observe, ask
       // again. Bounded by earlyWaits; mutating retries stay forbidden.
@@ -153,14 +166,19 @@ export class Agent {
         entry.url = this.page.url;
         entry.elapsed_ms = this.elapsed();
         this.status = "ready";
+
         return;
       }
+
       this.status = selected === "DONE" ? "done" : "blocked";
+
       return;
     }
 
     const action = page.actions.find((a) => a.id === selected);
+
     if (!action) throw new Error(`Decision selected unknown action ${selected}`);
+
     if (this.history.length >= this.maxSteps) {
       this.status = "blocked";
       throw new Error(`Stopped at the ${this.maxSteps}-action budget`);
@@ -168,20 +186,25 @@ export class Agent {
 
     let text: string | null = null;
     let helper: { model: string; latency_ms: number; usage?: unknown } | null = null;
+
     if (action.kind === "fill") {
       if (!(await this.browser.fresh(page))) {
         throw new StalePage("Page changed before text generation. Choose again.");
       }
+
       const context = fieldContext(this.goal, action, page, this.history);
+
       if (this.pendingText && JSON.stringify(this.pendingText[0]) === JSON.stringify(context)) {
         [, text, helper] = this.pendingText;
       } else {
         const generated = await fieldText(context);
+
         // Fail fast: an empty helper answer means nothing was typed; looping
         // on TYPE_TEXT just burns the action budget.
         if (!generated.text) {
           throw new Error("Text helper returned no valid field value; nothing typed.");
         }
+
         text = generated.text;
         helper = generated.helper;
         this.pendingText = [context, text, helper];
@@ -215,6 +238,7 @@ export class Agent {
       executed_ms: this.elapsed(),
       elapsed_ms: this.elapsed(),
     };
+
     this.history.push(entry);
 
     this.page = await this.browser.observe();
@@ -250,7 +274,9 @@ export class Agent {
       executed_ms: this.elapsed(),
       elapsed_ms: this.elapsed(),
     };
+
     this.history.push(entry);
+
     return entry;
   }
 
@@ -268,6 +294,7 @@ export class Agent {
         url: this.page.url,
       });
     }
+
     return {
       status: this.status,
       goal: this.goal,

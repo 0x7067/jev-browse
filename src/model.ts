@@ -13,6 +13,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function postJson(url: string, key: string, body: unknown): Promise<any> {
   for (let attempt = 0; attempt < 3; attempt++) {
     let response: Response;
+
     try {
       response = await fetch(url, {
         method: "POST",
@@ -22,15 +23,19 @@ async function postJson(url: string, key: string, body: unknown): Promise<any> {
     } catch {
       throw new Error("Model connection failed; no action executed.");
     }
+
     if ([429, 529, 503].includes(response.status) && attempt < 2) {
       await sleep(500 * 2 ** attempt);
       continue;
     }
+
     if (!response.ok) {
       throw new Error(`Model provider returned HTTP ${response.status}; no action executed.`);
     }
+
     return response.json();
   }
+
   throw new Error("Model unavailable");
 }
 
@@ -47,20 +52,23 @@ export function validateChoice(answer: RawChoiceAnswer, ids: Set<string>): asser
 } {
   const probabilities = answer?.probabilities;
   const numbers = [...Object.values(probabilities ?? {}), answer?.confidence];
+
   const sum = Object.values(probabilities ?? {}).reduce(
     (a: number, b) => a + (typeof b === "number" ? b : NaN),
     0,
   );
+
   const valid =
     typeof answer?.choice === "string" &&
     ids.has(answer.choice) &&
     !!probabilities &&
     Object.keys(probabilities).length === ids.size &&
-    [...Object.keys(probabilities)].every((k) => ids.has(k)) &&
+    Object.keys(probabilities).every((k) => ids.has(k)) &&
     numbers.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1) &&
     Math.abs(sum - 1) < 0.02 &&
     (probabilities[answer.choice] as number) >=
       Math.max(...Object.values(probabilities).map(Number)) - 1e-6;
+
   if (!valid) {
     throw new Error("Invalid TypeSafe response; no action executed.");
   }
@@ -72,6 +80,7 @@ export function actionSpace(actions: ObservedAction[]) {
   const indices = new Map<number, string>();
   const targets: Record<string, Record<string, ObservedAction>> = {};
   const controls: Record<string, ObservedAction> = {};
+
   const operations: Record<string, string> = {
     click: "CLICK",
     fill: "TYPE_TEXT",
@@ -81,39 +90,51 @@ export function actionSpace(actions: ObservedAction[]) {
 
   for (const action of actions) {
     const kind = action.kind;
+
     if (!(kind in operations)) {
       controls[action.id.toUpperCase()] = action;
       continue;
     }
+
     const node = action.node!;
     let index = indices.get(node);
+
     if (index === undefined) {
       index = String(elements.length + 1);
       indices.set(node, index);
       const element: any = {};
+
       for (const k of ["role", "value", "checked", "selected", "expanded"] as const) {
         if (k in action) element[k] = action[k];
       }
+
       element.index = index;
       element.label = action.label.split(" → ")[0];
       element.operations = [] as string[];
+
       if (kind === "select") {
         element.value = action.current_value ?? "";
         element.options = [] as any[];
       }
+
       elements.push(element);
     }
+
     const operation = operations[kind];
     const group = (targets[operation] ??= {});
     const element = elements[Number(index) - 1];
+
     if (!element.operations.includes(operation)) element.operations.push(operation);
     let target = index;
+
     if (kind === "select") {
       target = `${index}:${element.options.length + 1}`;
       element.options.push({ index: target, label: action.label, value: action.value });
     }
+
     group[target] = action;
   }
+
   return { elements, targets, controls };
 }
 
@@ -139,6 +160,7 @@ export async function choose(
   history: any[],
 ): Promise<Decision> {
   const { elements, targets, controls } = actionSpace(state.actions);
+
   const labels: Record<string, string> = {
     CLICK: "Click an element, button, menu option, autocomplete suggestion, or calendar day.",
     TYPE_TEXT:
@@ -146,8 +168,11 @@ export async function choose(
     SELECT: "Select an observed dropdown value.",
     HOVER: "Hover over an element to reveal menus, tooltips, or hover-only controls.",
   };
+
   const operations: ChoiceCriteria = {};
+
   for (const key of Object.keys(targets)) operations[key] = labels[key];
+
   for (const [key, value] of Object.entries(controls)) operations[key] = value.label;
   operations.DONE = "Every requirement is visibly satisfied.";
   operations.BLOCKED = "No supported operation can progress.";
@@ -159,8 +184,10 @@ export async function choose(
       instructions: { goal, rules: NEXT_ACTION },
     },
   };
+
   for (const [operation, candidates] of Object.entries(targets)) {
     const criteria: ChoiceCriteria = {};
+
     for (const [index, a] of Object.entries(candidates)) {
       criteria[index] = {
         element: `[${index}] ${a.label}`,
@@ -172,6 +199,7 @@ export async function choose(
         ),
       };
     }
+
     questions[`${operation.toLowerCase()}_target`] = {
       type: "choice",
       criteria,
@@ -180,6 +208,7 @@ export async function choose(
   }
 
   const started = performance.now();
+
   const result = await client.systemOne({
     state: {
       page: { url: state.url, title: state.title, text: state.text },
@@ -204,12 +233,14 @@ export async function choose(
   let targetAnswer: any = null;
   let probabilities: Record<string, number> = {};
   let choice: string;
+
   if (operation in targets) {
     // Unused target heads cannot cause an action. Validate the selected head only.
     targetAnswer = answers[`${operation.toLowerCase()}_target`] ?? {};
     validateChoice(targetAnswer, new Set(Object.keys(targets[operation])));
     target = targetAnswer.choice;
     choice = targets[operation][target].id;
+
     for (const [index, a] of Object.entries(targets[operation])) {
       probabilities[a.id] = targetAnswer.probabilities[index];
     }
@@ -217,6 +248,7 @@ export async function choose(
     choice = operation in controls ? controls[operation].id : operation;
     probabilities[choice] = operationAnswer.probabilities[operation];
   }
+
   return {
     choice,
     operation,
@@ -248,19 +280,24 @@ export async function fieldText(
   context: unknown,
 ): Promise<{ text: string; helper: { model: string; latency_ms: number; usage: unknown } }> {
   const key = process.env.TEXT_MODEL_API_KEY;
+
   if (!key) {
     throw new Error(
       "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
     );
   }
+
   const base = (process.env.TEXT_MODEL_BASE_URL ?? "https://api.deepseek.com/v1").replace(/\/+$/, "");
   const model = process.env.TEXT_MODEL ?? "deepseek-chat";
+
   const reasoning = base.includes("api.deepseek.com/")
     ? { thinking: { type: "disabled" } }
     : { reasoning: { effort: "low" } };
+
   const reasoningFinal = process.env.TEXT_MODEL_REASONING === "none" ? { reasoning: { enabled: false } } : reasoning;
 
   const started = performance.now();
+
   const result = await postJson(`${base}/chat/completions`, key, {
     model,
     max_tokens: 1024,
@@ -271,10 +308,13 @@ export async function fieldText(
       { role: "user", content: JSON.stringify(context) },
     ],
   });
+
   let value: unknown;
+
   try {
     const output = JSON.parse(result.choices[0].message.content);
     value = output.text;
+
     if (
       Object.keys(output).join() !== "text" ||
       typeof value !== "string" ||
@@ -286,6 +326,7 @@ export async function fieldText(
   } catch {
     throw new Error("Text helper returned no valid field value; nothing typed.");
   }
+
   return {
     text: value,
     helper: {
