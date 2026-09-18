@@ -1,44 +1,119 @@
 #!/usr/bin/env node
 /**
- * Install jev-drive as a native plugin in each harness:
+ * Install jev-drive as a STANDALONE plugin per harness.
  *
- *   node scripts/install.mjs [pi|claude|opencode|codex|all]
+ *   node scripts/install.mjs [pi|claude|opencode|codex|all|clean]
  *
- * pi       — `pi install <drive>`; the package.json `pi` manifest exposes the
- *            extension and the skill
- * claude   — prints the plugin commands (Claude owns the install step)
- * opencode — writes a stub into ~/.config/opencode/plugin/ that re-exports the
- *            canonical plugin file, so repo updates flow
- * codex    — merges an entry into ~/.agents/plugins/marketplace.json (personal
- *            marketplace rooted at ~) and enables it in ~/.codex/config.toml
+ * The install materializes a self-contained copy under ~/.jev-drive/install/:
+ * esbuild bundles each entry point (SDK inlined, host APIs external) and the
+ * portable manifests are copied verbatim. Nothing installed references this
+ * repo — every path inside the bundle is plugin-relative.
  *
- * Idempotent: re-running changes nothing already installed.
+ * Layout (mirrors the repo so relative resolution is identical):
+ *   install/src/cli.ts|mcp.ts|snapshot.js   — bundled CLI + MCP server
+ *   install/integrations/pi/index.ts        — bundled pi extension
+ *   install/integrations/opencode/jev-drive.ts + snapshot.js — bundled plugin
+ *   install/plugin.json|mcp.json|skills/|.claude-plugin|.mcp.json|package.json
+ *
+ * Re-run to refresh after repo changes. Idempotent.
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DRIVE = fileURLToPath(new URL("..", import.meta.url));
-const OPENCODE_PLUGIN = join(DRIVE, "integrations", "opencode", "jev-drive.ts");
+const INSTALL = join(homedir(), ".jev-drive", "install");
+const ESBUILD = join(DRIVE, "node_modules", ".bin", "esbuild");
 
 const targets = process.argv[2] ? [process.argv[2]] : ["pi", "claude", "opencode", "codex"];
 
+function bundle(entry, outfile, externals = []) {
+  mkdirSync(dirname(outfile), { recursive: true });
+  execFileSync(
+    ESBUILD,
+    [
+      entry,
+      "--bundle",
+      "--format=esm",
+      "--platform=node",
+      "--target=node22",
+      ...externals.map((e) => `--external:${e}`),
+      `--outfile=${outfile}`,
+    ],
+    { stdio: "pipe" },
+  );
+}
+
+function materialize() {
+  console.log(`bundling -> ${INSTALL}`);
+  bundle(join(DRIVE, "src", "cli.ts"), join(INSTALL, "src", "cli.ts"));
+  bundle(join(DRIVE, "src", "mcp.ts"), join(INSTALL, "src", "mcp.ts"));
+  bundle(
+    join(DRIVE, "integrations", "pi", "index.ts"),
+    join(INSTALL, "integrations", "pi", "index.ts"),
+    ["typebox", "@earendil-works/*"],
+  );
+  bundle(
+    join(DRIVE, "integrations", "opencode", "jev-drive.ts"),
+    join(INSTALL, "integrations", "opencode", "jev-drive.ts"),
+    ["@opencode-ai/plugin"],
+  );
+  // Each bundle reads ./snapshot.js beside itself at runtime.
+  for (const dir of [
+    join(INSTALL, "src"),
+    join(INSTALL, "integrations", "pi"),
+    join(INSTALL, "integrations", "opencode"),
+  ]) {
+    cpSync(join(DRIVE, "src", "snapshot.js"), join(dir, "snapshot.js"));
+  }
+  for (const f of [
+    "plugin.json",
+    "mcp.json",
+    ".mcp.json",
+    "package.json",
+    "README.md",
+    ".env.example",
+  ]) {
+    cpSync(join(DRIVE, f), join(INSTALL, f));
+  }
+  cpSync(join(DRIVE, ".claude-plugin"), join(INSTALL, ".claude-plugin"), { recursive: true });
+  cpSync(join(DRIVE, "skills"), join(INSTALL, "skills"), { recursive: true });
+}
+
 function installPi() {
+  // Register the standalone dir as a pi package; drop any prior drive entry.
+  const settingsPath = join(homedir(), ".pi", "agent", "settings.json");
+  if (!existsSync(settingsPath)) {
+    console.log(`pi: no ${settingsPath}; run \`pi install ${INSTALL}\` manually`);
+    return;
+  }
+  const settings = JSON.parse(readFileSync(settingsPath, "utf8"));
+  settings.packages = (settings.packages ?? []).filter((p) => {
+    const source = typeof p === "string" ? p : p?.source;
+    return !(source && (source.includes("typesafe/drive") || source.includes(".jev-drive/install")));
+  });
+  writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
   try {
-    execFileSync("pi", ["install", DRIVE], { stdio: "inherit" });
+    execFileSync("pi", ["install", INSTALL], { stdio: "inherit" });
   } catch {
-    console.log(`pi: \`pi install ${DRIVE}\` failed — run it manually`);
+    console.log(`pi: \`pi install ${INSTALL}\` failed — run it manually`);
   }
 }
 
 function installClaude() {
-  console.log(`claude: per-session:  claude --plugin-dir ${DRIVE}`);
+  console.log(`claude: per-session:  claude --plugin-dir ${INSTALL}`);
   console.log(
-    "claude: persistent:   register " +
-      `${DRIVE} in a local marketplace, then \`claude plugin install jev-drive\``,
+    `claude: persistent:   register ${INSTALL} in a local marketplace, then \`claude plugin install jev-drive\``,
   );
   console.log("claude: exposes jev_browse over MCP (needs Node >=22.18 on PATH)");
 }
@@ -46,25 +121,21 @@ function installClaude() {
 function installOpencode() {
   const pluginDir = join(homedir(), ".config", "opencode", "plugin");
   mkdirSync(pluginDir, { recursive: true });
-  const stub = join(pluginDir, "jev-drive.ts");
-  const content =
-    "// Installed by jev-drive — re-exports the canonical plugin so repo updates flow.\n" +
-    `export { default } from ${JSON.stringify(OPENCODE_PLUGIN)};\n`;
-  if (existsSync(stub) && readFileSync(stub, "utf8") === content) {
-    console.log("opencode: already installed");
-    return;
-  }
-  writeFileSync(stub, content);
-  console.log(`opencode: wrote ${stub}`);
+  cpSync(
+    join(INSTALL, "integrations", "opencode", "jev-drive.ts"),
+    join(pluginDir, "jev-drive.ts"),
+  );
+  // The bundle reads ./snapshot.js beside itself.
+  cpSync(join(DRIVE, "src", "snapshot.js"), join(pluginDir, "snapshot.js"));
+  console.log(`opencode: installed ${join(pluginDir, "jev-drive.ts")}`);
 }
 
 function installCodex() {
   // Personal marketplace: ~/.agents/plugins/marketplace.json, root = ~/.
-  // source.path must be ./-relative and stay inside that root.
   const home = homedir();
-  const rel = relative(home, DRIVE).split("\\").join("/");
+  const rel = relative(home, INSTALL).split("\\").join("/");
   if (rel.startsWith("..") || rel === "") {
-    console.log(`codex: plugin must live under ${home} for the personal marketplace`);
+    console.log(`codex: install dir must live under ${home}`);
     return;
   }
   const marketplaceDir = join(home, ".agents", "plugins");
@@ -75,20 +146,24 @@ function installCodex() {
     : { name: "personal", interface: { displayName: "Personal" }, plugins: [] };
   marketplace.plugins ??= [];
   const name = marketplace.name ?? "personal";
-  if (!marketplace.plugins.some((p) => p.name === "jev-drive")) {
+  const path = `./${rel}`;
+  const entry = marketplace.plugins.find((p) => p.name === "jev-drive");
+  if (!entry) {
     marketplace.plugins.push({
       name: "jev-drive",
-      source: { source: "local", path: `./${rel}` },
+      source: { source: "local", path },
       policy: { installation: "AVAILABLE", authentication: "ON_INSTALL" },
       category: "Productivity",
     });
     writeFileSync(marketplacePath, JSON.stringify(marketplace, null, 2) + "\n");
     console.log(`codex: added jev-drive to ${marketplacePath}`);
+  } else if (entry.source?.path !== path) {
+    entry.source.path = path;
+    writeFileSync(marketplacePath, JSON.stringify(marketplace, null, 2) + "\n");
+    console.log(`codex: updated jev-drive path in ${marketplacePath}`);
   } else {
     console.log("codex: marketplace entry already present");
   }
-
-  // Enable it in user config: [plugins."jev-drive@<marketplace-name>"]
   const configPath = join(home, ".codex", "config.toml");
   const key = `[plugins."jev-drive@${name}"]`;
   const existing = existsSync(configPath) ? readFileSync(configPath, "utf8") : "";
@@ -97,9 +172,10 @@ function installCodex() {
     writeFileSync(configPath, `${existing}\n${key}\nenabled = true\n`);
     console.log(`codex: enabled in ${configPath}`);
   }
-  console.log("codex: restart the app, then /plugins to verify the jev_browse tool");
+  console.log("codex: restart the app, then /plugins to verify jev_browse");
 }
 
+materialize();
 for (const target of targets) {
   if (target === "all") {
     for (const fn of [installPi, installClaude, installOpencode, installCodex]) fn();
@@ -107,8 +183,11 @@ for (const target of targets) {
   else if (target === "claude") installClaude();
   else if (target === "opencode") installOpencode();
   else if (target === "codex") installCodex();
-  else {
-    console.error(`unknown target: ${target} (pi|claude|opencode|codex|all)`);
+  else if (target === "clean") {
+    rmSync(INSTALL, { recursive: true, force: true });
+    console.log(`removed ${INSTALL}`);
+  } else {
+    console.error(`unknown target: ${target} (pi|claude|opencode|codex|all|clean)`);
     process.exitCode = 1;
   }
 }

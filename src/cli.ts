@@ -11,6 +11,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { Agent, type RunResult } from "./agent.ts";
 import { loadDotEnv } from "./env.ts";
@@ -63,7 +64,7 @@ function releaseLock(): void {
   }
 }
 
-interface CliArgs {
+export interface CliArgs {
   url?: string;
   goals: string[];
   engine: "cdp" | "agent-browser";
@@ -120,9 +121,17 @@ export function makeDriver(args: CliArgs): (url: string) => Promise<BrowserDrive
   return (url) => CdpBrowser.open(url, { cdpUrl: args.cdpUrl, headed: args.headed });
 }
 
-export async function runOnce(
+/**
+ * Embeddable run: lock + abort signal, no process-level handlers. Safe to call
+ * inside a host process (pi extension, OpenCode plugin); the caller owns
+ * lifecycle. Aborting `signal` closes the browser and releases the lock.
+ */
+export async function runAgent(
   args: CliArgs,
-  onEvent?: (event: { type: string; [k: string]: unknown }) => void,
+  opts: {
+    onEvent?: (event: { type: string; [k: string]: unknown }) => void;
+    signal?: AbortSignal;
+  } = {},
 ): Promise<RunResult> {
   // Scheme allowlist: page text flows to external model APIs, so file:// and
   // chrome:// are exfiltration paths, not just navigation. file:// needs an
@@ -149,31 +158,48 @@ export async function runOnce(
     releaseLock();
     throw error;
   }
+  const onAbort = () => void agent.close().catch(() => {});
+  opts.signal?.addEventListener("abort", onAbort, { once: true });
+  try {
+    return await agent.run(opts.onEvent);
+  } finally {
+    opts.signal?.removeEventListener("abort", onAbort);
+    await agent.close();
+    releaseLock();
+  }
+}
+
+/** Process-owning run: embeddable core plus signal handlers for CLI/MCP. */
+export async function runOnce(
+  args: CliArgs,
+  onEvent?: (event: { type: string; [k: string]: unknown }) => void,
+): Promise<RunResult> {
   // An external kill must still close the browser — Node's default SIGTERM
   // disposition skips finally blocks entirely. Bound the cleanup so a hung
   // close can't wedge the exit itself.
+  const controller = new AbortController();
   const onSignal = (signal: "SIGTERM" | "SIGINT") => {
-    const timeout = setTimeout(() => process.exit(128 + (signal === "SIGTERM" ? 15 : 2)), 3000);
+    const timeout = setTimeout(
+      () => process.exit(128 + (signal === "SIGTERM" ? 15 : 2)),
+      3000,
+    );
     timeout.unref();
-    void agent
-      .close()
+    controller.abort();
+    // runAgent's finally closes the browser; exit once it settles.
+    void result
       .catch(() => {})
-      .finally(() => {
-        releaseLock();
-        process.exit(128 + (signal === "SIGTERM" ? 15 : 2));
-      });
+      .finally(() => process.exit(128 + (signal === "SIGTERM" ? 15 : 2)));
   };
   const onSigterm = () => onSignal("SIGTERM");
   const onSigint = () => onSignal("SIGINT");
   process.once("SIGTERM", onSigterm);
   process.once("SIGINT", onSigint);
+  const result = runAgent(args, { onEvent, signal: controller.signal });
   try {
-    return await agent.run(onEvent);
+    return await result;
   } finally {
     process.off("SIGTERM", onSigterm);
     process.off("SIGINT", onSigint);
-    await agent.close();
-    releaseLock();
   }
 }
 
@@ -203,5 +229,10 @@ async function main(): Promise<void> {
   }
 }
 
-const invokedAsScript = process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+// Entry check: the module URL alone can't distinguish cli.ts from a bundle
+// that also contains mcp.ts — the basename gates auto-run to cli entries.
+const invokedAsScript =
+  !!process.argv[1] &&
+  /cli\.(ts|js)$/.test(process.argv[1]) &&
+  fileURLToPath(import.meta.url) === process.argv[1];
 if (invokedAsScript) await main();

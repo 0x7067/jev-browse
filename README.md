@@ -45,7 +45,7 @@ Node 22+. Credentials: `TYPESAFE_API_KEY` (required), `TEXT_MODEL_API_KEY` +
 `drive/.env` or export them; a repo-root `.env` also loads when cwd is the
 repo. `TYPESAFE_MODEL` defaults to `jev-latest`.
 
-## CLI (the shared entry point every adapter calls)
+## CLI
 
 ```bash
 node dist/cli.js --url https://example.com --goal "Find the pricing page and report the tiers" \
@@ -71,20 +71,24 @@ and `skills/jev-browse/`. Each harness also gets its native plugin form:
 
 | Harness | Native plugin | Install |
 | --- | --- | --- |
-| **Pi** | `pi` package manifest in `package.json` (extension + skill) | `pi install /path/to/drive` |
-| **Claude Code** | `.claude-plugin/plugin.json` + `.mcp.json` | `claude --plugin-dir /path/to/drive` per session, or marketplace install |
-| **OpenCode** | `Plugin` hooks module exposing `jev_browse` | stub into `~/.config/opencode/plugin/` (installer writes it) |
+| **Pi** | `pi` package manifest in `package.json` (extension + skill) | `pi install ~/.jev-drive/install` (installer runs it) |
+| **Claude Code** | `.claude-plugin/plugin.json` + `.mcp.json` | `claude --plugin-dir ~/.jev-drive/install` per session, or marketplace install |
+| **OpenCode** | `Plugin` hooks module exposing `jev_browse` | bundled plugin file into `~/.config/opencode/plugin/` (installer writes it) |
 | **Codex** | portable `plugin.json` + `mcp.json` + `skills/` (Codex ≥0.117 reads the Agent Plugins format natively) | personal marketplace entry in `~/.agents/plugins/marketplace.json` (installer writes it) |
 
-`scripts/install.mjs` performs all four installs (idempotent):
+`scripts/install.mjs` performs all four installs (idempotent). It esbuild-
+bundles every entry point into `~/.jev-drive/install/` — a standalone copy
+that shares nothing with this repo except its shape, so moving the repo only
+means re-running the installer:
 
 ```bash
 node scripts/install.mjs        # all four
 node scripts/install.mjs pi     # or one target
 ```
 
-The Codex/OpenCode paths bake in absolute paths — moving this repo means
-re-running the installer.
+Adapters (pi extension, OpenCode plugin) run the engine **in-process** via
+`runAgent()` — no CLI subprocess, host abort signals cancel the browser run.
+The CLI and MCP server wrap the same core with process-level signal handling.
 
 ## Semantics preserved from the reference
 

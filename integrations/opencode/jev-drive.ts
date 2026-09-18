@@ -1,18 +1,16 @@
 /**
- * OpenCode plugin: exposes the jev_browse tool by spawning the jev-drive CLI.
+ * OpenCode plugin: exposes the jev_browse tool, running the Jev driver loop
+ * in-process (no CLI spawn).
  *
- * Install: `node <drive>/scripts/install.mjs opencode` writes a stub into
- * ~/.config/opencode/plugin/ that re-exports this file, so repo updates flow.
- * Requires `npm install` in drive/ once and Node >=22.18 (type stripping).
+ * Install: `node <drive>/scripts/install.mjs opencode` writes a bundled,
+ * self-contained copy into ~/.config/opencode/plugin/.
+ * Dev: resolve ../../src/* relative to this file (npm install in drive/ first).
  */
-
-import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 
 import type { Plugin } from "@opencode-ai/plugin";
 import { tool } from "@opencode-ai/plugin";
 
-const CLI = fileURLToPath(new URL("../../src/cli.ts", import.meta.url));
+import { runAgent } from "../../src/cli.ts";
 
 const JevDrivePlugin: Plugin = async () => ({
   tool: {
@@ -31,24 +29,20 @@ const JevDrivePlugin: Plugin = async () => ({
         max_steps: tool.schema.number().optional(),
       },
       async execute(args, context) {
-        const argv = [CLI, "--url", args.url, "--goal", args.goal];
-        if (args.engine) argv.push("--engine", args.engine);
-        if (args.max_steps) argv.push("--max-steps", String(args.max_steps));
-        return await new Promise<string>((resolve) => {
-          const child = spawn(process.execPath, argv);
-          let stdout = "";
-          let stderr = "";
-          // Cancel the browser run with the tool call.
-          context?.abort?.addEventListener("abort", () => child.kill("SIGTERM"), {
-            once: true,
-          });
-          child.stdout.on("data", (d) => (stdout += d.toString()));
-          child.stderr.on("data", (d) => (stderr += d.toString()));
-          child.on("close", (code) => {
-            const last = stdout.trim().split("\n").pop() ?? "";
-            resolve(last || `jev-drive exited ${code}: ${stderr.slice(-800)}`);
-          });
-        });
+        const result = await runAgent(
+          {
+            url: args.url,
+            goals: [args.goal],
+            engine: args.engine === "agent-browser" ? "agent-browser" : "cdp",
+            headed: false,
+            maxSteps: args.max_steps,
+          },
+          { signal: context?.abort },
+        );
+        if (result.status === "error") {
+          throw new Error(result.error ?? "jev-drive run failed");
+        }
+        return JSON.stringify(result, null, 2);
       },
     }),
   },
