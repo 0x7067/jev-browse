@@ -1,0 +1,63 @@
+evals/results/fixture-v1-1789774416986.json
+  s_0503a55d84ed51::t_4736a2e1b749dc 1-236
+evals/tasks.json
+  s_0503a55d84ed51::t_882a5ee9950c7a 121
+  s_0503a55d84ed51::t_5ce0b529d742ad 63-108
+  s_0503a55d84ed51::t_d5285f686a6725 56-62,109-119,122-134
+  s_0503a55d84ed51::t_e433fda876ecdd 120
+src/snapshot.js
+  s_0503a55d84ed51::t_1e158d9460319c 103,140,208,214
+  s_0503a55d84ed51::t_651a42752ae03f 99-102,104-106,117-139
+  s_0503a55d84ed51::t_8cfb8ac27cb86f 204-207,209-213,215-218
+src/questions.ts
+  s_0503a55d84ed51::t_64f2b9e7f19120 13-17
+plugin.json
+  s_0503a55d84ed51::t_82d93ac176861b 4
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_82d93ac176861b 23-27
+  s_0503a55d84ed51::t_caaa78b1cdca52 1156,1161-1168,1314,1332-1335,1354-1358,1434-1435,1471-1479,1489-1490,1546-1547,1591
+package.json
+  s_0503a55d84ed51::t_82d93ac176861b 3
+bundled/snapshot.js
+  s_0503a55d84ed51::t_caaa78b1cdca52 99-102,104-106,117-139,204-207,209-213,215-218
+  s_0503a55d84ed51::t_1e158d9460319c 103,140,208,214
+evals/results/harder-v2-1789774107922.json
+  s_0503a55d84ed51::t_6dd288306c6036 1-183
+evals/results/hover-fix-1789774287456.json
+  s_0503a55d84ed51::t_e852aa0bf509d2 1-38
+scripts/eval.mjs
+  s_0503a55d84ed51::t_91f6d127e87df9 78-80,83-89
+evals/results/range-fix-1789774457886.json
+  s_0503a55d84ed51::t_a107f23351b70c 1-57
+evals/results/postlint-1789774742983.json
+  s_0503a55d84ed51::t_1e158d9460319c 1-67
+bundled/cli.mjs
+  s_0503a55d84ed51::t_82d93ac176861b 20-24
+  s_0503a55d84ed51::t_caaa78b1cdca52 1153,1158-1165,1311,1329-1332,1351-1355,1431-1432,1468-1476,1486-1487,1543-1544,1588
+.claude-plugin/marketplace.json
+  s_0503a55d84ed51::t_82d93ac176861b 8,15
+evals/results/hover-fix2-1789774317517.json
+  s_0503a55d84ed51::t_46e0166906c7a3 1-59
+evals/README.md
+  s_0503a55d84ed51::t_fb38711e609a52 1-53
+evals/results/range-fix2-1789774680190.json
+  s_0503a55d84ed51::t_af7986ac53f33a 1-74
+README.md
+  s_0503a55d84ed51::t_c2e9d32a4a260f 161-164,166-168,176,188-191
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2f1b42c50144cf2a7325fde0c63eefdfc0da1db5",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
