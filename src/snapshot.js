@@ -96,6 +96,14 @@ return s?[s]:[]}).join(' ') ||
 
   const actions=[];
 
+  // Interactive elements hidden by CSS (menus, captions revealed on :hover)
+  // never reach the action table — but their visible container can be
+  // hovered to reveal them. ancestor → {fx,fy} for post-gather hover offers.
+  const hoverZones=new Map();
+
+  const INTERACTIVE='a[href],button,select,input,textarea,summary,'+
+    '[role="link"],[role="button"],[role="menuitem"],[role="option"],[role="tab"]';
+
   const hoverable=e=>e.matches('[aria-haspopup],[onmouseover],[title]') ||
     !!e.closest('nav,header,[role="navigation"],[role="menu"],[role="menubar"],[class*="menu"],[class*="dropdown"]');
 
@@ -106,7 +114,30 @@ return s?[s]:[]}).join(' ') ||
     if (depth>4) return;
 
     for (const e of root.querySelectorAll(selector)) {
-      if (!safe(e) || !visible(e) || e.matches(':disabled') || e.closest('[aria-disabled="true"]')) continue;
+      if (!safe(e) || !visible(e) || e.matches(':disabled') || e.closest('[aria-disabled="true"]')) {
+        if (e.matches(INTERACTIVE) && hoverZones.size < 24) {
+          // Walk up to the nearest visible ancestor sized like a hover zone —
+          // skipping body-sized wrappers where hovering means nothing.
+          let a=e.parentElement, hops=0;
+
+          while (a && hops++<6 && !hoverZones.has(a)) {
+            if (visible(a) && !a.matches(selector)) {
+              const ar=a.getBoundingClientRect();
+              const ax=fx+ar.x+ar.width/2, ay=fy+ar.y+ar.height/2;
+
+              if (ar.width>0 && ar.height>0 && ar.width<=800 && ar.height<=400 &&
+                  ax>=0 && ay>=0 && ax<innerWidth && ay<innerHeight) hoverZones.set(a,{fx,fy});
+
+              break;
+            }
+
+            a=a.parentElement;
+          }
+        }
+
+        continue;
+      }
+
       const r=e.getBoundingClientRect(), x=fx+r.x+r.width/2, y=fy+r.y+r.height/2, rname=role(e);
 
       if (!rname || r.width<=0 || r.height<=0 || x<0 || y<0 || x>=innerWidth || y>=innerHeight) continue;
@@ -170,6 +201,21 @@ return s?[s]:[]}).join(' ') ||
   };
 
   gather(document,0,0,0);
+
+  // Emit hover offers on the visible ancestors of hidden interactive content.
+  for (const [a,off] of hoverZones) {
+    const ar=a.getBoundingClientRect();
+
+    const base={node:identity(a),role:'group',
+      label:('Hover '+((name(a)||'element').replace(/\s+/g,' ').trim())).slice(0,240),
+      rect:{x:off.fx+ar.x,y:off.fy+ar.y,w:ar.width,h:ar.height}};
+
+    if (off.fx||off.fy) base.frame={x:off.fx,y:off.fy};
+
+    if (a.getRootNode() instanceof ShadowRoot) base.shadow=true;
+    actions.push({...base,kind:'hover'});
+  }
+
   const words=[], walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
   const range=document.createRange(); let node,length=0;
 

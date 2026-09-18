@@ -75,10 +75,18 @@ function verify(task, result) {
 
 function runOnce(task, env) {
   return new Promise((resolvePromise) => {
+    const url = task.file_url ? `file://${join(ROOT, task.url)}` : task.url;
+    const childEnv = task.file_url ? { ...env, JEV_ALLOW_FILE_URLS: "1" } : env;
+
     const cli = spawn(
       process.execPath,
-      [join(ROOT, "src", "cli.ts"), "--url", task.url, "--goal", task.goal],
-      { cwd: ROOT, env },
+      [
+        join(ROOT, "src", "cli.ts"),
+        "--url", url,
+        "--goal", task.goal,
+        ...(task.file_url ? ["--allow-file-urls"] : []),
+      ],
+      { cwd: ROOT, env: childEnv },
     );
 
     let stdout = "";

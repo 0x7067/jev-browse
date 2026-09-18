@@ -1,0 +1,57 @@
+{
+  "label": "range-fix",
+  "started": "2026-09-18T23:34:07.832Z",
+  "tasks": {
+    "fx-range": {
+      "runs": 2,
+      "verified": 0,
+      "median_ms": 2557,
+      "median_decisions": 3,
+      "median_jev_ms": 1949,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 2557,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1949,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "PRESS_ARROWRIGHT:Press arrowright",
+            "PRESS_ARROWRIGHT:Press arrowright",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "PRESS_ARROWRIGHT:Press arrowright@1717",
+            "PRESS_ARROWRIGHT:Press arrowright@2151",
+            "PRESS_ARROWRIGHT:Press arrowright@2557"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 1828,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1559,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "PRESS_ARROWRIGHT:Press arrowright",
+            "PRESS_ARROWRIGHT:Press arrowright",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "PRESS_ARROWRIGHT:Press arrowright@1058",
+            "PRESS_ARROWRIGHT:Press arrowright@1446",
+            "PRESS_ARROWRIGHT:Press arrowright@1828"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 2557
+}

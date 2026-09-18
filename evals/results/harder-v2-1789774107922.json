@@ -1,0 +1,183 @@
+{
+  "label": "harder-v2",
+  "started": "2026-09-18T23:27:49.094Z",
+  "tasks": {
+    "tin-iframe": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3417,
+      "median_decisions": 2,
+      "median_jev_ms": 1016,
+      "median_text_ms": 1261,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3417,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 1016,
+          "text_ms": 1261,
+          "final_url": "https://the-internet.herokuapp.com/iframe",
+          "ops": [
+            "TYPE_TEXT:Rich Text Area. Press ALT-0 fo"
+          ],
+          "events": [
+            "TYPE_TEXT:Rich Text Area. Press ALT-0 fo@2676",
+            "DONE:Rich Text Area. Press ALT-0 fo@3417"
+          ]
+        }
+      ]
+    },
+    "tin-shadowdom": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 4287,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4287,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/shadowdom",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1793",
+            "BLOCKED:Wait for the page to update@3011",
+            "BLOCKED:Wait for the page to update@4028",
+            "BLOCKED:Wait for the page to update@4287"
+          ]
+        }
+      ]
+    },
+    "tin-checkboxes": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1778,
+      "median_decisions": 2,
+      "median_jev_ms": 769,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1778,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 769,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/checkboxes",
+          "ops": [
+            "CLICK:checkbox"
+          ],
+          "events": [
+            "CLICK:checkbox@1002",
+            "DONE:checkbox@1778"
+          ]
+        }
+      ]
+    },
+    "tin-hovers": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 4148,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4148,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/hovers",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1517",
+            "BLOCKED:Wait for the page to update@2630",
+            "BLOCKED:Wait for the page to update@3739",
+            "BLOCKED:Wait for the page to update@4148"
+          ]
+        }
+      ]
+    },
+    "tin-file-upload": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4971,
+      "median_decisions": 4,
+      "median_jev_ms": 1406,
+      "median_text_ms": 1734,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4971,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1406,
+          "text_ms": 1734,
+          "final_url": "https://the-internet.herokuapp.com/upload",
+          "ops": [
+            "CLICK:Open textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Upload"
+          ],
+          "events": [
+            "CLICK:Open textbox@1013",
+            "TYPE_TEXT:textbox@3394",
+            "CLICK:Upload@4250",
+            "DONE:Upload@4971"
+          ]
+        }
+      ]
+    },
+    "tin-key-press": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2643,
+      "median_decisions": 3,
+      "median_jev_ms": 1133,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2643,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1133,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/key_presses",
+          "ops": [
+            "CLICK:Open textbox",
+            "PRESS_TAB:Press tab"
+          ],
+          "events": [
+            "CLICK:Open textbox@1111",
+            "PRESS_TAB:Press tab@1808",
+            "DONE:Press tab@2643"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 21244
+}

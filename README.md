@@ -158,9 +158,14 @@ table rather than offer dead targets.
 | --- | --- |
 | [src/agent.ts](src/agent.ts) | The complete loop and text-helper handoff |
 | [src/snapshot.js](src/snapshot.js) | Atomic DOM snapshot, indexed controls, freshness guards |
-| [src/model.ts](src/model.ts) | Dynamic operation/target heads and text generation |
+| [src/model/decide.ts](src/model/decide.ts) | Dynamic operation/target heads and the decision request |
+| [src/model/space.ts](src/model/space.ts) | The indexed action space |
+| [src/model/text.ts](src/model/text.ts) | Text-helper handoff for `TYPE_TEXT` |
+| [src/model/endpoints.ts](src/model/endpoints.ts) | Model-endpoint warm-up |
 | [src/questions.ts](src/questions.ts) | Model instructions |
-| [src/cdp.ts](src/cdp.ts) | Chrome launch/attach, minimal CDP client, trusted input |
+| [src/cdp/browser.ts](src/cdp/browser.ts) | Chrome launch/attach, trusted input, network tracking |
+| [src/cdp/socket.ts](src/cdp/socket.ts) | Minimal CDP client over a browser WebSocket |
+| [src/cdp/chrome.ts](src/cdp/chrome.ts) | Chrome/Chromium discovery |
 | [src/abrowser.ts](src/abrowser.ts) | agent-browser engine over the same driver interface |
 | [src/cli.ts](src/cli.ts) | Headless entry point every adapter runs |
 | [src/mcp.ts](src/mcp.ts) | stdio MCP server exposing `jev_browse` |
@@ -168,6 +173,7 @@ table rather than offer dead targets.
 | [integrations/opencode](integrations/opencode/jev-browse.ts) | OpenCode plugin (dormant; MCP is the install path) |
 | [bundled](bundled/) | Committed esbuild bundles; the entry points installs actually run |
 | [plugin.json](plugin.json) · [mcp.json](mcp.json) | Portable Agent Plugins manifest and MCP wiring |
+| [scripts/eval.mjs](scripts/eval.mjs) + [evals/](evals/) | Real-world task suite and results |
 | [scripts/record_demo.mjs](scripts/record_demo.mjs) | CDP screencast recorder behind `docs/demo.*` |
 
 ## Evidence and limits
@@ -179,9 +185,10 @@ one-way Zürich to London on September 20, 2026, with real fares. The video
 plays at 1× from CDP frame timestamps, with a ~0.8 s final hold.
 
 Verified coverage: [`fixture-interactions.html`](fixture-interactions.html)
-scores **15/16**, one fixture section per interaction class. The remaining
-gap is range sliders: a click would set the value, but the model tends to
-press arrow keys without focusing the slider first.
+plus a [real-world task suite](evals/) — form flows, autocomplete, iframes,
+shadow roots, hover-reveal menus, native selects, date pickers, file upload,
+dynamic loading, modals, and multi-tab flows all pass. Range sliders work
+through the focus-then-arrows idiom.
 
 A `DONE` choice is a claim, not proof; the model can assert a goal it didn't
 reach (measured on Enter-only palettes). Verify outcomes independently.

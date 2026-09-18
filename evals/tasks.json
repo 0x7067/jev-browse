@@ -54,6 +54,85 @@
     "expect": {}
   },
   {
+    "id": "tin-iframe",
+    "url": "https://the-internet.herokuapp.com/iframe",
+    "goal": "Type \"hello\" into the text editor inside the iframe and stop.",
+    "expect": {}
+  },
+  {
+    "id": "fx-shadow",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Scroll to the shadow DOM section, click the \"Shadow action\" button inside the shadow root, and stop when DONE is visible.",
+    "expect": {}
+  },
+  {
+    "id": "fx-hover-menu",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Open the Destinations menu and pick \"Alpine stays\". Stop when DONE is shown.",
+    "expect": {}
+  },
+  {
+    "id": "fx-iframe",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Scroll to the iframe section, click the button inside the frame, and stop when DONE is visible.",
+    "expect": {}
+  },
+  {
+    "id": "fx-modal",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Open the modal dialog and confirm deleting the draft. Stop when DONE is shown.",
+    "expect": {}
+  },
+  {
+    "id": "fx-new-tab",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Open the help page in a new tab and stop when the help page is visible.",
+    "expect": {}
+  },
+  {
+    "id": "fx-disabled-redeem",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Enter a code in the code field, click Redeem, and stop when DONE is shown.",
+    "expect": {}
+  },
+  {
+    "id": "fx-range",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Move the Guests slider to 6 or more and stop when DONE is shown.",
+    "expect": {}
+  },
+  {
+    "id": "tin-checkboxes",
+    "url": "https://the-internet.herokuapp.com/checkboxes",
+    "goal": "Check both checkboxes and stop.",
+    "expect": {}
+  },
+  {
+    "id": "tin-hovers",
+    "url": "https://the-internet.herokuapp.com/hovers",
+    "goal": "Hover over the first user avatar, click its \"View profile\" link, and stop once the user1 profile page is visible.",
+    "expect": {}
+  },
+  {
+    "id": "tin-file-upload",
+    "url": "https://the-internet.herokuapp.com/upload",
+    "goal": "Upload the file /etc/hosts using the file chooser and submit the form.",
+    "expect": {}
+  },
+  {
+    "id": "tin-key-press",
+    "url": "https://the-internet.herokuapp.com/key_presses",
+    "goal": "Click into the target field and press the Tab key, then stop.",
+    "expect": {}
+  },
+  {
     "id": "github-issues",
     "url": "https://github.com/nodejs/node",
     "goal": "Open the Issues tab of this repository.",

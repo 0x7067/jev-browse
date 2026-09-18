@@ -17,8 +17,11 @@ Submit populated search fields before opening a result; a populated field alone 
 WAIT only when the needed control is absent/disabled, or submitted results are still loading.
 If Search/Submit is visible and the required fields are ready, CLICK it immediately.
 Recent WAIT actions are not evidence of loading. Prefer a useful visible control over WAIT.
-PRESS_* sends a real key: Enter submits fields and command palettes, Escape closes dialogs,
-arrows move in pickers and sliders. HOVER reveals hover-only menus before they can be clicked.
+PRESS_* sends a real key to whatever element currently holds focus \u2014 with nothing focused,
+the key is lost and the action changes nothing. Enter submits fields and command palettes,
+Escape closes dialogs, arrows move in pickers and sliders. Before using arrows on a slider,
+CLICK it once to focus it (the click may set an intermediate value), then PRESS_ARROWLEFT/RIGHT
+to reach the requested value. HOVER reveals hover-only menus before they can be clicked.
 GO_BACK/GO_FORWARD navigate history. If an action opened a new tab, continue there.
 DONE requires visible evidence that ALL requirements are satisfied. If asked to open a result,
 a matching link is not enough. BLOCKED means no supported operation can make progress.`;
@@ -1147,12 +1150,19 @@ var Agent = class _Agent {
     this.history.push(entry);
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
+    entry.pending_requests = this.page.pending_requests ?? 0;
     entry.url = this.page.url;
     entry.elapsed_ms = this.elapsed();
     this.fingerprints.push(this.page.fingerprint);
     const repeated = this.history.slice(-3);
-    const tail = this.history.slice(-8);
-    this.status = repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || tail.length === 8 && tail.every((h) => h.page_changed === false) || this.cycling() ? "blocked" : "ready";
+    let idleMs = 0;
+    const last = this.history[this.history.length - 1];
+    for (let i = this.history.length - 1; i >= 0; i--) {
+      const h = this.history[i];
+      if (h.page_changed !== false || (h.pending_requests ?? 0) > 0) break;
+      idleMs = (last?.elapsed_ms ?? 0) - h.elapsed_ms;
+    }
+    this.status = repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || this.cycling() ? "blocked" : "ready";
   }
   /** True when the recent fingerprint trail is a short cycle repeated whole. */
   cycling() {
@@ -1298,6 +1308,7 @@ var CdpSocket = class _CdpSocket {
   ws;
   nextId = 1;
   pending = /* @__PURE__ */ new Map();
+  listeners = /* @__PURE__ */ new Map();
   closed = false;
   constructor(ws) {
     this.ws = ws;
@@ -1315,6 +1326,10 @@ var CdpSocket = class _CdpSocket {
         this.pending.delete(msg.id);
         if (msg.error) p.reject(new Error(`${msg.error.message ?? "CDP error"}`));
         else p.resolve(msg.result ?? {});
+        return;
+      }
+      if (msg.method) {
+        for (const cb of this.listeners.get(msg.method) ?? []) cb(msg.params, msg.sessionId);
       }
     });
     ws.addEventListener("close", () => {
@@ -1332,6 +1347,11 @@ var CdpSocket = class _CdpSocket {
       });
     });
     return new _CdpSocket(ws);
+  }
+  onEvent(method, cb) {
+    let set = this.listeners.get(method);
+    if (!set) this.listeners.set(method, set = /* @__PURE__ */ new Set());
+    set.add(cb);
   }
   call(method, params = {}, sessionId) {
     if (this.closed) return Promise.reject(new Error("CDP connection closed"));
@@ -1408,6 +1428,8 @@ var CdpBrowser = class _CdpBrowser {
   afterInput = null;
   seen = /* @__PURE__ */ new Set();
   adopted = [];
+  /** In-flight request ids per session — the "is the page actually working" signal. */
+  pending = /* @__PURE__ */ new Map();
   constructor() {
   }
   static async open(url, opts = {}) {
@@ -1443,6 +1465,15 @@ var CdpBrowser = class _CdpBrowser {
         wsUrl = await browserWsUrl(port);
       }
       browser.socket = await CdpSocket.connect(wsUrl);
+      browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
+        if (sessionId) (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, /* @__PURE__ */ new Set()).get(sessionId)).add(p.requestId);
+      });
+      browser.socket.onEvent("Network.loadingFinished", (p, sessionId) => {
+        if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
+      });
+      browser.socket.onEvent("Network.loadingFailed", (p, sessionId) => {
+        if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
+      });
       browser.target = (await browser.socket.call("Target.createTarget", {
         url: "about:blank",
         background: true
@@ -1452,6 +1483,8 @@ var CdpBrowser = class _CdpBrowser {
         flatten: true
       })).sessionId;
       browser.seen.add(browser.target);
+      await browser.call("Network.enable").catch(() => {
+      });
       const { targetInfos } = await browser.socket.call("Target.getTargets").catch(() => ({ targetInfos: [] }));
       for (const t of targetInfos) browser.seen.add(t.targetId);
       await browser.call("Emulation.setDeviceMetricsOverride", {
@@ -1507,6 +1540,8 @@ var CdpBrowser = class _CdpBrowser {
         this.target = t.targetId;
         this.session = sessionId;
         this.adopted.push(t.targetId);
+        await this.call("Network.enable").catch(() => {
+        });
       } catch {
       }
     }
@@ -1550,6 +1585,7 @@ var CdpBrowser = class _CdpBrowser {
         const info = await this.evaluate(READ_STATE);
         if (info === null || info === void 0) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
+        info.pending_requests = this.pending.get(this.session)?.size ?? 0;
         return info;
       } catch (error) {
         if (!(error instanceof StalePage) || attempt === 99) throw error;

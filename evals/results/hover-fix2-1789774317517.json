@@ -1,0 +1,59 @@
+{
+  "label": "hover-fix2",
+  "started": "2026-09-18T23:31:48.048Z",
+  "tasks": {
+    "tin-hovers": {
+      "runs": 2,
+      "verified": 0,
+      "median_ms": 2738,
+      "median_decisions": 4,
+      "median_jev_ms": 1409,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 2312,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1317,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/hovers",
+          "ops": [
+            "HOVER:Hover User Avatar name: user1 ",
+            "CLICK:View profile",
+            "GO_BACK:Go back to the previous page"
+          ],
+          "events": [
+            "HOVER:Hover User Avatar name: user1 @752",
+            "CLICK:View profile@1253",
+            "GO_BACK:Go back to the previous page@1594",
+            "DONE:Go back to the previous page@2312"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 2738,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1409,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/hovers",
+          "ops": [
+            "HOVER:Hover User Avatar name: user1 ",
+            "CLICK:View profile",
+            "GO_BACK:Go back to the previous page"
+          ],
+          "events": [
+            "HOVER:Hover User Avatar name: user1 @749",
+            "CLICK:View profile@1649",
+            "GO_BACK:Go back to the previous page@1982",
+            "DONE:Go back to the previous page@2737"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 2738
+}
