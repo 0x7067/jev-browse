@@ -193,9 +193,9 @@ export async function choose(
         element: `[${index}] ${a.label}`,
         current_value: a.current_value ?? a.value ?? "",
         ...Object.fromEntries(
-          ["role", "checked", "selected", "expanded"]
-            .filter((k) => k in a)
-            .map((k) => [k, a[k]]),
+          ["role", "checked", "selected", "expanded"].flatMap((k) =>
+            k in a ? [[k, a[k]]] : [],
+          ),
         ),
       };
     }
@@ -217,7 +217,9 @@ export async function choose(
         .slice(-10)
         .map((h) =>
           Object.fromEntries(
-            ["action", "kind", "text", "page_changed"].filter((k) => k in h).map((k) => [k, h[k]]),
+            ["action", "kind", "text", "page_changed"].flatMap((k) =>
+              k in h ? [[k, h[k]]] : [],
+            ),
           ),
         ),
     },
@@ -272,7 +274,9 @@ export function fieldContext(goal: string, action: ObservedAction, page: PageSta
     page: { title: page.title, text: page.text.slice(0, 6000) },
     recent_actions: history
       .slice(-6)
-      .map((h) => Object.fromEntries(["action", "text"].filter((k) => k in h).map((k) => [k, h[k]]))),
+      .map((h) =>
+        Object.fromEntries(["action", "text"].flatMap((k) => (k in h ? [[k, h[k]]] : []))),
+      ),
   };
 }
 

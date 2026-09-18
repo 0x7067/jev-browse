@@ -24,7 +24,7 @@
       .map(id=>name(doc.getElementById(id),seen)).filter(Boolean).join(' ');
 
     return referenced || e.getAttribute('aria-label') ||
-      [...(e.labels||[])].map(l=>name(l,seen)).filter(Boolean).join(' ') ||
+      [...(e.labels||[])].flatMap(l=>{const s=name(l,seen);return s?[s]:[]}).join(' ') ||
       (['button','submit','reset'].includes(e.type) ? e.value : '') || e.getAttribute('alt') ||
       (e.tagName==='INPUT' ? '' : [...e.childNodes].map(n=>n.nodeType===3 ? n.textContent :
         n.nodeType===1 && n.getAttribute('aria-hidden')!=='true' ? name(n,seen) : '').join(' ').trim()) ||
@@ -76,8 +76,8 @@
   };
 
   cache.pageKey=()=>[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
-    [...document.querySelectorAll('input,textarea,select')].filter(safe)
-      .map(e=>[identity(e),e.value,e.checked,e.selectedIndex,e.disabled,e.readOnly])];
+    [...document.querySelectorAll('input,textarea,select')]
+      .flatMap(e=>safe(e)?[[identity(e),e.value,e.checked,e.selectedIndex,e.disabled,e.readOnly]]:[])];
   cache.guard=e=>{
     if (!e?.isConnected || !visible(e)) return null;
     const scope=e.closest('form,dialog,[role="dialog"],article,li,tr,[role="row"]') || e.parentElement;
