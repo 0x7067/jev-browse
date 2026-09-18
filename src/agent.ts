@@ -5,6 +5,8 @@
  */
 
 import { MAX_STEPS } from "./questions.ts";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 import { actionSpace, choose, fieldContext, fieldText, type Decision } from "./model.ts";
 import { makeClient } from "./env.ts";
 import { StalePage, type BrowserDriver, type ObservedAction, type PageState } from "./types.ts";
@@ -56,6 +58,7 @@ export class Agent {
   private decision: Decision | null = null;
   private history: HistoryEntry[] = [];
   private decisions: Decision[] = [];
+  private earlyWaits = 0;
   private textCalls: any[] = [];
   private pendingText: [unknown, string, { model: string; latency_ms: number }] | null = null;
   private status: "ready" | "done" | "blocked" = "ready";
@@ -134,6 +137,24 @@ export class Agent {
         this.status = "ready";
         throw new StalePage("Page changed since the decision. Choose again.");
       }
+      // A BLOCKED claim before any real action — or on an empty snapshot —
+      // is a give-up we can afford to second-guess: wait, re-observe, ask
+      // again. Bounded by earlyWaits; mutating retries stay forbidden.
+      if (
+        selected === "BLOCKED" &&
+        this.earlyWaits < 3 &&
+        (page.actions.length === 0 || this.history.every((h) => h.kind === "wait"))
+      ) {
+        this.earlyWaits++;
+        const entry = this.waitEntry("Wait for the page to update", page);
+        await sleep(700);
+        this.page = await this.browser.observe();
+        entry.page_changed = this.page.fingerprint !== page.fingerprint;
+        entry.url = this.page.url;
+        entry.elapsed_ms = this.elapsed();
+        this.status = "ready";
+        return;
+      }
       this.status = selected === "DONE" ? "done" : "blocked";
       return;
     }
@@ -156,6 +177,11 @@ export class Agent {
         [, text, helper] = this.pendingText;
       } else {
         const generated = await fieldText(context);
+        // Fail fast: an empty helper answer means nothing was typed; looping
+        // on TYPE_TEXT just burns the action budget.
+        if (!generated.text) {
+          throw new Error("Text helper returned no valid field value; nothing typed.");
+        }
         text = generated.text;
         helper = generated.helper;
         this.pendingText = [context, text, helper];
@@ -166,6 +192,7 @@ export class Agent {
     // act() re-checks freshness immediately before input, after text generation.
     await this.browser.act(action, page, text);
     this.pendingText = null;
+    this.earlyWaits = 0;
 
     // Record execution before observing; a stale post-action observation must
     // not erase the action.
@@ -201,6 +228,30 @@ export class Agent {
       repeated.every((h) => h.page_changed === false && h.kind !== "wait")
         ? "blocked"
         : "ready";
+  }
+
+  private waitEntry(action: string, page: PageState): HistoryEntry {
+    const entry: HistoryEntry = {
+      step: this.history.length + 1,
+      action,
+      kind: "wait",
+      choice: "wait",
+      probability: 0,
+      confidence: 0,
+      latency_ms: 0,
+      text: null,
+      text_helper: null,
+      text_latency_ms: 0,
+      operation: "WAIT",
+      target: null,
+      page_changed: null,
+      url: page.url,
+      usage: null,
+      executed_ms: this.elapsed(),
+      elapsed_ms: this.elapsed(),
+    };
+    this.history.push(entry);
+    return entry;
   }
 
   async run(onEvent?: (event: { type: string; [k: string]: unknown }) => void): Promise<RunResult> {

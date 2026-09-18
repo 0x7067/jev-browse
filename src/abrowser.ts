@@ -11,7 +11,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { loadSnapshotJs } from "./snapshot.ts";
+import { loadSnapshotJs } from "./snapshot-loader.ts";
 import { StalePage, type BrowserDriver, type ObservedAction, type PageState } from "./types.ts";
 
 const execFileAsync = promisify(execFile);

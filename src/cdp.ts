@@ -12,7 +12,7 @@ import { homedir, platform } from "node:os";
 import { createServer } from "node:net";
 import { join } from "node:path";
 
-import { loadSnapshotJs } from "./snapshot.ts";
+import { loadSnapshotJs } from "./snapshot-loader.ts";
 import { StalePage, type BrowserDriver, type ObservedAction, type PageState } from "./types.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
