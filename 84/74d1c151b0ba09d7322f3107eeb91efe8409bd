@@ -1,0 +1,27 @@
+src/model.ts
+  s_fc055f79654e23::t_4f794c13e27032 164-167,169-172,176-180
+  s_fc055f79654e23::t_00b9e24b5948e7 9,93,95
+  s_fc055f79654e23::t_d5d9f4c359ac8d 84
+src/snapshot.js
+  s_fc055f79654e23::t_d969fdda9428a8 27-29
+  s_fc055f79654e23::t_9683d950e2d83d 118
+src/cdp.ts
+  s_fc055f79654e23::t_d65c25e8045513 26-35,47-50,150,494
+  s_fc055f79654e23::t_e6e9f2c2c96183 36-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8474d1c151b0ba09d7322f3107eeb91efe8409bd",
+  "prompts": {},
+  "sessions": {
+    "s_fc055f79654e23": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b695-dd0f-74ad-8dad-3ac02550b7c8",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
