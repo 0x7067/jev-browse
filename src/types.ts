@@ -1,5 +1,16 @@
 /** Shared types for the driver-agnostic agent loop. */
 
+/** A value that survives a JSON round trip — the shape of page- and wire-boundary data. */
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+export type JsonObject = { [key: string]: JsonValue };
+
 export type ActionKind =
   | "click"
   | "fill"
@@ -26,7 +37,7 @@ export interface ObservedAction {
   checked?: string;
   selected?: string;
   expanded?: string;
-  [extra: string]: unknown;
+  [extra: string]: JsonValue | undefined;
 }
 
 export interface PageState {
@@ -37,11 +48,16 @@ export interface PageState {
   text: string;
   scroll: { y: number; height: number };
   actions: ObservedAction[];
-  marker: unknown;
-  page_key: unknown;
-  guards: Record<string, unknown>;
+  marker: JsonValue;
+  page_key: JsonValue;
+  guards: Record<string, JsonValue>;
   omitted_actions: number;
   fingerprint: string;
+}
+
+/** Result of executing one observed action. */
+export interface ActResult {
+  executed: string;
 }
 
 /** A decision no longer refers to the observed page. */
@@ -62,6 +78,6 @@ export interface BrowserDriver {
   /** Is `page` still the live document? With an action, compare only its guard. */
   fresh(page: PageState, action?: ObservedAction): Promise<boolean>;
   /** Execute an observed action. Must re-check freshness before input. */
-  act(action: ObservedAction, page: PageState, text?: string | null): Promise<unknown>;
+  act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
   close(): Promise<void>;
 }

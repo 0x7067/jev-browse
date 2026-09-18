@@ -12,7 +12,13 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 
 import { loadSnapshotJs } from "./snapshot-loader.ts";
-import { StalePage, type BrowserDriver, type ObservedAction, type PageState } from "./types.ts";
+import {
+  StalePage,
+  type ActResult,
+  type BrowserDriver,
+  type ObservedAction,
+  type PageState,
+} from "./types.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -256,7 +262,7 @@ export class AgentBrowser implements BrowserDriver {
     return JSON.stringify(await this.evaluate(MARKER)) === JSON.stringify(page.marker);
   }
 
-  async act(action: ObservedAction, page: PageState, text?: string | null): Promise<unknown> {
+  async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {
     if (!(await this.fresh(page, action))) {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
