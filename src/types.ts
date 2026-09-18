@@ -1,6 +1,15 @@
 /** Shared types for the driver-agnostic agent loop. */
 
-export type ActionKind = "click" | "fill" | "select" | "scroll" | "wait";
+export type ActionKind =
+  | "click"
+  | "fill"
+  | "select"
+  | "scroll"
+  | "wait"
+  | "hover"
+  | "press"
+  | "back"
+  | "forward";
 
 export interface ObservedAction {
   id: string; // "e1".."e250", "scroll_down", "scroll_up", "wait"
@@ -11,6 +20,9 @@ export interface ObservedAction {
   value?: string; // select: option value; click/fill: current field value
   current_value?: string;
   delta?: number; // scroll
+  key?: string; // press: key name
+  frame?: { x: number; y: number }; // iframe: viewport offset for absolute coords
+  shadow?: boolean; // element lives in a shadow root
   checked?: string;
   selected?: string;
   expanded?: string;

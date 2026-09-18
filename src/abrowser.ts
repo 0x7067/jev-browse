@@ -194,6 +194,11 @@ export class AgentBrowser implements BrowserDriver {
         const info = await this.evaluate(READ_STATE);
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
+        // CLI selectors cannot reach iframe/shadow elements — hide them so the
+        // model can't pick unexecutable actions.
+        info.actions = info.actions.filter(
+          (a: ObservedAction) => !a.frame && !a.shadow,
+        );
         return info as PageState;
       } catch (error) {
         if (!(error instanceof StalePage) || attempt === 9) throw error;
@@ -229,6 +234,17 @@ export class AgentBrowser implements BrowserDriver {
       this.afterInput = action;
       return { executed: action.id };
     }
+    if (kind === "back" || kind === "forward") {
+      await this.run([kind]);
+      return { executed: action.id };
+    }
+    if (kind === "press") {
+      const key =
+        String(action.key).charAt(0).toUpperCase() + String(action.key).slice(1);
+      await this.run(["press", key]);
+      this.afterInput = action;
+      return { executed: action.id };
+    }
     if (typeof action.node !== "number") throw new Error("Invalid observed node");
     // Tag the observed node so agent-browser can target it by selector. The
     // model never emits selectors; code maps its own node id to an attribute.
@@ -244,9 +260,9 @@ export class AgentBrowser implements BrowserDriver {
           (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===${JSON.stringify(String(action.value))} &&
               !o.disabled && !o.closest('optgroup[disabled]')))) return false;
       e.setAttribute(${JSON.stringify(TAG_ATTR)}, ${JSON.stringify(String(action.node))});
-      return true;
+      return e.tagName==='INPUT' ? e.type : '';
     })()`);
-    if (tagged !== true) {
+    if (tagged === false || tagged === undefined) {
       if (kind === "select") {
         throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
       }
@@ -256,8 +272,14 @@ export class AgentBrowser implements BrowserDriver {
     try {
       if (kind === "click") {
         await this.run(["click", selector]);
+      } else if (kind === "hover") {
+        await this.run(["hover", selector]);
       } else if (kind === "fill") {
-        await this.run(["fill", selector, text ?? ""]);
+        if (tagged === "file") {
+          await this.run(["upload", selector, text ?? ""]);
+        } else {
+          await this.run(["fill", selector, text ?? ""]);
+        }
       } else if (kind === "select") {
         await this.run(["select", selector, String(action.value)]);
       }

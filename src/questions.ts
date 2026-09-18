@@ -10,6 +10,9 @@ Submit populated search fields before opening a result; a populated field alone 
 WAIT only when the needed control is absent/disabled, or submitted results are still loading.
 If Search/Submit is visible and the required fields are ready, CLICK it immediately.
 Recent WAIT actions are not evidence of loading. Prefer a useful visible control over WAIT.
+PRESS_* sends a real key: Enter submits fields and command palettes, Escape closes dialogs,
+arrows move in pickers and sliders. HOVER reveals hover-only menus before they can be clicked.
+GO_BACK/GO_FORWARD navigate history. If an action opened a new tab, continue there.
 DONE requires visible evidence that ALL requirements are satisfied. If asked to open a result,
 a matching link is not enough. BLOCKED means no supported operation can make progress.`;
 

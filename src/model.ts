@@ -72,7 +72,12 @@ export function actionSpace(actions: ObservedAction[]) {
   const indices = new Map<number, string>();
   const targets: Record<string, Record<string, ObservedAction>> = {};
   const controls: Record<string, ObservedAction> = {};
-  const operations: Record<string, string> = { click: "CLICK", fill: "TYPE_TEXT", select: "SELECT" };
+  const operations: Record<string, string> = {
+    click: "CLICK",
+    fill: "TYPE_TEXT",
+    select: "SELECT",
+    hover: "HOVER",
+  };
 
   for (const action of actions) {
     const kind = action.kind;
@@ -139,6 +144,7 @@ export async function choose(
     TYPE_TEXT:
       "Enter or replace text in an editable field. A small LLM will supply the value from the goal.",
     SELECT: "Select an observed dropdown value.",
+    HOVER: "Hover over an element to reveal menus, tooltips, or hover-only controls.",
   };
   const operations: ChoiceCriteria = {};
   for (const key of Object.keys(targets)) operations[key] = labels[key];

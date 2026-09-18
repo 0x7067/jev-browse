@@ -21,6 +21,27 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const READ_STATE = loadSnapshotJs();
 const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
 
+/** Input.dispatchKeyEvent params per key name (press actions). */
+const KEYS: Record<string, Record<string, unknown>> = {
+  enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" },
+  tab: { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 },
+  escape: { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 },
+  backspace: { key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 },
+  delete: { key: "Delete", code: "Delete", windowsVirtualKeyCode: 46 },
+  arrowup: { key: "ArrowUp", code: "ArrowUp", windowsVirtualKeyCode: 38 },
+  arrowdown: { key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 },
+  arrowleft: { key: "ArrowLeft", code: "ArrowLeft", windowsVirtualKeyCode: 37 },
+  arrowright: { key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 },
+  home: { key: "Home", code: "Home", windowsVirtualKeyCode: 36 },
+  end: { key: "End", code: "End", windowsVirtualKeyCode: 35 },
+  pageup: { key: "PageUp", code: "PageUp", windowsVirtualKeyCode: 33 },
+  pagedown: { key: "PageDown", code: "PageDown", windowsVirtualKeyCode: 34 },
+  space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " },
+};
+
+/** Input types typed via real key events — insertText cannot drive them. */
+const KEY_TYPED_INPUTS = new Set(["date", "time", "datetime-local", "month", "week"]);
+
 function fingerprint(state: Record<string, unknown>): string {
   const content: Record<string, unknown> = {};
   for (const k of ["url", "text", "actions", "scroll"]) content[k] = state[k];
@@ -194,6 +215,8 @@ export class CdpBrowser implements BrowserDriver {
   private target!: string;
   private proc: ChildProcess | null = null;
   private afterInput: ObservedAction | null = null;
+  private seen = new Set<string>();
+  private adopted: string[] = [];
 
   private constructor() {}
 
@@ -242,6 +265,10 @@ export class CdpBrowser implements BrowserDriver {
           flatten: true,
         })
       ).sessionId;
+      browser.seen.add(browser.target);
+      // Tabs that pre-date the run (e.g. the launch tab) are not adoptable.
+      const { targetInfos } = await browser.socket.call("Target.getTargets").catch(() => ({ targetInfos: [] }));
+      for (const t of (targetInfos ?? []) as { targetId: string }[]) browser.seen.add(t.targetId);
       await browser.call("Emulation.setDeviceMetricsOverride", {
         width: 1120,
         height: 780,
@@ -279,7 +306,32 @@ export class CdpBrowser implements BrowserDriver {
     return response.result?.value;
   }
 
+  /** Follow newly opened tabs — the driver observes what the user would see. */
+  private async adoptNewTarget(): Promise<void> {
+    const { targetInfos } = await this.socket
+      .call("Target.getTargets")
+      .catch(() => ({ targetInfos: [] as { targetId: string; type: string }[] }));
+    const fresh = ((targetInfos ?? []) as { targetId: string; type: string }[]).filter(
+      (t) => t.type === "page" && !this.seen.has(t.targetId),
+    );
+    for (const t of fresh) {
+      this.seen.add(t.targetId);
+      try {
+        const { sessionId } = await this.socket.call("Target.attachToTarget", {
+          targetId: t.targetId,
+          flatten: true,
+        });
+        this.target = t.targetId;
+        this.session = sessionId;
+        this.adopted.push(t.targetId);
+      } catch {
+        // tab raced away
+      }
+    }
+  }
+
   async observe(): Promise<PageState> {
+    await this.adoptNewTarget();
     if (this.afterInput) {
       const action = this.afterInput;
       this.afterInput = null;
@@ -363,18 +415,37 @@ export class CdpBrowser implements BrowserDriver {
       this.afterInput = action;
       return { executed: action.id };
     }
+    if (kind === "back" || kind === "forward") {
+      await this.evaluate(`history.${kind === "back" ? "back" : "forward"}()`);
+      return { executed: action.id };
+    }
+    if (kind === "press") {
+      const key = KEYS[String(action.key)];
+      if (!key) throw new Error(`Unknown key ${action.key}`);
+      await this.call("Input.dispatchKeyEvent", { type: "keyDown", ...key });
+      await this.call("Input.dispatchKeyEvent", { type: "keyUp", ...key });
+      this.afterInput = action;
+      return { executed: action.id };
+    }
     if (typeof action.node !== "number") throw new Error("Invalid observed node");
     // Code-owned node IDs refer to actual observed elements, never model-generated selectors.
-    let target: { x: number; y: number } | null;
+    // Hit-testing is frame/shadow aware: iframe elements use owner-document
+    // local coords; shadow elements accept hits on the host or root siblings.
+    let target: { x: number; y: number; type?: string } | null;
     try {
       target = await this.evaluate(`(action => {
         const e=window.__jevFast?.nodes.get(action.node);
         if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]') ||
             !e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) return null;
         if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return null;
-        const r=e.getBoundingClientRect(), x=r.x+r.width/2, y=r.y+r.height/2;
-        if (!r.width || !r.height || x<0 || y<0 || x>=innerWidth || y>=innerHeight) return null;
-        if (!e.contains(document.elementFromPoint(x,y))) return null;
+        const r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
+        const d=e.ownerDocument, w=d.defaultView||window;
+        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return null;
+        const hit=d.elementFromPoint(lx,ly), root=e.getRootNode();
+        const covered = root instanceof ShadowRoot
+          ? !(e.contains(hit) || hit===root.host || hit?.getRootNode()===root)
+          : !e.contains(hit);
+        if (covered) return null;
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
               !o.disabled && !o.closest('optgroup[disabled]'))) return null;
@@ -382,7 +453,8 @@ export class CdpBrowser implements BrowserDriver {
           e.dispatchEvent(new Event('input',{bubbles:true}));
           e.dispatchEvent(new Event('change',{bubbles:true}));
         }
-        return {x,y};
+        const fx=action.frame?.x||0, fy=action.frame?.y||0;
+        return {x:lx+fx,y:ly+fy,type:e.tagName==='INPUT'?e.type:''};
       })(${JSON.stringify(action)})`);
     } catch (error) {
       if (kind === "select") {
@@ -396,6 +468,23 @@ export class CdpBrowser implements BrowserDriver {
       }
       throw new StalePage("Target changed or is covered. Observe again.");
     }
+    // File inputs: setFileInputFiles — never click (it opens a native dialog).
+    if (kind === "fill" && target.type === "file") {
+      const doc = await this.call("DOM.getDocument", { depth: 1 });
+      const found = await this.call("DOM.querySelector", {
+        nodeId: doc.root.nodeId,
+        selector: `input[data-jev-node="${action.node}"]`,
+      });
+      if (!found.nodeId) throw new StalePage("File input no longer addressable. Observe again.");
+      await this.call("DOM.setFileInputFiles", { files: [text ?? ""], nodeId: found.nodeId });
+      this.afterInput = action;
+      return { executed: action.id };
+    }
+    if (kind === "hover") {
+      await this.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: target.x, y: target.y });
+      this.afterInput = action;
+      return { executed: action.id };
+    }
     if (kind !== "select") {
       for (const type of ["mousePressed", "mouseReleased"]) {
         await this.call("Input.dispatchMouseEvent", {
@@ -407,21 +496,28 @@ export class CdpBrowser implements BrowserDriver {
         });
       }
       if (kind === "fill") {
-        const modifiers = platform() === "darwin" ? 4 : 2;
-        await this.call("Input.dispatchKeyEvent", {
-          type: "keyDown",
-          key: "a",
-          code: "KeyA",
-          modifiers,
-          commands: ["selectAll"],
-        });
-        await this.call("Input.dispatchKeyEvent", {
-          type: "keyUp",
-          key: "a",
-          code: "KeyA",
-          modifiers,
-        });
-        await this.call("Input.insertText", { text: text ?? "" });
+        if (target.type && KEY_TYPED_INPUTS.has(target.type)) {
+          // Date/time inputs ignore insertText; drive them with real key events.
+          for (const ch of text ?? "") {
+            await this.call("Input.dispatchKeyEvent", { type: "char", text: ch });
+          }
+        } else {
+          const modifiers = platform() === "darwin" ? 4 : 2;
+          await this.call("Input.dispatchKeyEvent", {
+            type: "keyDown",
+            key: "a",
+            code: "KeyA",
+            modifiers,
+            commands: ["selectAll"],
+          });
+          await this.call("Input.dispatchKeyEvent", {
+            type: "keyUp",
+            key: "a",
+            code: "KeyA",
+            modifiers,
+          });
+          await this.call("Input.insertText", { text: text ?? "" });
+        }
       }
     }
     this.afterInput = action;
@@ -430,7 +526,12 @@ export class CdpBrowser implements BrowserDriver {
 
   async close(): Promise<void> {
     try {
-      if (this.target) await this.socket.call("Target.closeTarget", { targetId: this.target });
+      for (const t of this.adopted) {
+        await this.socket.call("Target.closeTarget", { targetId: t }).catch(() => {});
+      }
+      if (this.target && !this.adopted.includes(this.target)) {
+        await this.socket.call("Target.closeTarget", { targetId: this.target });
+      }
     } catch {
       // target already gone
     }

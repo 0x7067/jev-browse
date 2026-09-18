@@ -6,14 +6,15 @@
     const id=cache.ids.get(e); cache.nodes.set(id,e); return id;
   };
   for (const [id,e] of cache.nodes) if (!e.isConnected) cache.nodes.delete(id);
-  const safe = e => !['password','file','hidden'].includes(e.type);
+  const safe = e => e.type !== 'hidden';
   const visible = e => !e.closest('[aria-hidden="true"],[inert]') &&
     e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true});
   const name = (e,seen=new Set()) => {
     if (!e || seen.has(e)) return '';
     seen.add(e);
+    const doc=e.ownerDocument||document;
     const referenced=(e.getAttribute('aria-labelledby')||'').split(/\s+/)
-      .map(id=>name(document.getElementById(id),seen)).filter(Boolean).join(' ');
+      .map(id=>name(doc.getElementById(id),seen)).filter(Boolean).join(' ');
     return referenced || e.getAttribute('aria-label') ||
       [...(e.labels||[])].map(l=>name(l,seen)).filter(Boolean).join(' ') ||
       (['button','submit','reset'].includes(e.type) ? e.value : '') || e.getAttribute('alt') ||
@@ -23,8 +24,12 @@
   };
   const roles=['button','link','checkbox','radio','switch','tab','menuitem','menuitemradio',
     'option','gridcell','combobox','textbox','searchbox','spinbutton'];
+  // Hover candidates are indexed too: menus and popups often live on elements
+  // with no interactive role until hovered.
+  const hoverSel='[aria-haspopup],[onmouseover],[class*="menu"],[class*="dropdown"],'+
+    '[class*="tooltip"],[class*="hover"]';
   const selector='a[href],button,input,textarea,select,summary,[contenteditable="true"],'+
-    roles.map(role=>'[role="'+role+'"]').join(',');
+    roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
   const role = e => {
     const explicit=e.getAttribute('role');
     if (roles.includes(explicit)) return explicit;
@@ -37,8 +42,11 @@
       if (['button','submit','reset','image'].includes(e.type)) return 'button';
       if (e.type==='search') return 'searchbox';
       if (e.type==='number') return 'spinbutton';
-      if (['text','email','url','tel'].includes(e.type)) return 'textbox';
+      if (e.type==='range') return 'slider';
+      if (['text','email','url','tel','password','date','time','datetime-local',
+           'month','week','file'].includes(e.type)) return 'textbox';
     }
+    if (e.matches(hoverSel)) return 'button';
     return null;
   };
   cache.pageKey=()=>[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
@@ -53,32 +61,57 @@
       e.getAttribute('href'),scope?.innerText?.slice(0,6000)||''];
   };
   const actions=[];
-  for (const e of document.querySelectorAll(selector)) {
-    if (!safe(e) || !visible(e) || e.matches(':disabled') || e.closest('[aria-disabled="true"]')) continue;
-    const r=e.getBoundingClientRect(), x=r.x+r.width/2, y=r.y+r.height/2, rname=role(e);
-    if (!rname || r.width<=0 || r.height<=0 || x<0 || y<0 || x>=innerWidth || y>=innerHeight) continue;
-    if (rname==='gridcell' && e.querySelector('button,[role="button"]')) continue;
-    const base={node:identity(e),role:rname,label:name(e)||rname,
-      rect:{x:r.x,y:r.y,w:r.width,h:r.height}};
-    for (const key of ['checked','selected','expanded']) {
-      const value=e.getAttribute('aria-'+key);
-      if (value!==null) base[key]=value;
+  const hoverable=e=>e.matches('[aria-haspopup],[onmouseover],[title]') ||
+    !!e.closest('nav,header,[role="navigation"],[role="menu"],[role="menubar"],[class*="menu"],[class*="dropdown"]');
+  // Piercing gather: same-origin iframes recurse with accumulated viewport
+  // offsets; open shadow roots recurse in the same coordinate space. `frame`
+  // records the offset so execution can hit-test and click correctly.
+  const gather=(root,fx,fy,depth)=>{
+    if (depth>4) return;
+    for (const e of root.querySelectorAll(selector)) {
+      if (!safe(e) || !visible(e) || e.matches(':disabled') || e.closest('[aria-disabled="true"]')) continue;
+      const r=e.getBoundingClientRect(), x=fx+r.x+r.width/2, y=fy+r.y+r.height/2, rname=role(e);
+      if (!rname || r.width<=0 || r.height<=0 || x<0 || y<0 || x>=innerWidth || y>=innerHeight) continue;
+      if (rname==='gridcell' && e.querySelector('button,[role="button"]')) continue;
+      const frame=(fx||fy)?{x:fx,y:fy}:undefined;
+      const shadow=e.getRootNode() instanceof ShadowRoot;
+      const base={node:identity(e),role:rname,label:name(e)||rname,
+        rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height},...(frame?{frame}:{}),
+        ...(shadow?{shadow:true}:{})};
+      for (const key of ['checked','selected','expanded']) {
+        const value=e.getAttribute('aria-'+key);
+        if (value!==null) base[key]=value;
+      }
+      if (['checkbox','radio'].includes(e.type)) base.checked=String(e.checked);
+      if (e.type==='file') e.setAttribute('data-jev-node', String(base.node));
+      if (e.tagName==='SELECT') {
+        for (const o of e.options) if (!o.selected && !o.disabled && !o.closest('optgroup[disabled]'))
+          actions.push({...base,kind:'select',value:o.value,
+            current_value:[...e.selectedOptions].map(o=>o.label).join(', '),label:base.label+' → '+o.label});
+      } else {
+        const editable=!e.readOnly && e.getAttribute('aria-readonly')!=='true' &&
+          (['textbox','searchbox','spinbutton'].includes(rname) ||
+            (rname==='combobox' && ['INPUT','TEXTAREA'].includes(e.tagName)));
+        const value='value' in e ? String(e.value) :
+          e.isContentEditable || rname==='combobox' ? e.innerText.trim() : '';
+        actions.push({...base,kind:editable?'fill':'click',value});
+        if (editable) actions.push({...base,kind:'click',value,label:'Open '+base.label});
+      }
+      if (hoverable(e)) actions.push({...base,kind:'hover',value:undefined,label:'Hover '+base.label});
     }
-    if (['checkbox','radio'].includes(e.type)) base.checked=String(e.checked);
-    if (e.tagName==='SELECT') {
-      for (const o of e.options) if (!o.selected && !o.disabled && !o.closest('optgroup[disabled]'))
-        actions.push({...base,kind:'select',value:o.value,
-          current_value:[...e.selectedOptions].map(o=>o.label).join(', '),label:base.label+' → '+o.label});
-    } else {
-      const editable=!e.readOnly && e.getAttribute('aria-readonly')!=='true' &&
-        (['textbox','searchbox','spinbutton'].includes(rname) ||
-          (rname==='combobox' && ['INPUT','TEXTAREA'].includes(e.tagName)));
-      const value='value' in e ? String(e.value) :
-        e.isContentEditable || rname==='combobox' ? e.innerText.trim() : '';
-      actions.push({...base,kind:editable?'fill':'click',value});
-      if (editable) actions.push({...base,kind:'click',value,label:'Open '+base.label});
+    for (const e of root.querySelectorAll('*')) {
+      if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
     }
-  }
+    for (const f of root.querySelectorAll('iframe')) {
+      try {
+        const d=f.contentDocument;
+        if (!d?.body || !visible(f)) continue;
+        const r=f.getBoundingClientRect();
+        gather(d,fx+r.x,fy+r.y,depth+1);
+      } catch { /* cross-origin */ }
+    }
+  };
+  gather(document,0,0,0);
   const words=[], walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
   const range=document.createRange(); let node,length=0;
   while ((node=walker.nextNode()) && length<6000) {
@@ -102,6 +135,11 @@
   if (scrollY+innerHeight<height-2) actions.push({id:'scroll_down',kind:'scroll',label:'Scroll down',delta:560});
   if (scrollY>0) actions.push({id:'scroll_up',kind:'scroll',label:'Scroll up',delta:-560});
   actions.push({id:'wait',kind:'wait',label:'Wait for the page to update'});
+  actions.push({id:'go_back',kind:'back',label:'Go back to the previous page'});
+  actions.push({id:'go_forward',kind:'forward',label:'Go forward in history'});
+  for (const k of ['enter','tab','escape','backspace','delete','arrowup','arrowdown',
+                   'arrowleft','arrowright','home','end','pageup','pagedown','space'])
+    actions.push({id:'press_'+k,kind:'press',key:k,label:'Press '+k});
   return {url:location.href,title:document.title,w:innerWidth,h:innerHeight,text,
     scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions};
 })()

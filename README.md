@@ -17,6 +17,18 @@ One index per DOM node, per-operation target heads, code-owned element
 identity — the model never emits selectors or code. `TYPE_TEXT` delegates the
 string to a small OpenAI-compatible helper; everything else is Jev choices.
 
+Operations: `CLICK`, `TYPE_TEXT`, `SELECT`, `SCROLL_UP`, `SCROLL_DOWN`, `WAIT`,
+`DONE`, `BLOCKED` (reference) plus `HOVER`, `GO_BACK`, `GO_FORWARD`,
+`PRESS_ENTER`/`PRESS_TAB`/`PRESS_ESCAPE`/`PRESS_BACKSPACE`/`PRESS_DELETE`/
+`PRESS_ARROW*`/`PRESS_HOME`/`PRESS_END`/`PRESS_PAGE*`/`PRESS_SPACE`. The
+extractor pierces same-origin iframes (with coordinate offsets) and open
+shadow roots, indexes `password`/`date`/`time`/`range`/`file` inputs, and
+marks menu-ish elements as hoverable. Date/time fields are typed with real
+key events; `file` inputs are filled via `DOM.setFileInputFiles`; newly
+opened tabs are adopted automatically (cdp engine). Verified coverage:
+`fixture-interactions.html` scores 15/16 — range sliders remain reachable
+but model-dependent.
+
 ## Engines
 
 | | `cdp` (default) | `agent-browser` |
