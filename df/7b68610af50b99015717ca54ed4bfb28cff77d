@@ -1,0 +1,66 @@
+src/cdp/chrome.ts
+  s_0503a55d84ed51::t_08c51b4b8d888d 1-63
+src/agent.ts
+  s_0503a55d84ed51::t_b0aac0faaf64a3 44
+  s_0503a55d84ed51::t_9af2a8350d02c7 275-281,287,293
+  s_0503a55d84ed51::t_19626d15273f74 268,282-286,288-289
+  s_0503a55d84ed51::t_7ed6f84aa99a22 11-14
+  s_0503a55d84ed51::t_73f605f18d3909 159-162,175-184
+  s_0503a55d84ed51::t_3847d61ae85a13 185-186
+package.json
+  s_0503a55d84ed51::t_ae69e9e6749c8e 3
+evals/results/probe-fix-check-1789773589506.json
+  s_0503a55d84ed51::t_f98ea0188f488f 1-115
+src/cdp/browser.ts
+  s_0503a55d84ed51::t_2bc9854a15dc8a 285
+  s_0503a55d84ed51::t_f7aa0e49c963f2 83-84,135-143,157,232
+  s_0503a55d84ed51::t_fb5c6c5e639e56 1-82,85-134,144-156,158-231,233-284,286-503
+src/model/space.ts
+  s_0503a55d84ed51::t_667899739a6989 1-87
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_bd08e3aa14ff75 9,58,110-124,251-294,641-643,646,1075,1086-1092,1231,1233-1234,1247-1298,1383-1405,1421,1532,1684,1730,1750,1993,2007,2010,2012,2024
+src/cdp/socket.ts
+  s_0503a55d84ed51::t_6fd3b03cbaa931 1-15,17-44,51-70,78-152
+  s_0503a55d84ed51::t_ecadd2f7be5579 16,45-50,71-77
+src/cli.ts
+  s_0503a55d84ed51::t_0f8bc49f2c651a 18
+.claude-plugin/marketplace.json
+  s_0503a55d84ed51::t_ae69e9e6749c8e 8,15
+evals/results/harder-v1-1789773427884.json
+  s_0503a55d84ed51::t_55b17ce6eff77d 1-268
+evals/results/idle-timer-fix-1789774023656.json
+  s_0503a55d84ed51::t_4bfaeb9e80a9ca 1-90
+src/model/decide.ts
+  s_0503a55d84ed51::t_1da511edc8d843 1-236
+src/model/text.ts
+  s_0503a55d84ed51::t_f53bfac09d2f46 1-115
+bundled/cli.mjs
+  s_0503a55d84ed51::t_bd08e3aa14ff75 6,55,107-121,248-291,638-640,643,1072,1083-1089,1228,1230-1231,1244-1295,1380-1402,1418,1529,1681,1727,1747,1990,2004,2007,2009,2021
+src/model/endpoints.ts
+  s_0503a55d84ed51::t_84b29cf56b8b03 1-25
+evals/tasks.json
+  s_0503a55d84ed51::t_ddade313e21030 32-57,59-61
+  s_0503a55d84ed51::t_04d01b548d983f 58
+src/types.ts
+  s_0503a55d84ed51::t_0944978c385d99 57-58
+plugin.json
+  s_0503a55d84ed51::t_ae69e9e6749c8e 4
+evals/results/pending-fix-1789773975165.json
+  s_0503a55d84ed51::t_11102da02172ff 1-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "df7b68610af50b99015717ca54ed4bfb28cff77d",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
