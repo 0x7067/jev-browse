@@ -23,7 +23,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Two runs sharing a profile dir collide on Chrome's SingletonLock — one wins,
 // the other hangs on a debug port that never binds. A pid lock dir fails fast.
-const LOCK_DIR = join(homedir(), ".jev-drive", "run.lock");
+const LOCK_DIR = join(homedir(), ".jev-browse", "run.lock");
 
 function pidAlive(pid: number): boolean {
   try {
@@ -48,7 +48,7 @@ async function acquireLock(timeoutMs = 30_000): Promise<void> {
         continue; // stale lock from a dead process
       }
       if (Date.now() > deadline) {
-        throw new Error(`Another jev-drive run (pid ${holder}) holds the browser profile`);
+        throw new Error(`Another jev-browse run (pid ${holder}) holds the browser profile`);
       }
       await sleep(1000);
     }
@@ -107,7 +107,7 @@ function parseArgs(argv: string[]): CliArgs {
   }
   if (!args.url || !args.goals.length || !["cdp", "agent-browser"].includes(args.engine)) {
     throw new Error(
-      "Usage: jev-drive --url URL --goal GOAL [--goal ...] [--engine cdp|agent-browser] [--headed] [--cdp http://host:9222] [--max-steps N] [--allow-file-urls]",
+      "Usage: jev-browse --url URL --goal GOAL [--goal ...] [--engine cdp|agent-browser] [--headed] [--cdp http://host:9222] [--max-steps N] [--allow-file-urls]",
     );
   }
   return args;
@@ -143,7 +143,7 @@ export async function runAgent(
     protocol !== "https:" &&
     !(protocol === "file:" && allowFile)
   ) {
-    throw new Error(`jev-drive only drives http(s) pages; got ${args.url}`);
+    throw new Error(`jev-browse only drives http(s) pages; got ${args.url}`);
   }
   await acquireLock();
   let agent: Agent;

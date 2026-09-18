@@ -64,7 +64,7 @@ export class AgentBrowser implements BrowserDriver {
     // A dedicated persistent profile keeps this session off the shared
     // agent-browser Main profile (SingletonLock) while preserving logins.
     const profile =
-      process.env.JEV_AB_PROFILE ?? join(homedir(), ".jev-drive", "agent-browser-profile");
+      process.env.JEV_AB_PROFILE ?? join(homedir(), ".jev-browse", "agent-browser-profile");
     try {
       // open with no URL first: the session binds to its own tab. open <url> at
       // launch can leave the bound tab on about:blank while the page loads in a

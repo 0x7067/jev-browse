@@ -34,14 +34,14 @@ but model-dependent.
 | | `cdp` (default) | `agent-browser` |
 | --- | --- | --- |
 | Transport | Minimal CDP client, built-in WebSocket | `agent-browser` CLI subprocesses |
-| Browser | Launches Chrome (`--headless=new`, persistent `~/.jev-drive/profile`) or `--cdp http://host:9222` attach | Managed session, dedicated `~/.jev-drive/agent-browser-profile` |
+| Browser | Launches Chrome (`--headless=new`, persistent `~/.jev-browse/profile`) or `--cdp http://host:9222` attach | Managed session, dedicated `~/.jev-browse/agent-browser-profile` |
 | Input | `Input.dispatchMouseEvent`/`insertText` (trusted) — exact reference sequence | agent-browser click/fill/select on tagged `data-jev-node` elements — delegated, close but not identical semantics |
 | Deps | Chrome only | agent-browser binary |
 | Role | Reference-faithful engine | Alternate engine; useful where agent-browser already manages Chrome |
 
 Both implement `BrowserDriver` (`observe / fresh / act / close`) and share the
 same `snapshot.js`, action-space builder, decision call, and freshness guards.
-Runs serialize on a `~/.jev-drive/run.lock` pid lock — concurrent invocations
+Runs serialize on a `~/.jev-browse/run.lock` pid lock — concurrent invocations
 fail fast instead of colliding on Chrome's SingletonLock.
 
 ## Build
@@ -83,13 +83,13 @@ and `skills/jev-browse/`. Each harness also gets its native plugin form:
 
 | Harness | Native plugin | Install |
 | --- | --- | --- |
-| **Pi** | `pi` package manifest in `package.json` (extension + skill) | `pi install ~/.jev-drive/install` (installer runs it) |
-| **Claude Code** | `.claude-plugin/plugin.json` + `.mcp.json` | `claude --plugin-dir ~/.jev-drive/install` per session, or marketplace install |
+| **Pi** | `pi` package manifest in `package.json` (extension + skill) | `pi install ~/.jev-browse/install` (installer runs it) |
+| **Claude Code** | `.claude-plugin/plugin.json` + `.mcp.json` | `claude --plugin-dir ~/.jev-browse/install` per session, or marketplace install |
 | **OpenCode** | `Plugin` hooks module exposing `jev_browse` | bundled plugin file into `~/.config/opencode/plugin/` (installer writes it) |
 | **Codex** | portable `plugin.json` + `mcp.json` + `skills/` (Codex ≥0.117 reads the Agent Plugins format natively) | personal marketplace entry in `~/.agents/plugins/marketplace.json` (installer writes it) |
 
 `scripts/install.mjs` performs all four installs (idempotent). It esbuild-
-bundles every entry point into `~/.jev-drive/install/` — a standalone copy
+bundles every entry point into `~/.jev-browse/install/` — a standalone copy
 that shares nothing with this repo except its shape, so moving the repo only
 means re-running the installer:
 

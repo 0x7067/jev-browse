@@ -1,5 +1,5 @@
 {
-  "name": "jev-drive",
+  "name": "jev-browse",
   "version": "0.1.0",
   "description": "Jev drives a real browser: one goal, an indexed action space, one systemOne decision per step.",
   "type": "module",
@@ -16,8 +16,8 @@
     ]
   },
   "bin": {
-    "jev-drive": "dist/cli.js",
-    "jev-drive-mcp": "dist/mcp.js"
+    "jev-browse": "dist/cli.js",
+    "jev-browse-mcp": "dist/mcp.js"
   },
   "scripts": {
     "build": "tsc && cp src/snapshot.js dist/snapshot.js",

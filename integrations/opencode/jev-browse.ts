@@ -15,7 +15,7 @@ import { tool } from "@opencode-ai/plugin";
 
 import { runAgent } from "../../src/cli.ts";
 
-export const jev_drive = async () => ({
+export const jev_browse = async () => ({
   tool: {
     jev_browse: tool({
       description:
@@ -43,7 +43,7 @@ export const jev_drive = async () => ({
           { signal: context?.abort },
         );
         if (result.status === "error") {
-          throw new Error(result.error ?? "jev-drive run failed");
+          throw new Error(result.error ?? "jev-browse run failed");
         }
         return JSON.stringify(result, null, 2);
       },

@@ -226,7 +226,7 @@ export class CdpBrowser implements BrowserDriver {
     if (!opts.cdpUrl) {
       port = await freePort();
       const profileDir =
-        opts.profileDir ?? process.env.JEV_PROFILE ?? join(homedir(), ".jev-drive", "profile");
+        opts.profileDir ?? process.env.JEV_PROFILE ?? join(homedir(), ".jev-browse", "profile");
       const args = [
         `--remote-debugging-port=${port}`,
         `--user-data-dir=${profileDir}`,

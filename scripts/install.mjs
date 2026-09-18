@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Install jev-drive as a STANDALONE plugin per harness.
+ * Install jev-browse as a STANDALONE plugin per harness.
  *
  *   node scripts/install.mjs [pi|claude|opencode|codex|all|clean]
  *
- * The install materializes a self-contained copy under ~/.jev-drive/install/:
+ * The install materializes a self-contained copy under ~/.jev-browse/install/:
  * esbuild bundles each entry point (SDK inlined, host APIs external) and the
  * portable manifests are copied verbatim. Nothing installed references this
  * repo — every path inside the bundle is plugin-relative.
@@ -12,7 +12,7 @@
  * Layout (mirrors the repo so relative resolution is identical):
  *   install/src/cli.ts|mcp.ts|snapshot.js   — bundled CLI + MCP server
  *   install/integrations/pi/index.ts        — bundled pi extension
- *   install/integrations/opencode/jev-drive.ts + snapshot.js — bundled plugin
+ *   install/integrations/opencode/jev-browse.ts + snapshot.js — bundled plugin
  *   install/plugin.json|mcp.json|skills/|.claude-plugin|.mcp.json|package.json
  *
  * Re-run to refresh after repo changes. Idempotent.
@@ -32,7 +32,7 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DRIVE = fileURLToPath(new URL("..", import.meta.url));
-const INSTALL = join(homedir(), ".jev-drive", "install");
+const INSTALL = join(homedir(), ".jev-browse", "install");
 const ESBUILD = join(DRIVE, "node_modules", ".bin", "esbuild");
 
 const targets = process.argv[2] ? [process.argv[2]] : ["pi", "claude", "opencode", "codex"];
@@ -65,8 +65,8 @@ function materialize() {
   );
   // @opencode-ai/plugin is bundled in — local plugin dirs can't resolve it.
   bundle(
-    join(DRIVE, "integrations", "opencode", "jev-drive.ts"),
-    join(INSTALL, "integrations", "opencode", "jev-drive.ts"),
+    join(DRIVE, "integrations", "opencode", "jev-browse.ts"),
+    join(INSTALL, "integrations", "opencode", "jev-browse.ts"),
   );
   // Each bundle reads ./snapshot.js beside itself at runtime.
   for (const dir of [
@@ -100,7 +100,13 @@ function installPi() {
   const settings = JSON.parse(readFileSync(settingsPath, "utf8"));
   settings.packages = (settings.packages ?? []).filter((p) => {
     const source = typeof p === "string" ? p : p?.source;
-    return !(source && (source.includes("typesafe/drive") || source.includes(".jev-drive/install")));
+    return !(
+      source &&
+      (source.includes(".jev-drive") ||
+        source.includes(".jev-browse") ||
+        source.includes("typesafe/drive") ||
+        source.includes("Development/jev-drive"))
+    );
   });
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
   try {
@@ -113,7 +119,7 @@ function installPi() {
 function installClaude() {
   console.log(`claude: per-session:  claude --plugin-dir ${INSTALL}`);
   console.log(
-    `claude: persistent:   register ${INSTALL} in a local marketplace, then \`claude plugin install jev-drive\``,
+    `claude: persistent:   register ${INSTALL} in a local marketplace, then \`claude plugin install jev-browse\``,
   );
   console.log("claude: exposes jev_browse over MCP (needs Node >=22.18 on PATH)");
 }
@@ -122,7 +128,7 @@ function installOpencode() {
   // OpenCode v2 has no plugin-tool API — register the bundled MCP server
   // instead. Remove stale plugin files from earlier installs.
   for (const dir of ["plugin", "plugins"]) {
-    rmSync(join(homedir(), ".config", "opencode", dir, "jev-drive.ts"), { force: true });
+    rmSync(join(homedir(), ".config", "opencode", dir, "jev-browse.ts"), { force: true });
     rmSync(join(homedir(), ".config", "opencode", dir, "snapshot.js"), { force: true });
   }
   try {
@@ -157,25 +163,25 @@ function installCodex() {
   marketplace.plugins ??= [];
   const name = marketplace.name ?? "personal";
   const path = `./${rel}`;
-  const entry = marketplace.plugins.find((p) => p.name === "jev-drive");
+  const entry = marketplace.plugins.find((p) => p.name === "jev-browse");
   if (!entry) {
     marketplace.plugins.push({
-      name: "jev-drive",
+      name: "jev-browse",
       source: { source: "local", path },
       policy: { installation: "AVAILABLE", authentication: "ON_INSTALL" },
       category: "Productivity",
     });
     writeFileSync(marketplacePath, JSON.stringify(marketplace, null, 2) + "\n");
-    console.log(`codex: added jev-drive to ${marketplacePath}`);
+    console.log(`codex: added jev-browse to ${marketplacePath}`);
   } else if (entry.source?.path !== path) {
     entry.source.path = path;
     writeFileSync(marketplacePath, JSON.stringify(marketplace, null, 2) + "\n");
-    console.log(`codex: updated jev-drive path in ${marketplacePath}`);
+    console.log(`codex: updated jev-browse path in ${marketplacePath}`);
   } else {
     console.log("codex: marketplace entry already present");
   }
   const configPath = join(home, ".codex", "config.toml");
-  const key = `[plugins."jev-drive@${name}"]`;
+  const key = `[plugins."jev-browse@${name}"]`;
   const existing = existsSync(configPath) ? readFileSync(configPath, "utf8") : "";
   mkdirSync(dirname(configPath), { recursive: true });
   if (!existing.includes(key)) {

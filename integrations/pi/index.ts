@@ -1,4 +1,4 @@
-// Pi extension for jev-drive. Registers a `jev_browse` tool that runs the Jev
+// Pi extension for jev-browse. Registers a `jev_browse` tool that runs the Jev
 // driver loop in-process and streams step events as tool-call updates.
 //
 // Dev: this file resolves ../../src/* relative to itself inside the repo
@@ -60,7 +60,7 @@ export default function (pi: ExtensionAPI) {
       );
       if (result.status === "error") {
         // Throw so the call is marked as a tool error, not a prose result.
-        throw new Error(result.error ?? "jev-drive run failed");
+        throw new Error(result.error ?? "jev-browse run failed");
       }
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],

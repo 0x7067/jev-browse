@@ -120,7 +120,7 @@ async function handle(request: { id?: unknown; method?: string; params?: any }):
       respond(id, {
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
-        serverInfo: { name: "jev-drive", version: "0.1.0" },
+        serverInfo: { name: "jev-browse", version: "0.1.0" },
       });
       return;
     case "notifications/initialized":
