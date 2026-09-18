@@ -1,0 +1,102 @@
+tools/oxlint/anti-slop/rules/no-conditional-empty-object-spread.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-49
+tools/oxlint/anti-slop/rules/no-unknown-type-aliases.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-54
+tools/oxlint/anti-slop/shared/lexical-type-parameters.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-61
+tools/oxlint/anti-slop/rules/no-reflect-get.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-28
+tools/oxlint/anti-slop/shared/type-alias-resolution.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-250
+tools/oxlint/anti-slop/shared/reflect-method.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-24
+tools/oxlint/anti-slop/rules/require-readable-spacing.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-47
+tools/oxlint/anti-slop/shared/function-parameters.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-49
+tools/oxlint/anti-slop/rules/no-module-mocking.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-80
+tools/oxlint/anti-slop/shared/dictionary-types.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-515
+tools/oxlint/anti-slop/rules/no-shape-in-symbol-names.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-46
+tools/oxlint/anti-slop/shared/scope.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-15
+tools/oxlint/anti-slop/rules/no-chained-type-assertions.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-77
+tools/oxlint/anti-slop/rules/no-unsafe-dictionary-type.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-154
+tools/oxlint/anti-slop/shared/array-method.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-94
+tools/oxlint/anti-slop/effect/rules/no-service-constructor-imports.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-52
+tools/oxlint/anti-slop/rules/no-reduce-accumulator-copy.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-109
+tools/oxlint/anti-slop/rules/no-unknown-parameters.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-69
+tools/oxlint/anti-slop/rules/require-safety-comment-for-type-assertion.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-131
+tools/oxlint/anti-slop/effect/index.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-21
+tools/oxlint/anti-slop/rules/no-object-parameters.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-83
+tools/oxlint/anti-slop/index.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-47
+tools/oxlint/anti-slop/effect/rules/no-manual-tagged-construction.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-37
+tools/oxlint/anti-slop/rules/no-reflect-apply.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-28
+tools/oxlint/anti-slop/effect/rules/prefer-effect-match.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-54
+tools/oxlint/anti-slop/rules/no-runtime-typeof.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-77
+tools/oxlint/anti-slop/rules/no-array-filter-map.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-28
+tools/oxlint/anti-slop/rules/no-known-value-widening.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-415
+tools/oxlint/anti-slop/effect/rules/no-manual-tag-comparison.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-45
+tools/oxlint/anti-slop/UPSTREAM.md
+  s_fc055f79654e23::t_908bad6816bdb6 1-19
+tools/oxlint/anti-slop/rules/no-unknown-returns.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-82
+oxlint.config.ts
+  s_fc055f79654e23::t_2d46cc1cedafb1 1-41
+tools/oxlint/anti-slop/effect/rules/no-manual-effect-error-tag.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-52
+package.json
+  s_fc055f79654e23::t_5c0a26a193ae32 36,39
+  s_fc055f79654e23::t_77d96dab4d0c07 24
+tools/oxlint/anti-slop/rules/no-widen-then-assert.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-366
+tools/oxlint/anti-slop/effect/shared/tagged-values.ts
+  s_fc055f79654e23::t_f1cb931db7701a 1-97
+package-lock.json
+  s_fc055f79654e23::t_e79e58a46cba40 2,8,10,15-16,20,23,610-969,1215-1263
+tools/oxlint/anti-slop/vendor/eslint-stylistic/LICENSE
+  s_fc055f79654e23::t_49595abb92a5d2 1-22
+tools/oxlint/anti-slop/vendor/eslint-stylistic/UPSTREAM.md
+  s_fc055f79654e23::t_f95a6b40ebbd3f 1-28
+tools/oxlint/anti-slop/vendor/eslint-stylistic/padding-line-ast.ts
+  s_fc055f79654e23::t_e26ce5b96ebb59 1-51
+tools/oxlint/anti-slop/vendor/eslint-stylistic/padding-line-between-statements.ts
+  s_fc055f79654e23::t_c1000aa508a1d2 1-906
+tools/oxlint/anti-slop/vendor/eslint-stylistic/padding-line-options.d.ts
+  s_fc055f79654e23::t_a95cdeacea35f3 1-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a2cb4e49416a9ea23d522c99a0e01813d8e6c018",
+  "prompts": {},
+  "sessions": {
+    "s_fc055f79654e23": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b695-dd0f-74ad-8dad-3ac02550b7c8",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
