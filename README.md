@@ -6,7 +6,7 @@
 
 Give it one goal. [TypeSafe's Jev](https://docs.typesafe.ai) picks an operation and an element. A small LLM writes text only when the operation is `TYPE_TEXT`. It ships with two interchangeable browser engines and installs on Pi, Claude Code, Codex, and any MCP-capable harness.
 
-**Zürich to London on Google Flights in 18.2 seconds.** One natural-language goal, generated city names, calendar clicks, and loading waits included.
+**Zürich to London on Google Flights in 10.2 seconds.** One natural-language goal, generated city names, calendar clicks, and loading waits included.
 
 [![A real Google Flights search at 1× speed: typed cities, clicked calendar, verified results page](docs/demo.gif)](docs/demo.mp4)
 
@@ -172,7 +172,7 @@ table rather than offer dead targets.
 
 ## Evidence and limits
 
-The current video is an **18,210 ms** Google Flights run. Timing starts
+The current video is a **10,209 ms** Google Flights run. Timing starts
 after initial page observation and includes model calls, generated text,
 browser work, and loading waits. The final frame is a verified results page:
 one-way Zürich to London on September 20, 2026, with real fares. The video
