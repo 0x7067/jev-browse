@@ -6,7 +6,7 @@
 import type { TypeSafeClient, Questions, ChoiceCriteria } from "@typesafe-ai/sdk";
 
 import { NEXT_ACTION, TARGET, TEXT_VALUE } from "./questions.ts";
-import type { ObservedAction, PageState } from "./types.ts";
+import type { ActionKind, ObservedAction, PageState } from "./types.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -81,7 +81,7 @@ export function actionSpace(actions: ObservedAction[]) {
   const targets: Record<string, Record<string, ObservedAction>> = {};
   const controls: Record<string, ObservedAction> = {};
 
-  const operations: Record<string, string> = {
+  const operations: Partial<Record<ActionKind, string>> = {
     click: "CLICK",
     fill: "TYPE_TEXT",
     select: "SELECT",
@@ -90,8 +90,9 @@ export function actionSpace(actions: ObservedAction[]) {
 
   for (const action of actions) {
     const kind = action.kind;
+    const operation = operations[kind];
 
-    if (!(kind in operations)) {
+    if (operation === undefined) {
       controls[action.id.toUpperCase()] = action;
       continue;
     }
@@ -120,7 +121,6 @@ export function actionSpace(actions: ObservedAction[]) {
       elements.push(element);
     }
 
-    const operation = operations[kind];
     const group = (targets[operation] ??= {});
     const element = elements[Number(index) - 1];
 
@@ -161,17 +161,23 @@ export async function choose(
 ): Promise<Decision> {
   const { elements, targets, controls } = actionSpace(state.actions);
 
-  const labels: Record<string, string> = {
-    CLICK: "Click an element, button, menu option, autocomplete suggestion, or calendar day.",
-    TYPE_TEXT:
+  const labels = new Map([
+    ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
+    [
+      "TYPE_TEXT",
       "Enter or replace text in an editable field. A small LLM will supply the value from the goal.",
-    SELECT: "Select an observed dropdown value.",
-    HOVER: "Hover over an element to reveal menus, tooltips, or hover-only controls.",
-  };
+    ],
+    ["SELECT", "Select an observed dropdown value."],
+    ["HOVER", "Hover over an element to reveal menus, tooltips, or hover-only controls."],
+  ]);
 
   const operations: ChoiceCriteria = {};
 
-  for (const key of Object.keys(targets)) operations[key] = labels[key];
+  for (const key of Object.keys(targets)) {
+    const label = labels.get(key);
+
+    if (label !== undefined) operations[key] = label;
+  }
 
   for (const [key, value] of Object.entries(controls)) operations[key] = value.label;
   operations.DONE = "Every requirement is visibly satisfied.";

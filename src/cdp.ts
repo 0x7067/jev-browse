@@ -23,22 +23,31 @@ const READ_STATE = loadSnapshotJs();
 const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
 
 /** Input.dispatchKeyEvent params per key name (press actions). */
-const KEYS: Record<string, Record<string, unknown>> = {
-  enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" },
-  tab: { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 },
-  escape: { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 },
-  backspace: { key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 },
-  delete: { key: "Delete", code: "Delete", windowsVirtualKeyCode: 46 },
-  arrowup: { key: "ArrowUp", code: "ArrowUp", windowsVirtualKeyCode: 38 },
-  arrowdown: { key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 },
-  arrowleft: { key: "ArrowLeft", code: "ArrowLeft", windowsVirtualKeyCode: 37 },
-  arrowright: { key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 },
-  home: { key: "Home", code: "Home", windowsVirtualKeyCode: 36 },
-  end: { key: "End", code: "End", windowsVirtualKeyCode: 35 },
-  pageup: { key: "PageUp", code: "PageUp", windowsVirtualKeyCode: 33 },
-  pagedown: { key: "PageDown", code: "PageDown", windowsVirtualKeyCode: 34 },
-  space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " },
-};
+interface KeyEventParams {
+  key: string;
+  code: string;
+  windowsVirtualKeyCode: number;
+  text?: string;
+}
+
+const KEYS: ReadonlyMap<string, KeyEventParams> = new Map(
+  Object.entries({
+    enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" },
+    tab: { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 },
+    escape: { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 },
+    backspace: { key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 },
+    delete: { key: "Delete", code: "Delete", windowsVirtualKeyCode: 46 },
+    arrowup: { key: "ArrowUp", code: "ArrowUp", windowsVirtualKeyCode: 38 },
+    arrowdown: { key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 },
+    arrowleft: { key: "ArrowLeft", code: "ArrowLeft", windowsVirtualKeyCode: 37 },
+    arrowright: { key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 },
+    home: { key: "Home", code: "Home", windowsVirtualKeyCode: 36 },
+    end: { key: "End", code: "End", windowsVirtualKeyCode: 35 },
+    pageup: { key: "PageUp", code: "PageUp", windowsVirtualKeyCode: 33 },
+    pagedown: { key: "PageDown", code: "PageDown", windowsVirtualKeyCode: 34 },
+    space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " },
+  }),
+);
 
 /** Input types typed via real key events — insertText cannot drive them. */
 const KEY_TYPED_INPUTS = new Set(["date", "time", "datetime-local", "month", "week"]);
@@ -138,7 +147,7 @@ class CdpSocket {
   }
 }
 
-const CHROME_CANDIDATES: Record<string, string[]> = {
+const CHROME_CANDIDATES: Partial<Record<NodeJS.Platform, readonly string[]>> = {
   darwin: [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
@@ -482,7 +491,7 @@ export class CdpBrowser implements BrowserDriver {
     }
 
     if (kind === "press") {
-      const key = KEYS[String(action.key)];
+      const key = KEYS.get(String(action.key));
 
       if (!key) throw new Error(`Unknown key ${action.key}`);
       await this.call("Input.dispatchKeyEvent", { type: "keyDown", ...key });

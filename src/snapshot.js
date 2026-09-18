@@ -24,7 +24,9 @@
       .map(id=>name(doc.getElementById(id),seen)).filter(Boolean).join(' ');
 
     return referenced || e.getAttribute('aria-label') ||
-      [...(e.labels||[])].flatMap(l=>{const s=name(l,seen);return s?[s]:[]}).join(' ') ||
+      [...(e.labels||[])].flatMap(l=>{const s=name(l,seen);
+
+return s?[s]:[]}).join(' ') ||
       (['button','submit','reset'].includes(e.type) ? e.value : '') || e.getAttribute('alt') ||
       (e.tagName==='INPUT' ? '' : [...e.childNodes].map(n=>n.nodeType===3 ? n.textContent :
         n.nodeType===1 && n.getAttribute('aria-hidden')!=='true' ? name(n,seen) : '').join(' ').trim()) ||
@@ -113,6 +115,7 @@
         rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height}};
 
       if (frame) base.frame=frame;
+
       if (shadow) base.shadow=true;
 
       for (const key of ['checked','selected','expanded']) {
