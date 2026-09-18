@@ -106,11 +106,13 @@ function installPi() {
   }
 
   const settings = JSON.parse(readFileSync(settingsPath, "utf8"));
+  // JSON scalars only: a value is a primitive string iff it survives String() unchanged.
+  const isJsonString = (v) => v === String(v);
   settings.packages = (settings.packages ?? []).filter((p) => {
-    const source = typeof p === "string" ? p : p?.source;
+    const source = isJsonString(p) ? p : p?.source;
 
     return !(
-      source &&
+      isJsonString(source) &&
       (source.includes(".jev-drive") ||
         source.includes(".jev-browse") ||
         source.includes("typesafe/drive") ||

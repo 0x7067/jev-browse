@@ -127,6 +127,11 @@ async function screencast(wsUrl, onFrame) {
     });
 
   let stopped = false;
+  ws.addEventListener("close", () => {
+    // The agent closes its tab on exit — a dead socket must not hang stop().
+    for (const p of pending.values()) p.reject(new Error("CDP connection closed"));
+    pending.clear();
+  });
   ws.addEventListener("message", async (event) => {
     const msg = JSON.parse(String(event.data));
 
@@ -135,7 +140,9 @@ async function screencast(wsUrl, onFrame) {
 
       if (p) {
         pending.delete(msg.id);
-        msg.error ? p.reject(new Error(msg.error.message)) : p.resolve(msg.result ?? {});
+
+        if (msg.error) p.reject(new Error(msg.error.message));
+        else p.resolve(msg.result ?? {});
       }
 
       return;
@@ -162,7 +169,10 @@ async function screencast(wsUrl, onFrame) {
     async stop() {
       if (stopped) return;
       stopped = true;
-      await send("Page.stopScreencast").catch(() => {});
+      await Promise.race([
+        send("Page.stopScreencast").catch(() => {}),
+        sleep(2000),
+      ]);
       ws.close();
     },
   };
@@ -252,6 +262,8 @@ async function main() {
 
           if (t0 === null) t0 = ts;
           stamps.push(ts);
+          // Persist incrementally — a crash must not lose frame timing.
+          writeFileSync(join(framesDir, "stamps.json"), JSON.stringify(stamps));
           writeFileSync(
             join(framesDir, `f_${String(++frameIndex).padStart(6, "0")}.jpg`),
             Buffer.from(data, "base64"),
