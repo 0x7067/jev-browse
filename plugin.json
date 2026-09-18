@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "jev-drive",
+  "version": "0.1.0",
+  "description": "TypeSafe Jev drives a real browser: one goal, an indexed action space, one systemOne decision per step. Exposes the jev_browse MCP tool.",
+  "license": "MIT",
+  "keywords": ["browser", "automation", "typesafe", "jev", "agent"],
+  "extensions": {
+    "works.earendil.pi": {
+      "extension": "integrations/pi/index.ts"
+    },
+    "ai.opencode.tools": {
+      "tool": "integrations/opencode/jev_browse.ts"
+    }
+  }
+}
