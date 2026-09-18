@@ -6,16 +6,17 @@
  */
 
 import { execFile } from "node:child_process";
-import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
+import { fingerprint, isJsonObject } from "./json.ts";
 import { loadSnapshotJs } from "./snapshot-loader.ts";
 import {
   StalePage,
   type ActResult,
   type BrowserDriver,
+  type JsonValue,
   type ObservedAction,
   type PageState,
 } from "./types.ts";
@@ -29,25 +30,6 @@ const READ_STATE = loadSnapshotJs();
 const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
 
 const TAG_ATTR = "data-jev-node";
-
-function fingerprint(state: Record<string, unknown>): string {
-  const content: Record<string, unknown> = {};
-
-  for (const k of ["url", "text", "actions", "scroll"]) content[k] = state[k];
-
-  const canonical = (v: unknown): unknown =>
-    Array.isArray(v)
-      ? v.map(canonical)
-      : v && typeof v === "object"
-        ? Object.fromEntries(
-            Object.keys(v as object)
-              .sort()
-              .map((k) => [k, canonical((v as Record<string, unknown>)[k])]),
-          )
-        : v;
-
-  return createHash("sha256").update(JSON.stringify(canonical(content))).digest("hex");
-}
 
 export interface AgentBrowserOptions {
   /** agent-browser binary; default "agent-browser" on PATH. */
@@ -115,7 +97,7 @@ export class AgentBrowser implements BrowserDriver {
     return env;
   }
 
-  private async run(args: string[]): Promise<any> {
+  private async run(args: string[]): Promise<JsonValue> {
     const argv = ["--session", this.session, "--json", ...args];
     let stdout: string;
 
@@ -142,7 +124,7 @@ export class AgentBrowser implements BrowserDriver {
     return parseOutput(stdout);
   }
 
-  private async evaluate(expression: string): Promise<any> {
+  private async evaluate<T>(expression: string): Promise<T | undefined> {
     // eval --stdin keeps large scripts out of argv.
     const argv = ["--session", this.session, "--json", "eval", "--stdin"];
     let stdout: string;
@@ -187,9 +169,13 @@ export class AgentBrowser implements BrowserDriver {
     }
 
     // --json envelope: {success, data:{result: <eval value>}}
-    if (parsed && typeof parsed === "object" && "result" in parsed) return parsed.result;
+    if (isJsonObject(parsed) && "result" in parsed) {
+      // SAFETY: the evaluated expression's return contract is declared by each call site's T.
+      return parsed.result as T;
+    }
 
-    return parsed;
+    // SAFETY: same contract — a bare eval value rather than an envelope payload.
+    return parsed as T | undefined;
   }
 
   async observe(): Promise<PageState> {
@@ -226,17 +212,15 @@ export class AgentBrowser implements BrowserDriver {
 
     for (let attempt = 0; attempt < 10; attempt++) {
       try {
-        const info = await this.evaluate(READ_STATE);
+        const info = await this.evaluate<PageState | null>(READ_STATE);
 
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
         // CLI selectors cannot reach iframe/shadow elements — hide them so the
         // model can't pick unexecutable actions.
-        info.actions = info.actions.filter(
-          (a: ObservedAction) => !a.frame && !a.shadow,
-        );
+        info.actions = info.actions.filter((a) => !a.frame && !a.shadow);
 
-        return info as PageState;
+        return info;
       } catch (error) {
         if (!(error instanceof StalePage) || attempt === 9) throw error;
         await sleep(20);
@@ -250,7 +234,7 @@ export class AgentBrowser implements BrowserDriver {
     if (action && (action.kind === "click" || action.kind === "select")) {
       const node = action.node;
 
-      if (typeof node !== "number") return false;
+      if (node === undefined) return false;
 
       const current = await this.evaluate(
         `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`,
@@ -298,11 +282,11 @@ export class AgentBrowser implements BrowserDriver {
       return { executed: action.id };
     }
 
-    if (typeof action.node !== "number") throw new Error("Invalid observed node");
+    if (action.node === undefined) throw new Error("Invalid observed node");
 
     // Tag the observed node so agent-browser can target it by selector. The
     // model never emits selectors; code maps its own node id to an attribute.
-    const tagged = await this.evaluate(`(() => {
+    const tagged = await this.evaluate<string | false>(`(() => {
       const e=window.__jevFast?.nodes.get(${action.node});
       if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]') ||
           !e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) return false;
@@ -372,7 +356,7 @@ export class AgentBrowser implements BrowserDriver {
 }
 
 /** agent-browser --json prints {success, data, error}; fall back to raw JSON/text. */
-function parseOutput(stdout: string): any {
+function parseOutput(stdout: string): JsonValue {
   const text = stdout.trim();
 
   if (!text) return null;
@@ -380,7 +364,7 @@ function parseOutput(stdout: string): any {
   try {
     const parsed = JSON.parse(text);
 
-    if (parsed && typeof parsed === "object" && "success" in parsed) {
+    if (isJsonObject(parsed) && "success" in parsed) {
       if (parsed.success === false) {
         throw new Error(String(parsed.error ?? "agent-browser call failed").slice(0, 500));
       }
