@@ -17,7 +17,7 @@ import { Agent, type RunResult } from "./agent.ts";
 import { loadDotEnv } from "./env.ts";
 import { CdpBrowser } from "./cdp.ts";
 import { AgentBrowser } from "./abrowser.ts";
-import type { BrowserDriver } from "./types.ts";
+import type { BrowserDriver, JsonValue } from "./types.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -96,6 +96,7 @@ function parseArgs(argv: string[]): CliArgs {
         args.goals.push(next()!);
         break;
       case "--engine":
+        // SAFETY: engine names outside the allowlist are rejected by the usage check below.
         args.engine = next() as CliArgs["engine"];
         break;
       case "--headed":
@@ -141,7 +142,7 @@ export function makeDriver(args: CliArgs): (url: string) => Promise<BrowserDrive
 export async function runAgent(
   args: CliArgs,
   opts: {
-    onEvent?: (event: { type: string; [k: string]: unknown }) => void;
+    onEvent?: (event: { type: string; [k: string]: JsonValue }) => void;
     signal?: AbortSignal;
   } = {},
 ): Promise<RunResult> {
@@ -189,7 +190,7 @@ export async function runAgent(
 /** Process-owning run: embeddable core plus signal handlers for CLI/MCP. */
 export async function runOnce(
   args: CliArgs,
-  onEvent?: (event: { type: string; [k: string]: unknown }) => void,
+  onEvent?: (event: { type: string; [k: string]: JsonValue }) => void,
 ): Promise<RunResult> {
   // An external kill must still close the browser — Node's default SIGTERM
   // disposition skips finally blocks entirely. Bound the cleanup so a hung

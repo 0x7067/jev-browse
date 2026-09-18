@@ -10,7 +10,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 import { actionSpace, choose, fieldContext, fieldText, type Decision } from "./model.ts";
 import { makeClient } from "./env.ts";
-import { StalePage, type BrowserDriver, type PageState } from "./types.ts";
+import { StalePage, type BrowserDriver, type JsonValue, type PageState } from "./types.ts";
 
 export interface AgentOptions {
   url: string;
@@ -280,7 +280,7 @@ export class Agent {
     return entry;
   }
 
-  async run(onEvent?: (event: { type: string; [k: string]: unknown }) => void): Promise<RunResult> {
+  async run(onEvent?: (event: { type: string; [k: string]: JsonValue }) => void): Promise<RunResult> {
     while (this.status === "ready") {
       await this.tick();
       const last = this.history[this.history.length - 1];
