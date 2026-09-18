@@ -4,6 +4,11 @@
   "description": "Jev drives a real browser: one goal, an indexed action space, one systemOne decision per step.",
   "type": "module",
   "private": true,
+  "keywords": ["pi-package"],
+  "pi": {
+    "extensions": ["./integrations/pi"],
+    "skills": ["./skills"]
+  },
   "bin": {
     "jev-drive": "dist/cli.js",
     "jev-drive-mcp": "dist/mcp.js"

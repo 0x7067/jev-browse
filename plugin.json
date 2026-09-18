@@ -9,8 +9,15 @@
     "works.earendil.pi": {
       "extension": "integrations/pi/index.ts"
     },
-    "ai.opencode.tools": {
-      "tool": "integrations/opencode/jev_browse.ts"
+    "ai.opencode": {
+      "plugin": "integrations/opencode/jev-drive.ts"
+    },
+    "com.openai": {
+      "interface": {
+        "displayName": "Jev Drive",
+        "shortDescription": "TypeSafe Jev drives a real browser toward one goal",
+        "category": "Developer Tools"
+      }
     }
   }
 }

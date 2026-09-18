@@ -63,33 +63,28 @@ installs don't need the build step.
 Step events stream to **stderr** as JSONL; the final result JSON is the only
 stdout payload. Exit 0 on `done`, 2 on `blocked`, 1 on error.
 
-## Packaging
+## Packaging and install
 
 `drive/` is a portable [Agent Plugin](https://agent-plugins.org/): root
 `plugin.json` manifest, `mcp.json` (stdio → `node ${PLUGIN_ROOT}/src/mcp.ts`),
-and `skills/jev-browse/`. Clients that implement the spec load the tool and
-the skill with no harness-specific work.
+and `skills/jev-browse/`. Each harness also gets its native plugin form:
 
-| Harness | Install |
-| --- | --- |
-| **Pi** | Register `integrations/pi/index.ts` in `~/.pi/agent/settings.json` extensions. Adds a `jev_browse` tool that streams step events into the tool call. |
-| **Claude Code** | `claude --plugin-dir /path/to/drive` for a session, or register `drive/` as a local marketplace plugin — it carries `.claude-plugin/plugin.json` + `.mcp.json` and exposes `jev_browse` over MCP via `node src/mcp.ts` (needs Node ≥22.18 on PATH for native type stripping). For a plain project `.mcp.json`, `${CLAUDE_PLUGIN_ROOT}` doesn't resolve — use an absolute path: `"args": ["/path/to/drive/src/mcp.ts"]`. |
-| **OpenCode** | Symlink `integrations/opencode/jev_browse.ts` into `~/.config/opencode/tools/` (or `.opencode/tools/`) — copying requires `JEV_DRIVE_CLI=/path/to/drive/src/cli.ts`. Or use MCP config below. |
-| **Codex / other MCP** | `node /path/to/drive/src/mcp.ts` is a stdio MCP server |
+| Harness | Native plugin | Install |
+| --- | --- | --- |
+| **Pi** | `pi` package manifest in `package.json` (extension + skill) | `pi install /path/to/drive` |
+| **Claude Code** | `.claude-plugin/plugin.json` + `.mcp.json` | `claude --plugin-dir /path/to/drive` per session, or marketplace install |
+| **OpenCode** | `Plugin` hooks module exposing `jev_browse` | stub into `~/.config/opencode/plugin/` (installer writes it) |
+| **Codex** | portable `plugin.json` + `mcp.json` + `skills/` (Codex ≥0.117 reads the Agent Plugins format natively) | personal marketplace entry in `~/.agents/plugins/marketplace.json` (installer writes it) |
 
-OpenCode MCP config alternative (`opencode.json`):
+`scripts/install.mjs` performs all four installs (idempotent):
 
-```json
-{ "mcp": { "jev": { "type": "local", "command": ["node", "/path/to/drive/src/mcp.ts"], "enabled": true } } }
+```bash
+node scripts/install.mjs        # all four
+node scripts/install.mjs pi     # or one target
 ```
 
-Codex (`~/.codex/config.toml`):
-
-```toml
-[mcp_servers.jev]
-command = "node"
-args = ["/path/to/drive/src/mcp.ts"]
-```
+The Codex/OpenCode paths bake in absolute paths — moving this repo means
+re-running the installer.
 
 ## Semantics preserved from the reference
 
