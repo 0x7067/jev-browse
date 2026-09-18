@@ -110,8 +110,10 @@
       const shadow=e.getRootNode() instanceof ShadowRoot;
 
       const base={node:identity(e),role:rname,label:name(e)||rname,
-        rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height},...(frame?{frame}:{}),
-        ...(shadow?{shadow:true}:{})};
+        rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height}};
+
+      if (frame) base.frame=frame;
+      if (shadow) base.shadow=true;
 
       for (const key of ['checked','selected','expanded']) {
         const value=e.getAttribute('aria-'+key);
