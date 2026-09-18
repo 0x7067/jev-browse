@@ -7,18 +7,18 @@
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { createServer } from "node:net";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
+import { loadSnapshotJs } from "./snapshot.ts";
 import { StalePage, type BrowserDriver, type ObservedAction, type PageState } from "./types.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Atomically read visible content and controls, preserving actual DOM node identity.
-const READ_STATE = readFileSync(fileURLToPath(new URL("./snapshot.js", import.meta.url)), "utf8");
+const READ_STATE = loadSnapshotJs();
 const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
 
 function fingerprint(state: Record<string, unknown>): string {

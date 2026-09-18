@@ -63,10 +63,10 @@ function materialize() {
     join(INSTALL, "integrations", "pi", "index.ts"),
     ["typebox", "@earendil-works/*"],
   );
+  // @opencode-ai/plugin is bundled in — local plugin dirs can't resolve it.
   bundle(
     join(DRIVE, "integrations", "opencode", "jev-drive.ts"),
     join(INSTALL, "integrations", "opencode", "jev-drive.ts"),
-    ["@opencode-ai/plugin"],
   );
   // Each bundle reads ./snapshot.js beside itself at runtime.
   for (const dir of [
@@ -119,15 +119,25 @@ function installClaude() {
 }
 
 function installOpencode() {
-  const pluginDir = join(homedir(), ".config", "opencode", "plugin");
-  mkdirSync(pluginDir, { recursive: true });
-  cpSync(
-    join(INSTALL, "integrations", "opencode", "jev-drive.ts"),
-    join(pluginDir, "jev-drive.ts"),
-  );
-  // The bundle reads ./snapshot.js beside itself.
-  cpSync(join(DRIVE, "src", "snapshot.js"), join(pluginDir, "snapshot.js"));
-  console.log(`opencode: installed ${join(pluginDir, "jev-drive.ts")}`);
+  // OpenCode v2 has no plugin-tool API — register the bundled MCP server
+  // instead. Remove stale plugin files from earlier installs.
+  for (const dir of ["plugin", "plugins"]) {
+    rmSync(join(homedir(), ".config", "opencode", dir, "jev-drive.ts"), { force: true });
+    rmSync(join(homedir(), ".config", "opencode", dir, "snapshot.js"), { force: true });
+  }
+  try {
+    execFileSync(
+      "opencode",
+      ["mcp", "add", "jev", "--global", "--", "node", join(INSTALL, "src", "mcp.ts")],
+      { stdio: "inherit" },
+    );
+    console.log("opencode: registered jev MCP server (global)");
+  } catch {
+    console.log("opencode: `opencode mcp add` failed — add this to ~/.config/opencode/opencode.json:");
+    console.log(
+      `  "mcp": { "servers": { "jev": { "type": "local", "command": ["node", "${join(INSTALL, "src", "mcp.ts")}"] } } }`,
+    );
+  }
 }
 
 function installCodex() {

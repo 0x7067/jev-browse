@@ -7,18 +7,17 @@
 
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
+import { loadSnapshotJs } from "./snapshot.ts";
 import { StalePage, type BrowserDriver, type ObservedAction, type PageState } from "./types.ts";
 
 const execFileAsync = promisify(execFile);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const READ_STATE = readFileSync(fileURLToPath(new URL("./snapshot.js", import.meta.url)), "utf8");
+const READ_STATE = loadSnapshotJs();
 const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
 const TAG_ATTR = "data-jev-node";
 

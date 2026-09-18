@@ -7,12 +7,15 @@
  * Dev: resolve ../../src/* relative to this file (npm install in drive/ first).
  */
 
-import type { Plugin } from "@opencode-ai/plugin";
+// Named export: OpenCode v2 treats each exported function as a plugin and
+// validates a default export as a {id, setup} definition, which a plain
+// plugin function fails. `@opencode-ai/plugin` is bundled in at install
+// time — local plugin dirs have no node_modules resolution.
 import { tool } from "@opencode-ai/plugin";
 
 import { runAgent } from "../../src/cli.ts";
 
-const JevDrivePlugin: Plugin = async () => ({
+export const jev_drive = async () => ({
   tool: {
     jev_browse: tool({
       description:
@@ -47,5 +50,3 @@ const JevDrivePlugin: Plugin = async () => ({
     }),
   },
 });
-
-export default JevDrivePlugin;

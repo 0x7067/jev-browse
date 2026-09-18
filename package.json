@@ -31,6 +31,7 @@
     "@typesafe-ai/sdk": "^0.6.0"
   },
   "devDependencies": {
+    "@opencode-ai/plugin": "^1.18.31",
     "@types/node": "^22.0.0",
     "esbuild": "^0.28.2",
     "tsx": "^4.0.0",
