@@ -15,6 +15,18 @@ import { createInterface } from "node:readline";
 
 import { runOnce } from "./cli.ts";
 import { loadDotEnv } from "./env.ts";
+import { isFiniteNumber, isString } from "./json.ts";
+import type { JsonObject, JsonValue } from "./types.ts";
+
+/** One decoded JSON-RPC request line (only the fields this server reads). */
+interface JsonRpcRequest {
+  id?: JsonValue;
+  method?: string;
+  params?: {
+    name?: string;
+    arguments?: JsonObject;
+  };
+}
 
 const PROTOCOL_VERSION = "2024-11-05";
 
@@ -58,15 +70,15 @@ const TOOL = {
   },
 };
 
-function respond(id: unknown, result: unknown): void {
+function respond(id: JsonValue, result: JsonValue): void {
   process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id, result }) + "\n");
 }
 
-function respondError(id: unknown, code: number, message: string): void {
+function respondError(id: JsonValue, code: number, message: string): void {
   process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } }) + "\n");
 }
 
-function toolResult(id: unknown, text: string, isError = false): void {
+function toolResult(id: JsonValue, text: string, isError = false): void {
   respond(id, { content: [{ type: "text", text }], isError });
 }
 
@@ -83,7 +95,7 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   return next;
 }
 
-async function callJevBrowse(id: unknown, args: Record<string, unknown>): Promise<void> {
+async function callJevBrowse(id: JsonValue, args: JsonObject): Promise<void> {
   const unknown = Object.keys(args).filter((k) => !ALLOWED_ARGS.has(k));
 
   if (unknown.length) {
@@ -92,7 +104,7 @@ async function callJevBrowse(id: unknown, args: Record<string, unknown>): Promis
     return;
   }
 
-  if (typeof args.goal !== "string" || typeof args.url !== "string") {
+  if (!isString(args.goal) || !isString(args.url)) {
     respondError(id, -32602, "jev_browse requires { goal: string, url: string }");
 
     return;
@@ -106,7 +118,7 @@ async function callJevBrowse(id: unknown, args: Record<string, unknown>): Promis
         engine: args.engine === "agent-browser" ? "agent-browser" : "cdp",
         headed: false,
         cdpUrl: process.env.JEV_CDP_URL,
-        maxSteps: typeof args.max_steps === "number" ? args.max_steps : undefined,
+        maxSteps: isFiniteNumber(args.max_steps) ? args.max_steps : undefined,
       },
       (event) =>
         process.stderr.write(JSON.stringify({ call: id, ...event }) + "\n"),
@@ -122,7 +134,7 @@ async function callJevBrowse(id: unknown, args: Record<string, unknown>): Promis
   }
 }
 
-async function handle(request: { id?: unknown; method?: string; params?: any }): Promise<void> {
+async function handle(request: JsonRpcRequest): Promise<void> {
   const { id, method, params } = request;
 
   switch (method) {
@@ -168,7 +180,7 @@ const rl = createInterface({ input: process.stdin, terminal: false });
 
 rl.on("line", (line) => {
   if (!line.trim()) return;
-  let request: { id?: unknown; method?: string; params?: any };
+  let request: JsonRpcRequest;
 
   try {
     request = JSON.parse(line);
