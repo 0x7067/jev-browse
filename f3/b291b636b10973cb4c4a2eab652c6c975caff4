@@ -1,0 +1,30 @@
+scripts/install.mjs
+  s_fc055f79654e23::t_1893d65dfd5063 109-110,112,115
+scripts/record_demo.mjs
+  s_fc055f79654e23::t_4d3997aa68ff71 143-145
+  s_0503a55d84ed51::t_16782412e52a6c 130-134,172-175,265-266
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f3b291b636b10973cb4c4a2eab652c6c975caff4",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    },
+    "s_fc055f79654e23": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b695-dd0f-74ad-8dad-3ac02550b7c8",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
