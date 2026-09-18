@@ -105,7 +105,7 @@ function installPi() {
       (source.includes(".jev-drive") ||
         source.includes(".jev-browse") ||
         source.includes("typesafe/drive") ||
-        source.includes("Development/jev-drive"))
+        source.includes("Development/jev-browser"))
     );
   });
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
