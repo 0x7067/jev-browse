@@ -11,6 +11,32 @@ import type { ActionKind, JsonValue, ObservedAction, PageState } from "./types.t
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Pre-establish TLS/HTTP2 to the model endpoints while the browser still
+ * launches and navigates — the first real request then skips the handshake.
+ * Fire-and-forget; failures are irrelevant.
+ */
+export function warmModelEndpoints(): void {
+  const origins = new Set<string>();
+
+  for (const raw of [
+    process.env.TYPESAFE_BASE_URL ?? "https://api.typesafe.ai",
+    process.env.TEXT_MODEL_BASE_URL,
+  ]) {
+    try {
+      if (raw) origins.add(new URL(raw).origin);
+    } catch {
+      // unparseable env — the real request will surface it
+    }
+  }
+
+  for (const origin of origins) {
+    fetch(origin, { method: "HEAD" })
+      .then((r) => r.arrayBuffer())
+      .catch(() => {});
+  }
+}
+
 async function postJson(url: string, key: string, body: JsonValue): Promise<any> {
   for (let attempt = 0; attempt < 3; attempt++) {
     let response: Response;
@@ -172,7 +198,55 @@ export interface Decision {
   latency_ms: number;
 }
 
+/**
+ * Shrink the decision input for context-limit retries. Element ids are bound
+ * to DOM nodes (not positions), so trimming the offered set stays consistent —
+ * but node-less controls (scroll/wait/back/press) must all survive the cut.
+ */
+function shrunkState(state: PageState, textCap: number, actionCap: number): PageState {
+  const elements = state.actions.filter((a) => a.node !== undefined);
+  const controls = state.actions.filter((a) => a.node === undefined);
+
+  return {
+    ...state,
+    text: state.text.slice(0, textCap),
+    actions: [...elements.slice(0, actionCap), ...controls],
+  };
+}
+
 export async function choose(
+  client: TypeSafeClient,
+  state: PageState,
+  goal: string,
+  history: any[],
+): Promise<Decision> {
+  const attempts = [state, shrunkState(state, 2500, 40), shrunkState(state, 1000, 20)];
+  let invalidRetried = false;
+
+  for (let i = 0; i < attempts.length; i++) {
+    try {
+      return await chooseOnce(client, attempts[i], goal, history);
+    } catch (error) {
+      const msg = String(error);
+
+      // A malformed answer hasn't mutated anything — one fresh ask is safe.
+      if (msg.includes("Invalid TypeSafe response") && !invalidRetried) {
+        invalidRetried = true;
+        i--;
+        continue;
+      }
+
+      // Context overflow: the next attempt offers less state.
+      if (/max_tokens|context|too (large|long|many)/i.test(msg) && i + 1 < attempts.length) continue;
+
+      throw error;
+    }
+  }
+
+  throw new Error("unreachable");
+}
+
+async function chooseOnce(
   client: TypeSafeClient,
   state: PageState,
   goal: string,

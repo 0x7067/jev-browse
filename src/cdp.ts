@@ -443,7 +443,7 @@ export class CdpBrowser implements BrowserDriver {
       }
     }
 
-    for (let attempt = 0; attempt < 10; attempt++) {
+    for (let attempt = 0; attempt < 100; attempt++) {
       try {
         const info = await this.evaluate<PageState | null>(READ_STATE);
 
@@ -452,8 +452,10 @@ export class CdpBrowser implements BrowserDriver {
 
         return info;
       } catch (error) {
-        if (!(error instanceof StalePage) || attempt === 9) throw error;
-        await sleep(20);
+        // Brief navigations (redirect chains, post-load location changes)
+        // outlast a few hundred ms; the retry budget must cover real ones.
+        if (!(error instanceof StalePage) || attempt === 99) throw error;
+        await sleep(40);
       }
     }
 
@@ -533,8 +535,15 @@ export class CdpBrowser implements BrowserDriver {
         if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]') ||
             !e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) return null;
         if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return null;
-        const r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
         const d=e.ownerDocument, w=d.defaultView||window;
+        let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
+        // Observed targets drift out of the viewport between snapshot and input
+        // (async layout, sticky chrome). One instant re-scroll beats a stale-page
+        // re-decision; a still-offscreen or covered target stays fatal.
+        if (r.width && r.height && (lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight)) {
+          e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
+        }
         if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return null;
         const hit=d.elementFromPoint(lx,ly), root=e.getRootNode();
         const covered = root instanceof ShadowRoot

@@ -9,8 +9,8 @@
  *
  *   node scripts/record_demo.mjs --url URL --goal "..." [--out docs] [--name demo]
  *
- * Env: repo .env first, then ~/.jev-browse/install/.env as fallback — the CLI
- * child gets the merged result without touching the user's shell env.
+ * Env: repo .env, merged over the current environment — the CLI child gets
+ * the merged result without touching the user's shell env.
  */
 
 import { spawn } from "node:child_process";
@@ -23,7 +23,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createServer } from "node:net";
-import { tmpdir, homedir } from "node:os";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -181,7 +181,6 @@ async function screencast(wsUrl, onFrame) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const env = { ...process.env };
-  loadEnvFile(join(homedir(), ".jev-browse", "install", ".env"), env);
   loadEnvFile(join(ROOT, ".env"), env);
 
   const work = mkdtempSync(join(tmpdir(), "jev-demo-"));
@@ -227,7 +226,7 @@ async function main() {
     const cli = spawn(
       process.execPath,
       [
-        join(ROOT, "dist", "cli.js"),
+        join(ROOT, "src", "cli.ts"),
         "--url", args.url,
         ...args.goals.flatMap((g) => ["--goal", g]),
         "--engine", "cdp",

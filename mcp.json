@@ -4,7 +4,7 @@
     "jev": {
       "type": "stdio",
       "command": "node",
-      "args": ["${PLUGIN_ROOT}/src/mcp.ts"]
+      "args": ["${PLUGIN_ROOT}/bundled/mcp.mjs"]
     }
   }
 }

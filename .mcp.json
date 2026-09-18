@@ -2,7 +2,7 @@
   "mcpServers": {
     "jev": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/src/mcp.ts"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bundled/mcp.mjs"]
     }
   }
 }

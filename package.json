@@ -16,11 +16,12 @@
     ]
   },
   "bin": {
-    "jev-browse": "dist/cli.js",
-    "jev-browse-mcp": "dist/mcp.js"
+    "jev-browse": "bundled/cli.mjs",
+    "jev-browse-mcp": "bundled/mcp.mjs"
   },
   "scripts": {
-    "build": "tsc && cp src/snapshot.js dist/snapshot.js",
+    "build": "tsc && cp src/snapshot.js dist/snapshot.js && npm run build:bundle",
+    "build:bundle": "esbuild src/cli.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/cli.mjs && esbuild src/mcp.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/mcp.mjs && cp src/snapshot.js bundled/snapshot.js",
     "lint": "oxlint",
     "run": "tsx src/cli.ts",
     "typecheck": "tsc --noEmit"
@@ -29,7 +30,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@typesafe-ai/sdk": "^0.6.0"
+    "@typesafe-ai/sdk": "^0.6.0",
+    "typebox": "^1.3.33"
   },
   "devDependencies": {
     "@opencode-ai/plugin": "^1.18.31",
@@ -38,7 +40,6 @@
     "esbuild": "^0.28.2",
     "oxlint": "^1.83.0",
     "tsx": "^4.0.0",
-    "typebox": "^1.3.33",
     "typescript": "^5.0.0"
   },
   "license": "MIT"

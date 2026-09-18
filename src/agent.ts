@@ -8,7 +8,14 @@ import { MAX_STEPS } from "./questions.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-import { actionSpace, choose, fieldContext, fieldText, type Decision } from "./model.ts";
+import {
+  actionSpace,
+  choose,
+  fieldContext,
+  fieldText,
+  warmModelEndpoints,
+  type Decision,
+} from "./model.ts";
 import { makeClient } from "./env.ts";
 import { StalePage, type BrowserDriver, type JsonValue, type PageState } from "./types.ts";
 
@@ -60,6 +67,7 @@ export class Agent {
   private history: HistoryEntry[] = [];
   private decisions: Decision[] = [];
   private earlyWaits = 0;
+  private fingerprints: string[] = [];
   private textCalls: any[] = [];
   private pendingText: [unknown, string, { model: string; latency_ms: number }] | null = null;
   private status: "ready" | "done" | "blocked" = "ready";
@@ -80,6 +88,7 @@ export class Agent {
   }
 
   static async start(opts: AgentOptions): Promise<Agent> {
+    warmModelEndpoints();
     const agent = new Agent(opts);
     agent.browser = await agent.openDriver(opts.url);
 
@@ -197,7 +206,15 @@ export class Agent {
       if (this.pendingText && JSON.stringify(this.pendingText[0]) === JSON.stringify(context)) {
         [, text, helper] = this.pendingText;
       } else {
-        const generated = await fieldText(context);
+        let generated;
+
+        try {
+          generated = await fieldText(context);
+        } catch (error) {
+          // An empty helper answer hasn't typed anything — one fresh ask is safe.
+          if (!String(error).includes("no valid field value")) throw error;
+          generated = await fieldText(context);
+        }
 
         // Fail fast: an empty helper answer means nothing was typed; looping
         // on TYPE_TEXT just burns the action budget.
@@ -245,13 +262,35 @@ export class Agent {
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
     entry.url = this.page.url;
     entry.elapsed_ms = this.elapsed();
+    this.fingerprints.push(this.page.fingerprint);
 
     const repeated = this.history.slice(-3);
+    const tail = this.history.slice(-8);
+
+    // Stalemate bounds: quick give-up on repeated no-op actions, a longer
+    // fuse for wait-heavy no-change loops, and cycle detection for
+    // back-and-forth loops that evade both (A→B→A→B changes every page).
     this.status =
-      repeated.length === 3 &&
-      repeated.every((h) => h.page_changed === false && h.kind !== "wait")
+      (repeated.length === 3 &&
+        repeated.every((h) => h.page_changed === false && h.kind !== "wait")) ||
+      (tail.length === 8 && tail.every((h) => h.page_changed === false)) ||
+      this.cycling()
         ? "blocked"
         : "ready";
+  }
+
+  /** True when the recent fingerprint trail is a short cycle repeated whole. */
+  private cycling(): boolean {
+    const f = this.fingerprints;
+    const n = f.length;
+
+    // Period 2 needs the pair thrice (x,y,x,y,x,y); period 3 twice (x,y,z,x,y,z).
+    return (
+      (n >= 6 && f[n - 1] === f[n - 3] && f[n - 3] === f[n - 5] &&
+        f[n - 2] === f[n - 4] && f[n - 4] === f[n - 6] && f[n - 1] !== f[n - 2]) ||
+      (n >= 6 && f[n - 1] === f[n - 4] && f[n - 4] !== f[n - 2] &&
+        f[n - 2] === f[n - 5] && f[n - 3] === f[n - 6] && f[n - 1] !== f[n - 3])
+    );
   }
 
   private waitEntry(action: string, page: PageState): HistoryEntry {

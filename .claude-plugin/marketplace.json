@@ -1,0 +1,27 @@
+{
+  "name": "jev-browse",
+  "owner": {
+    "name": "0x7067"
+  },
+  "metadata": {
+    "description": "TypeSafe Jev drives a real browser toward one goal",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "jev-browse",
+      "source": "./",
+      "description": "Jev drives a real browser: one goal, an indexed action space, one TypeSafe systemOne decision per step. Exposes the jev_browse MCP tool.",
+      "version": "0.1.0",
+      "license": "MIT",
+      "homepage": "https://github.com/0x7067/jev-browse",
+      "repository": "https://github.com/0x7067/jev-browse",
+      "keywords": ["browser", "automation", "typesafe", "jev", "agent"],
+      "category": "Productivity",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
+    }
+  ]
+}

@@ -4,6 +4,11 @@
   "version": "0.1.0",
   "description": "TypeSafe Jev drives a real browser: one goal, an indexed action space, one systemOne decision per step. Exposes the jev_browse MCP tool.",
   "license": "MIT",
+  "author": {
+    "name": "0x7067"
+  },
+  "homepage": "https://github.com/0x7067/jev-browse",
+  "repository": "https://github.com/0x7067/jev-browse",
   "keywords": ["browser", "automation", "typesafe", "jev", "agent"],
   "extensions": {
     "works.earendil.pi": {

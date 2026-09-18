@@ -1,0 +1,350 @@
+{
+  "label": "v3-fixes",
+  "started": "2026-09-18T23:03:09.527Z",
+  "tasks": {
+    "example-link": {
+      "runs": 3,
+      "verified": 3,
+      "median_ms": 1713,
+      "median_decisions": 2,
+      "median_jev_ms": 774,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1533,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 774,
+          "text_ms": 0,
+          "final_url": "https://www.iana.org/help/example-domains",
+          "ops": [
+            "CLICK:Learn more"
+          ],
+          "events": [
+            "CLICK:Learn more@844",
+            "DONE:Learn more@1533"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1978,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 739,
+          "text_ms": 0,
+          "final_url": "https://www.iana.org/help/example-domains",
+          "ops": [
+            "CLICK:Learn more"
+          ],
+          "events": [
+            "CLICK:Learn more@844",
+            "DONE:Learn more@1978"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1713,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 922,
+          "text_ms": 0,
+          "final_url": "https://www.iana.org/help/example-domains",
+          "ops": [
+            "CLICK:Learn more"
+          ],
+          "events": [
+            "CLICK:Learn more@1000",
+            "DONE:Learn more@1713"
+          ]
+        }
+      ]
+    },
+    "hn-comments": {
+      "runs": 3,
+      "verified": 3,
+      "median_ms": 1937,
+      "median_decisions": 2,
+      "median_jev_ms": 1020,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2834,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 973,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/item?id=49760187",
+          "ops": [
+            "CLICK:131 comments"
+          ],
+          "events": [
+            "CLICK:131 comments@1899",
+            "DONE:131 comments@2385",
+            "DONE:131 comments@2834"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1933,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 1089,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/item?id=49760187",
+          "ops": [
+            "CLICK:131 comments"
+          ],
+          "events": [
+            "CLICK:131 comments@1586",
+            "DONE:131 comments@1933"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1937,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 1020,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/item?id=49760187",
+          "ops": [
+            "CLICK:131 comments"
+          ],
+          "events": [
+            "CLICK:131 comments@1573",
+            "DONE:131 comments@1937"
+          ]
+        }
+      ]
+    },
+    "algolia-search": {
+      "runs": 3,
+      "verified": 0,
+      "median_ms": 0,
+      "median_decisions": 0,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": [
+            "TYPE_TEXT:@740"
+          ]
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": [
+            "TYPE_TEXT:@749"
+          ]
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": [
+            "TYPE_TEXT:@917"
+          ]
+        }
+      ]
+    },
+    "wikipedia-godel": {
+      "runs": 3,
+      "verified": 0,
+      "median_ms": 0,
+      "median_decisions": 0,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": [
+            "TYPE_TEXT:@1610"
+          ]
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": [
+            "TYPE_TEXT:@1106"
+          ]
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": [
+            "TYPE_TEXT:@1090"
+          ]
+        }
+      ]
+    },
+    "httpbin-form": {
+      "runs": 3,
+      "verified": 0,
+      "median_ms": 0,
+      "median_decisions": 0,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": []
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": []
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": []
+        }
+      ]
+    },
+    "flights-zurich-london": {
+      "runs": 3,
+      "verified": 0,
+      "median_ms": 0,
+      "median_decisions": 0,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": [
+            "CLICK:Change ticket type. Round trip@1416",
+            "CLICK:One way@1843",
+            "SCROLL_DOWN:One way@2209",
+            "TYPE_TEXT:One way@2617"
+          ]
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": [
+            "CLICK:Change ticket type. Round trip@1112",
+            "CLICK:One way@1610"
+          ]
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+          "ops": [],
+          "events": [
+            "CLICK:Change ticket type. Round trip@1024",
+            "CLICK:One way@1384",
+            "CLICK:One way@1724"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 3650
+}

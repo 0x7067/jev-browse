@@ -1,0 +1,38 @@
+[
+  {
+    "id": "example-link",
+    "url": "https://example.com",
+    "goal": "Open the 'More information' link. Stop once the page about example domains on iana.org is visible.",
+    "expect": { "url_match": "iana\\.org" }
+  },
+  {
+    "id": "hn-comments",
+    "url": "https://news.ycombinator.com",
+    "goal": "Open the comments page of the top story.",
+    "expect": { "url_match": "news\\.ycombinator\\.com/item\\?id=\\d+" }
+  },
+  {
+    "id": "algolia-search",
+    "url": "https://hn.algolia.com/",
+    "goal": "Search for \"openai codex\" and open the first story result.",
+    "expect": { "url_not_match": "hn\\.algolia\\.com" }
+  },
+  {
+    "id": "wikipedia-godel",
+    "url": "https://en.wikipedia.org/wiki/Main_Page",
+    "goal": "Find and open the Wikipedia article about Gödel's incompleteness theorems.",
+    "expect": { "url_match": "incompleteness" }
+  },
+  {
+    "id": "httpbin-form",
+    "url": "https://httpbin.org/forms/post",
+    "goal": "Fill the customer name field with \"Ada Lovelace\" and submit the form.",
+    "expect": { "url_match": "httpbin\\.org/post" }
+  },
+  {
+    "id": "flights-zurich-london",
+    "url": "https://www.google.com/travel/flights?hl=en",
+    "goal": "Find one-way flights from Zurich to London on September 20, 2026, for one adult in economy. Stop when matching flight options are visible.",
+    "expect": { "url_match": "flights/search" }
+  }
+]

@@ -8,7 +8,7 @@
  * stdout payload, so callers can pipe stdout without scraping progress.
  */
 
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -180,6 +180,25 @@ export async function runAgent(
 
   try {
     return await agent.run(opts.onEvent);
+  } catch (error) {
+    // Error results carry no history — emit the final state so stderr
+    // consumers (evals, harness logs) can see what the agent last saw.
+    const snap = agent.snapshot();
+
+    opts.onEvent?.({
+      type: "fatal",
+      error: error instanceof Error ? error.message : String(error),
+      url: snap.page?.url,
+      title: snap.page?.title,
+      elements: snap.elements.length,
+      recent_actions: snap.history.slice(-5).map((h) => ({
+        operation: h.operation,
+        action: h.action,
+        page_changed: h.page_changed,
+      })),
+    });
+
+    throw error;
   } finally {
     opts.signal?.removeEventListener("abort", onAbort);
     await agent.close();
@@ -255,11 +274,12 @@ async function main(): Promise<void> {
   }
 }
 
-// Entry check: the module URL alone can't distinguish cli.ts from a bundle
-// that also contains mcp.ts — the basename gates auto-run to cli entries.
+// Entry check: npm/npx bins invoke through a symlink named for the package,
+// so resolve argv[1] first. The cli.* basename gate keeps this module inert
+// inside the mcp bundle, which shares the same argv[1].
+const entryPath = process.argv[1] ? realpathSync(process.argv[1]) : "";
+
 const invokedAsScript =
-  !!process.argv[1] &&
-  /cli\.(ts|js)$/.test(process.argv[1]) &&
-  fileURLToPath(import.meta.url) === process.argv[1];
+  /cli\.(ts|js|mjs)$/.test(entryPath) && fileURLToPath(import.meta.url) === entryPath;
 
 if (invokedAsScript) await main();

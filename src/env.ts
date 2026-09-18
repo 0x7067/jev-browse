@@ -6,9 +6,17 @@ import { TypeSafeClient } from "@typesafe-ai/sdk";
 
 const PACKAGE_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
-// Fill missing keys from .env (package dir first, then cwd). Shell exports win.
+// Fill missing keys from .env (package dir, plugin data dirs, then cwd).
+// Shell exports win. PLUGIN_DATA/CLAUDE_PLUGIN_DATA are the writable dirs
+// clients give plugin-installed MCP servers.
 export function loadDotEnv(): void {
-  for (const dir of [PACKAGE_ROOT, process.cwd()]) {
+  for (const dir of [
+    PACKAGE_ROOT,
+    process.env.PLUGIN_DATA,
+    process.env.CLAUDE_PLUGIN_DATA,
+    process.cwd(),
+  ]) {
+    if (!dir) continue;
     let text: string;
 
     try {
