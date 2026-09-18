@@ -35,7 +35,7 @@ const DRIVE = fileURLToPath(new URL("..", import.meta.url));
 const INSTALL = join(homedir(), ".jev-browse", "install");
 const ESBUILD = join(DRIVE, "node_modules", ".bin", "esbuild");
 
-const targets = process.argv[2] ? [process.argv[2]] : ["pi", "claude", "opencode", "codex"];
+const targets = process.argv.length > 2 ? process.argv.slice(2) : ["pi", "claude", "opencode", "codex"];
 
 function bundle(entry, outfile, externals = []) {
   mkdirSync(dirname(outfile), { recursive: true });
