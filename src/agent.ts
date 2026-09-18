@@ -10,7 +10,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 import { actionSpace, choose, fieldContext, fieldText, type Decision } from "./model.ts";
 import { makeClient } from "./env.ts";
-import { StalePage, type BrowserDriver, type ObservedAction, type PageState } from "./types.ts";
+import { StalePage, type BrowserDriver, type PageState } from "./types.ts";
 
 export interface AgentOptions {
   url: string;
