@@ -1,0 +1,18 @@
+LICENSE
+  h_29be57c0addd47 1-21
+package.json
+  h_29be57c0addd47 40-41
+scripts/install.mjs
+  h_29be57c0addd47 108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a6eac9d0458bdef36b7cb5c5dc3f2762863b0c33",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
