@@ -1,0 +1,19 @@
+src/abrowser.ts
+  s_fc055f79654e23::t_ddb603f69f0a7d 13,19,100,127,172-175,177-178,215,221,223,237,285,289,359,367
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4c9b5f5c60d8c81a2202dc066e64cd9af4a1f9dd",
+  "prompts": {},
+  "sessions": {
+    "s_fc055f79654e23": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b695-dd0f-74ad-8dad-3ac02550b7c8",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
