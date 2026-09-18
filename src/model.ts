@@ -5,12 +5,13 @@
 
 import type { TypeSafeClient, Questions, ChoiceCriteria } from "@typesafe-ai/sdk";
 
+import { isFiniteNumber, isString } from "./json.ts";
 import { NEXT_ACTION, TARGET, TEXT_VALUE } from "./questions.ts";
-import type { ActionKind, ObservedAction, PageState } from "./types.ts";
+import type { ActionKind, JsonValue, ObservedAction, PageState } from "./types.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function postJson(url: string, key: string, body: unknown): Promise<any> {
+async function postJson(url: string, key: string, body: JsonValue): Promise<any> {
   for (let attempt = 0; attempt < 3; attempt++) {
     let response: Response;
 
@@ -40,9 +41,9 @@ async function postJson(url: string, key: string, body: unknown): Promise<any> {
 }
 
 interface RawChoiceAnswer {
-  choice?: unknown;
-  confidence?: unknown;
-  probabilities?: Record<string, unknown>;
+  choice?: JsonValue;
+  confidence?: JsonValue;
+  probabilities?: Record<string, JsonValue>;
 }
 
 export function validateChoice(answer: RawChoiceAnswer, ids: Set<string>): asserts answer is {
@@ -51,23 +52,24 @@ export function validateChoice(answer: RawChoiceAnswer, ids: Set<string>): asser
   probabilities: Record<string, number>;
 } {
   const probabilities = answer?.probabilities;
-  const numbers = [...Object.values(probabilities ?? {}), answer?.confidence];
+  const choice = answer?.choice;
+  const values = Object.values(probabilities ?? {});
 
-  const sum = Object.values(probabilities ?? {}).reduce(
-    (a: number, b) => a + (typeof b === "number" ? b : NaN),
-    0,
-  );
+  const sum = values.reduce((a: number, b) => a + (isFiniteNumber(b) ? b : NaN), 0);
+  const chosen = isString(choice) && probabilities !== undefined ? probabilities[choice] : undefined;
 
   const valid =
-    typeof answer?.choice === "string" &&
-    ids.has(answer.choice) &&
-    !!probabilities &&
+    isString(choice) &&
+    ids.has(choice) &&
+    probabilities !== undefined &&
     Object.keys(probabilities).length === ids.size &&
     Object.keys(probabilities).every((k) => ids.has(k)) &&
-    numbers.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1) &&
+    [...values, answer?.confidence].every(
+      (n) => isFiniteNumber(n) && n >= 0 && n <= 1,
+    ) &&
     Math.abs(sum - 1) < 0.02 &&
-    (probabilities[answer.choice] as number) >=
-      Math.max(...Object.values(probabilities).map(Number)) - 1e-6;
+    isFiniteNumber(chosen) &&
+    chosen >= Math.max(...values.map(Number)) - 1e-6;
 
   if (!valid) {
     throw new Error("Invalid TypeSafe response; no action executed.");
@@ -75,6 +77,19 @@ export function validateChoice(answer: RawChoiceAnswer, ids: Set<string>): asser
 }
 
 /** One index per observed element; each operation has its own valid target choices. */
+/** One candidate element as presented to the choice model. */
+type ElementChoice = {
+  index: string;
+  label: string;
+  operations: string[];
+  role?: string;
+  value?: string;
+  checked?: string;
+  selected?: string;
+  expanded?: string;
+  options?: { index: string; label: string; value: JsonValue }[];
+};
+
 export function actionSpace(actions: ObservedAction[]) {
   const elements: any[] = [];
   const indices = new Map<number, string>();
@@ -103,19 +118,22 @@ export function actionSpace(actions: ObservedAction[]) {
     if (index === undefined) {
       index = String(elements.length + 1);
       indices.set(node, index);
-      const element: any = {};
+
+      const element: ElementChoice = {
+        index,
+        label: action.label.split(" → ")[0],
+        operations: [],
+      };
 
       for (const k of ["role", "value", "checked", "selected", "expanded"] as const) {
-        if (k in action) element[k] = action[k];
-      }
+        const v = action[k];
 
-      element.index = index;
-      element.label = action.label.split(" → ")[0];
-      element.operations = [] as string[];
+        if (v !== undefined) element[k] = v;
+      }
 
       if (kind === "select") {
         element.value = action.current_value ?? "";
-        element.options = [] as any[];
+        element.options = [];
       }
 
       elements.push(element);
@@ -128,8 +146,9 @@ export function actionSpace(actions: ObservedAction[]) {
     let target = index;
 
     if (kind === "select") {
-      target = `${index}:${element.options.length + 1}`;
-      element.options.push({ index: target, label: action.label, value: action.value });
+      const options = (element.options ??= []);
+      target = `${index}:${options.length + 1}`;
+      options.push({ index: target, label: action.label, value: action.value });
     }
 
     group[target] = action;
@@ -232,25 +251,29 @@ export async function choose(
     questions,
   });
 
-  const answers = result.answers as Record<string, any>;
+  // SAFETY: systemOne answers are free-form per question name; validateChoice decodes the used fields.
+  const answers = result.answers as Record<string, RawChoiceAnswer>;
   const operationAnswer = answers.operation ?? {};
   validateChoice(operationAnswer, new Set(Object.keys(operations)));
   const operation = operationAnswer.choice;
 
   let target: string | null = null;
-  let targetAnswer: any = null;
+  let targetProbabilities: Record<string, number> = {};
+  let targetConfidence: number | null = null;
   let probabilities: Record<string, number> = {};
   let choice: string;
 
   if (operation in targets) {
     // Unused target heads cannot cause an action. Validate the selected head only.
-    targetAnswer = answers[`${operation.toLowerCase()}_target`] ?? {};
-    validateChoice(targetAnswer, new Set(Object.keys(targets[operation])));
-    target = targetAnswer.choice;
+    const answer = answers[`${operation.toLowerCase()}_target`] ?? {};
+    validateChoice(answer, new Set(Object.keys(targets[operation])));
+    target = answer.choice;
+    targetProbabilities = answer.probabilities;
+    targetConfidence = answer.confidence;
     choice = targets[operation][target].id;
 
     for (const [index, a] of Object.entries(targets[operation])) {
-      probabilities[a.id] = targetAnswer.probabilities[index];
+      probabilities[a.id] = answer.probabilities[index];
     }
   } else {
     choice = operation in controls ? controls[operation].id : operation;
@@ -264,8 +287,8 @@ export async function choose(
     confidence: operationAnswer.confidence,
     probabilities,
     operation_probabilities: operationAnswer.probabilities,
-    target_probabilities: targetAnswer?.probabilities ?? {},
-    target_confidence: targetAnswer?.confidence ?? null,
+    target_probabilities: targetProbabilities,
+    target_confidence: targetConfidence,
     raw_answers: answers,
     model: result.model,
     usage: result.usage,
@@ -287,8 +310,8 @@ export function fieldContext(goal: string, action: ObservedAction, page: PageSta
 }
 
 export async function fieldText(
-  context: unknown,
-): Promise<{ text: string; helper: { model: string; latency_ms: number; usage: unknown } }> {
+  context: JsonValue,
+): Promise<{ text: string; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
   const key = process.env.TEXT_MODEL_API_KEY;
 
   if (!key) {
@@ -319,26 +342,28 @@ export async function fieldText(
     ],
   });
 
-  let value: unknown;
+  let text: string;
 
   try {
     const output = JSON.parse(result.choices[0].message.content);
-    value = output.text;
+    const value: JsonValue = output.text;
 
     if (
       Object.keys(output).join() !== "text" ||
-      typeof value !== "string" ||
+      !isString(value) ||
       !value.trim() ||
       value.length > 2000
     ) {
       throw new Error();
     }
+
+    text = value;
   } catch {
     throw new Error("Text helper returned no valid field value; nothing typed.");
   }
 
   return {
-    text: value,
+    text,
     helper: {
       model,
       latency_ms: Math.round(performance.now() - started),

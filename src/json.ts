@@ -7,6 +7,11 @@ export function isJsonObject(value: JsonValue): value is JsonObject {
   return value !== null && value !== undefined && !Array.isArray(value) && value === Object(value);
 }
 
+export const isString = (value: JsonValue): value is string => typeof value === "string";
+
+/** Finite numbers only: NaN and Infinity are not JSON-representable quantities. */
+export const isFiniteNumber = (value: JsonValue): value is number => Number.isFinite(value);
+
 /** Deep-sort object keys so the fingerprint is insensitive to key order. */
 const canonicalize = (value: JsonValue): JsonValue =>
   Array.isArray(value)
