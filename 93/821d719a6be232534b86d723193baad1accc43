@@ -1,0 +1,21 @@
+src/agent.ts
+  s_0503a55d84ed51::t_1350d798716c95 76-77
+src/types.ts
+  s_0503a55d84ed51::t_f8c9f105a7e1b1 41-44,68-71,94-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "93821d719a6be232534b86d723193baad1accc43",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
