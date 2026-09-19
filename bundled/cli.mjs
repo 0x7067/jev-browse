@@ -1206,6 +1206,15 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
         return;
       }
       if (selected === "DONE") {
+        if (page.pending_nav || this.browser.pendingNav?.()) {
+          const navDeadline = Date.now() + 2500;
+          while (Date.now() < navDeadline) {
+            if (!await this.browser.fresh(page)) {
+              throw new StalePage("Navigation committed while confirming DONE. Choose again.");
+            }
+            await sleep3(120);
+          }
+        }
         await sleep3(400);
         if (!await this.browser.fresh(page)) {
           throw new StalePage("Page changed while confirming DONE. Choose again.");
@@ -1660,6 +1669,8 @@ var CdpBrowser = class _CdpBrowser {
   adopted = [];
   /** In-flight request ids per session — the "is the page actually working" signal. */
   pending = /* @__PURE__ */ new Map();
+  /** Uncommitted main-frame navigations per session — click → commit is a gap. */
+  navPending = /* @__PURE__ */ new Map();
   constructor() {
   }
   static async open(url, opts = {}) {
@@ -1724,6 +1735,17 @@ var CdpBrowser = class _CdpBrowser {
       });
       browser.socket.onEvent("Network.loadingFailed", (p, sessionId) => {
         if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
+      });
+      browser.socket.onEvent("Page.frameStartedNavigating", (p, sessionId) => {
+        if (sessionId) browser.navPending.set(sessionId, (browser.navPending.get(sessionId) ?? 0) + 1);
+      });
+      browser.socket.onEvent("Page.frameNavigated", (p, sessionId) => {
+        if (sessionId && p.frame?.parentId === void 0) {
+          browser.navPending.set(sessionId, Math.max(0, (browser.navPending.get(sessionId) ?? 0) - 1));
+        }
+      });
+      browser.socket.onEvent("Page.frameStoppedLoading", (p, sessionId) => {
+        if (sessionId) browser.navPending.set(sessionId, 0);
       });
       browser.target = (await browser.socket.call("Target.createTarget", {
         url: "about:blank",
@@ -1841,6 +1863,7 @@ var CdpBrowser = class _CdpBrowser {
         if (info === null || info === void 0) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
         info.pending_requests = this.pending.get(this.session)?.size ?? 0;
+        info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
         return info;
       } catch (error) {
         if (!(error instanceof StalePage) || attempt === 99) throw error;
@@ -1848,6 +1871,9 @@ var CdpBrowser = class _CdpBrowser {
       }
     }
     throw new StalePage("Page did not settle");
+  }
+  pendingNav() {
+    return (this.navPending.get(this.session) ?? 0) > 0;
   }
   async fresh(page, action) {
     if (action && (action.kind === "click" || action.kind === "select")) {

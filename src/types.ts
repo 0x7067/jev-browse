@@ -59,6 +59,8 @@ export interface PageState {
   fingerprint: string;
   /** In-flight network requests at observation time (0 or absent when the engine can't tell). */
   pending_requests?: number;
+  /** A main-frame navigation was initiated but hasn't committed yet. */
+  pending_nav?: boolean;
 }
 
 /** Result of executing one observed action. */
@@ -87,5 +89,8 @@ export interface BrowserDriver {
   act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
   /** In-page event synthesis, used when trusted input delivers nothing. */
   domClick(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
+
+  /** A main-frame navigation has started but not committed (CDP only). */
+  pendingNav?(): boolean;
   close(): Promise<void>;
 }

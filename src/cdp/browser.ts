@@ -107,6 +107,8 @@ export class CdpBrowser implements BrowserDriver {
   private adopted: string[] = [];
   /** In-flight request ids per session — the "is the page actually working" signal. */
   private pending = new Map<string, Set<string>>();
+  /** Uncommitted main-frame navigations per session — click → commit is a gap. */
+  private navPending = new Map<string, number>();
 
   private constructor() {}
 
@@ -195,6 +197,20 @@ export class CdpBrowser implements BrowserDriver {
       });
       browser.socket.onEvent("Network.loadingFailed", (p, sessionId) => {
         if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
+      });
+      // Document navigations: a click-triggered commit isn't visible in the
+      // old document's state, so DONE needs socket-level nav tracking to
+      // avoid declaring success mid-flight.
+      browser.socket.onEvent("Page.frameStartedNavigating", (p, sessionId) => {
+        if (sessionId) browser.navPending.set(sessionId, (browser.navPending.get(sessionId) ?? 0) + 1);
+      });
+      browser.socket.onEvent("Page.frameNavigated", (p, sessionId) => {
+        if (sessionId && p.frame?.parentId === undefined) {
+          browser.navPending.set(sessionId, Math.max(0, (browser.navPending.get(sessionId) ?? 0) - 1));
+        }
+      });
+      browser.socket.onEvent("Page.frameStoppedLoading", (p, sessionId) => {
+        if (sessionId) browser.navPending.set(sessionId, 0);
       });
       browser.target = (
         await browser.socket.call<{ targetId: string }>("Target.createTarget", {
@@ -340,6 +356,7 @@ export class CdpBrowser implements BrowserDriver {
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
         info.pending_requests = this.pending.get(this.session)?.size ?? 0;
+        info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
 
         return info;
       } catch (error) {
@@ -351,6 +368,10 @@ export class CdpBrowser implements BrowserDriver {
     }
 
     throw new StalePage("Page did not settle");
+  }
+
+  pendingNav(): boolean {
+    return (this.navPending.get(this.session) ?? 0) > 0;
   }
 
   async fresh(page: PageState, action?: ObservedAction): Promise<boolean> {

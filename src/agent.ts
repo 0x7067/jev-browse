@@ -308,6 +308,22 @@ export class Agent {
       }
 
       if (selected === "DONE") {
+        // A DONE claim while a click-triggered navigation is still in flight
+        // verifies the page the click just left. Give the commit a short
+        // window to land — once it does, fresh() fails and the machine
+        // re-decides on the navigated page.
+        if (page.pending_nav || this.browser.pendingNav?.()) {
+          const navDeadline = Date.now() + 2500;
+
+          while (Date.now() < navDeadline) {
+            if (!(await this.browser.fresh(page))) {
+              throw new StalePage("Navigation committed while confirming DONE. Choose again.");
+            }
+
+            await sleep(120);
+          }
+        }
+
         // A DONE claim on a just-clicked link can land before the navigation
         // it triggered starts. Require the page to stay put across a short
         // window, not just one freshness check.

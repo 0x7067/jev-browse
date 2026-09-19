@@ -1,0 +1,208 @@
+{
+  "label": "navwait",
+  "started": "2026-09-19T03:52:06.817Z",
+  "tasks": {
+    "hn-paginate": {
+      "runs": 3,
+      "verified": 3,
+      "median_ms": 4569,
+      "median_decisions": 3,
+      "median_jev_ms": 1288,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4561,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1288,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/?p=2",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:More"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@2094",
+            "SCROLL_DOWN:Scroll down@2870",
+            "CLICK:More@3466",
+            "CLICK:More@4561"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4569,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1287,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/?p=2",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:More"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@2079",
+            "SCROLL_DOWN:Scroll down@2824",
+            "CLICK:More@3447",
+            "CLICK:More@4569"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4801,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1407,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/?p=2",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:More"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@2210",
+            "SCROLL_DOWN:Scroll down@2934",
+            "CLICK:More@3714",
+            "CLICK:More@4801"
+          ]
+        }
+      ]
+    },
+    "crates-search": {
+      "runs": 3,
+      "verified": 3,
+      "median_ms": 3543,
+      "median_decisions": 4,
+      "median_jev_ms": 587,
+      "median_text_ms": 1080,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4211,
+          "steps": 2,
+          "decisions": 4,
+          "jev_ms": 587,
+          "text_ms": 1260,
+          "final_url": "https://crates.io/search?q=serde",
+          "ops": [
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search@2590",
+            "FOLLOW_UP:Press enter@2630",
+            "DONE:Press enter@4211"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3543,
+          "steps": 2,
+          "decisions": 4,
+          "jev_ms": 511,
+          "text_ms": 1080,
+          "final_url": "https://crates.io/search?q=serde",
+          "ops": [
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search@2335",
+            "FOLLOW_UP:Press enter@2371",
+            "DONE:Press enter@3543"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3186,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 941,
+          "text_ms": 1037,
+          "final_url": "https://crates.io/search?q=serde",
+          "ops": [
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search@2000",
+            "FOLLOW_UP:Press enter@2061",
+            "DONE:Press enter@3186"
+          ]
+        }
+      ]
+    },
+    "github-issues": {
+      "runs": 3,
+      "verified": 2,
+      "median_ms": 3706,
+      "median_decisions": 3,
+      "median_jev_ms": 1239,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 1888,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 1226,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node",
+          "ops": [
+            "CLICK:Issues \n           623"
+          ],
+          "events": [
+            "CLICK:Issues \n           623@1360",
+            "CLICK:Issues \n           623@1888"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3706,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 1239,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node/issues",
+          "ops": [
+            "CLICK:Issues \n           623"
+          ],
+          "events": [
+            "CLICK:Issues \n           623@1314",
+            "DONE:Issues \n           623@3706"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4055,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 1252,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node/issues",
+          "ops": [
+            "CLICK:Issues \n           623"
+          ],
+          "events": [
+            "CLICK:Issues \n           623@1471",
+            "DONE:Issues \n           623@4055"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 11818
+}
