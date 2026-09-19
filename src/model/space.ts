@@ -19,7 +19,7 @@ export type ElementChoice = {
   options?: { index: string; label: string; value: JsonValue }[];
 };
 
-export function actionSpace(actions: ObservedAction[]) {
+export function actionSpace(actions: ObservedAction[], delegatedContextmenu = false) {
   const elements: any[] = [];
   const indices = new Map<number, string>();
   const targets: Record<string, Record<string, ObservedAction>> = {};
@@ -104,6 +104,19 @@ export function actionSpace(actions: ObservedAction[]) {
 
     if (action.contextMenu === true) {
       (targets.CONTEXT_CLICK ??= {})[index] = action;
+
+      if (!element.operations.includes("CONTEXT_CLICK")) element.operations.push("CONTEXT_CLICK");
+    }
+  }
+
+  // Delegated right-click (frameworks bind contextmenu on a root container
+  // or document): any click target can respond, so the CONTEXT_CLICK pool
+  // widens to the whole click space instead of flagged elements only.
+  if (delegatedContextmenu) {
+    for (const [index, action] of Object.entries(targets.CLICK ?? {})) {
+      (targets.CONTEXT_CLICK ??= {})[index] = action;
+
+      const element = elements[Number(index) - 1];
 
       if (!element.operations.includes("CONTEXT_CLICK")) element.operations.push("CONTEXT_CLICK");
     }

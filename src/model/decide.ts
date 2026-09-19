@@ -121,7 +121,10 @@ async function chooseOnce(
   goal: string,
   history: any[],
 ): Promise<Decision> {
-  const { elements, targets, controls, dragDestinations } = actionSpace(state.actions);
+  const { elements, targets, controls, dragDestinations } = actionSpace(
+    state.actions,
+    state.delegatedContextmenu === true,
+  );
 
   const labels = new Map([
     ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
@@ -253,6 +256,7 @@ async function chooseOnce(
     ...(state.dialog !== undefined && { dialog: state.dialog }),
     ...(state.downloads?.length && { downloads: state.downloads }),
     ...(state.challenge && { challenge: "bot/captcha challenge detected on this page" }),
+    ...(state.tabs && state.tabs.length > 1 && { tabs: state.tabs }),
   };
 
   const result = await client.systemOne({

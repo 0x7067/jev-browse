@@ -90,18 +90,26 @@ return s?[s]:[]}).join(' ') ||
   // addEventListener-bound handlers are invisible to selectors and on* props.
   // The injected init script records them in a per-realm WeakMap — iframe
   // elements register into their own realm's map, so read via ownerDocument.
-  const listenSet=e=>((e.ownerDocument.defaultView||window).__jevListeners)?.get(e);
+  // window/document are valid WeakMap keys but have no ownerDocument — the
+  // realm map lives on the window they belong to.
+  const listenSet=e=>{
+    const w = e instanceof Window ? e : ((e.ownerDocument||e).defaultView||window);
+
+    return w.__jevListeners?.get(e);
+  };
 
   const CLICK_EVENTS=['click','dblclick','mousedown','mouseup','contextmenu'];
   const HOVER_EVENTS=['mouseover','mouseenter'];
 
   const listenedClick=e=>{
     const s=listenSet(e);
+
     return !!s && CLICK_EVENTS.some(k=>s.has(k));
   };
 
   const listenedHover=e=>{
     const s=listenSet(e);
+
     return !!s && HOVER_EVENTS.some(k=>s.has(k));
   };
 
@@ -182,6 +190,7 @@ return s?[s]:[]}).join(' ') ||
       if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
 
       const dropZone=hasDropProp(e);
+
       // Click-capable by any signal; hover-listened elements that can't be
       // clicked are offered as hover actions instead (revealing menus).
       const clickCapable = dropZone || e.matches(selector) || hasHandlerProp(e) ||
@@ -416,7 +425,7 @@ return s?[s]:[]}).join(' ') ||
 
       if (!scope) continue;
 
-      const ctx=scope.querySelector('h1,h2,h3,h4,h5,h6,[class*="name"],[class*="title"],[class*="header"],strong,b')
+      const ctx=scope.querySelector('h1,h2,h3,h4,h5,h6,label,td:first-child,th:first-child,[class*="name"],[class*="title"],[class*="header"],strong,b')
         ?.textContent?.trim().replace(/\s+/g,' ');
 
       if (ctx && ctx.length<=80 && !a.label.includes(ctx)) a.label=a.label+' — '+ctx;
@@ -507,10 +516,19 @@ return s?[s]:[]}).join(' ') ||
                    'arrowleft','arrowright','home','end','pageup','pagedown','space'])
     actions.push({id:'press_'+k,kind:'press',key:k,label:'Press '+k});
 
+  // A contextmenu listener bound on a root container or document means a
+  // framework delegates right-clicks — every element can respond, so the
+  // model gets CONTEXT_CLICK on the full click pool, not just flagged ones.
+  const delegatedContextmenu=[window,document,document.documentElement,document.body,
+      ...(document.body ? [...document.body.children] : [])]
+    .some(e=>e && listenSet(e)?.has('contextmenu'));
+
   const state={url:location.href,title:document.title,w:innerWidth,h:innerHeight,text,
     scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused};
 
   if (challenge) state.challenge=true;
+
+  if (delegatedContextmenu) state.delegatedContextmenu=true;
 
   return state;
 })()

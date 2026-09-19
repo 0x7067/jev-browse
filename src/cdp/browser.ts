@@ -135,6 +135,8 @@ export class CdpBrowser implements BrowserDriver {
   private afterInput: ObservedAction | null = null;
   private seen = new Set<string>();
   private adopted: string[] = [];
+  /** targetId → sessionId for every tab we own (initial + adopted). */
+  private sessions = new Map<string, string>();
   /** In-flight request ids per session — the "is the page actually working" signal. */
   /** In-flight requests per session: requestId → start time for age pruning. */
   private pending = new Map<string, Map<string, number>>();
@@ -308,6 +310,7 @@ export class CdpBrowser implements BrowserDriver {
         })
       ).sessionId;
       browser.seen.add(browser.target);
+      browser.sessions.set(browser.target, browser.session);
       await browser.call("Page.enable").catch(() => {});
       await browser.call("Network.enable").catch(() => {});
 
@@ -321,7 +324,8 @@ export class CdpBrowser implements BrowserDriver {
             const orig = EventTarget.prototype.addEventListener;
 
             EventTarget.prototype.addEventListener = function (type, listener, options) {
-              if (this instanceof Element && typeof type === "string") {
+              if (typeof type === "string" && this !== null && this !== undefined &&
+                  (this instanceof Node || this === window)) {
                 let s = map.get(this);
 
                 if (!s) map.set(this, (s = new Set()));
@@ -455,6 +459,7 @@ export class CdpBrowser implements BrowserDriver {
 
         this.target = t.targetId;
         this.session = sessionId;
+        this.sessions.set(t.targetId, sessionId);
         this.adopted.push(t.targetId);
         await this.call("Page.enable").catch(() => {});
         await this.call("Network.enable").catch(() => {});
@@ -471,6 +476,18 @@ export class CdpBrowser implements BrowserDriver {
         // tab raced away
       }
     }
+  }
+
+  /** Owned page targets (initial tab + adopted ones) with their titles —
+   *  powers the tabs field and FOCUS_TAB_* controls. */
+  private async listTabs(): Promise<{ targetId: string; title: string; url: string }[]> {
+    const { targetInfos } = await this.socket
+      .call<TargetList>("Target.getTargets")
+      .catch((): TargetList => ({ targetInfos: [] }));
+
+    return targetInfos
+      .filter((t) => t.type === "page" && this.sessions.has(t.targetId))
+      .map((t) => ({ targetId: t.targetId, title: t.title ?? "", url: t.url ?? "" }));
   }
 
   async observe(): Promise<PageState> {
@@ -521,6 +538,28 @@ export class CdpBrowser implements BrowserDriver {
         info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
 
         if (this.downloads.length) info.downloads = [...this.downloads];
+
+        // Multi-tab state: surfaces as a page field plus named FOCUS_TAB_*
+        // controls so the model can deliberately switch back to a tab it
+        // came from instead of getting hijacked by whichever adopted last.
+        const tabs = await this.listTabs();
+
+        if (tabs.length > 1) {
+          info.tabs = tabs.map((t) => ({
+            title: (t.title ?? "").slice(0, 80),
+            url: (t.url ?? "").slice(0, 200),
+            ...(t.targetId === this.target && { current: true }),
+          }));
+          tabs.forEach((t, i) => {
+            if (t.targetId !== this.target)
+              info.actions.push({
+                id: `focus_tab_${i}`,
+                kind: "focus_tab",
+                label: `Switch to tab: ${(t.title || t.url).slice(0, 90)}`,
+                value: t.targetId,
+              });
+          });
+        }
 
         // Report the dialog we auto-accepted since the last observation, once.
         if (this.lastDialog) {
@@ -692,6 +731,21 @@ export class CdpBrowser implements BrowserDriver {
 
     if (kind === "back" || kind === "forward") {
       await this.evaluate(`history.${kind === "back" ? "back" : "forward"}()`);
+
+      return { executed: action.id };
+    }
+
+    // Tab switching: the action's value carries the targetId; swapping the
+    // routed session is enough — subsequent observes/acts hit that tab.
+    if (kind === "focus_tab") {
+      const targetId = String(action.value ?? "");
+      const sessionId = this.sessions.get(targetId);
+
+      if (!sessionId) throw new StalePage("Tab is gone. Observe again.");
+
+      await this.socket.call("Target.activateTarget", { targetId }).catch(() => {});
+      this.target = targetId;
+      this.session = sessionId;
 
       return { executed: action.id };
     }
@@ -979,6 +1033,8 @@ export class CdpBrowser implements BrowserDriver {
       if (this.target && !this.adopted.includes(this.target)) {
         await this.socket.call("Target.closeTarget", { targetId: this.target });
       }
+
+      this.sessions.clear();
     } catch {
       // target already gone
     }

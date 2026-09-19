@@ -143,7 +143,9 @@ function runOnce(task, env, engine) {
         return;
       }
 
-      const ops = (result.history ?? []).map((h) => `${h.operation}:${(h.action ?? "").slice(0, 30)}`);
+      const ops = (result.history ?? []).map((h) =>
+        `${h.operation}:${(`${h.action ?? ""}${h.text ? ` "${h.text}"` : ""}`).slice(0, 80)}`);
+
       const jev_ms = (result.history ?? []).reduce((s, h) => s + (h.latency_ms || 0), 0);
       const text_ms = (result.history ?? []).reduce((s, h) => s + (h.text_latency_ms || 0), 0);
 
@@ -169,6 +171,9 @@ function runOnce(task, env, engine) {
         jev_ms,
         text_ms,
         final_url: result.final_url,
+        final_text: result.final_text,
+        answer: result.answer,
+        downloads: result.downloads,
         error: result.error,
         ops,
         events,

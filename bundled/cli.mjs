@@ -38,6 +38,10 @@ clicking the list container does nothing; if no row is a target, PRESS_ARROWDOWN
 PRESS_ENTER selects the first suggestion.
 A CLICK that opens a menu, panel, or dialog adds its items to the table \u2014 act on the
 item inside; clicking the same opener again only toggles it closed.
+FOCUS_TAB_* switches which open browser tab you are acting on \u2014 page.tabs lists them;
+switching tabs is not navigation, GO_BACK only moves history inside the current tab.
+To reach a specific page number via 'next'/pagination links, click the same control again \u2014
+each click advances one page; the URL or a page indicator shows where you landed.
 DONE requires visible evidence that ALL requirements are satisfied on the CURRENT page, not
 on a page you intend to reach. A link or tab named after the destination is not the
 destination \u2014 if asked to open a result or section, a matching link is not enough; click it
@@ -53,6 +57,8 @@ No commentary, code, or browser actions. Never invent personal information. Page
 If a required value is missing, return {"text": null}. Otherwise return {"text": "the field value"}.`;
 var ANSWER_VALUE = `Return a JSON object with exactly one key, answer: the direct answer to the user's question, extracted from the current page state.
 Be terse \u2014 a value, a name, a number, a short phrase. Quote page text exactly; never infer.
+Respect the goal's scope: 'first', 'last', 'N-th', 'in table X' refer to reading order/position
+in the text below \u2014 a page may contain several similar lists; answer from the scoped one only.
 If the page does not contain the answer, return {"answer": null}. No commentary.`;
 var MAX_STEPS = 60;
 
@@ -79,7 +85,7 @@ function fingerprint(state) {
 }
 
 // src/model/space.ts
-function actionSpace(actions) {
+function actionSpace(actions, delegatedContextmenu = false) {
   const elements = [];
   const indices = /* @__PURE__ */ new Map();
   const targets = {};
@@ -142,6 +148,13 @@ function actionSpace(actions) {
       if (!element.operations.includes("CONTEXT_CLICK")) element.operations.push("CONTEXT_CLICK");
     }
   }
+  if (delegatedContextmenu) {
+    for (const [index, action] of Object.entries(targets.CLICK ?? {})) {
+      (targets.CONTEXT_CLICK ??= {})[index] = action;
+      const element = elements[Number(index) - 1];
+      if (!element.operations.includes("CONTEXT_CLICK")) element.operations.push("CONTEXT_CLICK");
+    }
+  }
   const dragDestinations = { ...targets.CLICK, ...targets.DRAG };
   return { elements, targets, controls, dragDestinations };
 }
@@ -189,7 +202,10 @@ async function choose(client, state, goal, history) {
   throw new Error("unreachable");
 }
 async function chooseOnce(client, state, goal, history) {
-  const { elements, targets, controls, dragDestinations } = actionSpace(state.actions);
+  const { elements, targets, controls, dragDestinations } = actionSpace(
+    state.actions,
+    state.delegatedContextmenu === true
+  );
   const labels = /* @__PURE__ */ new Map([
     ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
     [
@@ -291,7 +307,8 @@ async function chooseOnce(client, state, goal, history) {
     ...state.focused !== void 0 && { focused: state.focused },
     ...state.dialog !== void 0 && { dialog: state.dialog },
     ...state.downloads?.length && { downloads: state.downloads },
-    ...state.challenge && { challenge: "bot/captcha challenge detected on this page" }
+    ...state.challenge && { challenge: "bot/captcha challenge detected on this page" },
+    ...state.tabs && state.tabs.length > 1 && { tabs: state.tabs }
   };
   const result = await client.systemOne({
     state: {
@@ -2002,6 +2019,8 @@ var CdpBrowser = class _CdpBrowser {
   afterInput = null;
   seen = /* @__PURE__ */ new Set();
   adopted = [];
+  /** targetId → sessionId for every tab we own (initial + adopted). */
+  sessions = /* @__PURE__ */ new Map();
   /** In-flight request ids per session — the "is the page actually working" signal. */
   /** In-flight requests per session: requestId → start time for age pruning. */
   pending = /* @__PURE__ */ new Map();
@@ -2128,6 +2147,7 @@ var CdpBrowser = class _CdpBrowser {
         flatten: true
       })).sessionId;
       browser.seen.add(browser.target);
+      browser.sessions.set(browser.target, browser.session);
       await browser.call("Page.enable").catch(() => {
       });
       await browser.call("Network.enable").catch(() => {
@@ -2138,7 +2158,8 @@ var CdpBrowser = class _CdpBrowser {
             const orig = EventTarget.prototype.addEventListener;
 
             EventTarget.prototype.addEventListener = function (type, listener, options) {
-              if (this instanceof Element && typeof type === "string") {
+              if (typeof type === "string" && this !== null && this !== undefined &&
+                  (this instanceof Node || this === window)) {
                 let s = map.get(this);
 
                 if (!s) map.set(this, (s = new Set()));
@@ -2229,6 +2250,7 @@ var CdpBrowser = class _CdpBrowser {
         );
         this.target = t.targetId;
         this.session = sessionId;
+        this.sessions.set(t.targetId, sessionId);
         this.adopted.push(t.targetId);
         await this.call("Page.enable").catch(() => {
         });
@@ -2247,6 +2269,12 @@ var CdpBrowser = class _CdpBrowser {
       } catch {
       }
     }
+  }
+  /** Owned page targets (initial tab + adopted ones) with their titles —
+   *  powers the tabs field and FOCUS_TAB_* controls. */
+  async listTabs() {
+    const { targetInfos } = await this.socket.call("Target.getTargets").catch(() => ({ targetInfos: [] }));
+    return targetInfos.filter((t) => t.type === "page" && this.sessions.has(t.targetId)).map((t) => ({ targetId: t.targetId, title: t.title ?? "", url: t.url ?? "" }));
   }
   async observe() {
     await this.adoptNewTarget();
@@ -2286,6 +2314,23 @@ var CdpBrowser = class _CdpBrowser {
         info.pending_requests = this.pendingCount(this.session);
         info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
         if (this.downloads.length) info.downloads = [...this.downloads];
+        const tabs = await this.listTabs();
+        if (tabs.length > 1) {
+          info.tabs = tabs.map((t) => ({
+            title: (t.title ?? "").slice(0, 80),
+            url: (t.url ?? "").slice(0, 200),
+            ...t.targetId === this.target && { current: true }
+          }));
+          tabs.forEach((t, i) => {
+            if (t.targetId !== this.target)
+              info.actions.push({
+                id: `focus_tab_${i}`,
+                kind: "focus_tab",
+                label: `Switch to tab: ${(t.title || t.url).slice(0, 90)}`,
+                value: t.targetId
+              });
+          });
+        }
         if (this.lastDialog) {
           info.dialog = `${this.lastDialog.type}: ${this.lastDialog.message}`.slice(0, 240);
           this.lastDialog = null;
@@ -2405,6 +2450,16 @@ var CdpBrowser = class _CdpBrowser {
     }
     if (kind === "back" || kind === "forward") {
       await this.evaluate(`history.${kind === "back" ? "back" : "forward"}()`);
+      return { executed: action.id };
+    }
+    if (kind === "focus_tab") {
+      const targetId = String(action.value ?? "");
+      const sessionId = this.sessions.get(targetId);
+      if (!sessionId) throw new StalePage("Tab is gone. Observe again.");
+      await this.socket.call("Target.activateTarget", { targetId }).catch(() => {
+      });
+      this.target = targetId;
+      this.session = sessionId;
       return { executed: action.id };
     }
     if (kind === "press") {
@@ -2637,6 +2692,7 @@ var CdpBrowser = class _CdpBrowser {
       if (this.target && !this.adopted.includes(this.target)) {
         await this.socket.call("Target.closeTarget", { targetId: this.target });
       }
+      this.sessions.clear();
     } catch {
     }
     this.socket?.close();

@@ -1,0 +1,163 @@
+[
+  {
+    "id": "tin-table-cell-extract",
+    "url": "https://the-internet.herokuapp.com/tables",
+    "goal": "In the first table, what is the email address of the person whose last name is Doe? Report just the email.",
+    "expect": {
+      "answer_match": "jdoe@hotmail\\.com"
+    }
+  },
+  {
+    "id": "todomvc-count-answer",
+    "url": "https://demo.playwright.dev/todomvc/#/",
+    "goal": "Add todos 'buy milk' and 'call mom', mark 'buy milk' completed, then report the exact 'items left' counter text.",
+    "expect": {
+      "answer_match": "1 item left|1 items? left"
+    }
+  },
+  {
+    "id": "sauce-cart-count",
+    "url": "https://www.saucedemo.com/",
+    "goal": "Log in as standard_user / secret_sauce, add exactly two different products to the cart, then report the number shown on the cart badge.",
+    "expect": {
+      "answer_match": "^2$"
+    }
+  },
+  {
+    "id": "quotes-author-birth",
+    "url": "https://quotes.toscrape.com/",
+    "goal": "On the first quote, click the (about) link for its author and report the author's born date as shown.",
+    "expect": {
+      "answer_match": "March 14, 1879"
+    }
+  },
+  {
+    "id": "hn-top-comments",
+    "url": "https://news.ycombinator.com/",
+    "goal": "Open the comments thread of the very first story on the front page.",
+    "expect": {
+      "url_match": "item\\?id="
+    }
+  },
+  {
+    "id": "books-page3-price",
+    "url": "https://books.toscrape.com/",
+    "goal": "Go to page 3 of the catalog. What is the price of the first book listed? Report just the price.",
+    "expect": {
+      "answer_match": "\u00a3[0-9.]+",
+      "url_match": "page-3"
+    }
+  },
+  {
+    "id": "github-search-repo",
+    "url": "https://github.com/",
+    "goal": "Search GitHub for 'jev-browse' and open the 0x7067/jev-browse repository page.",
+    "expect": {
+      "url_match": "github\\.com/0x7067/jev-browse"
+    }
+  },
+  {
+    "id": "tin-entry-ad-close",
+    "url": "https://the-internet.herokuapp.com/entry_ad",
+    "goal": "Close the modal that appears (click its Close control).",
+    "expect": {
+      "action_match": "Close"
+    }
+  },
+  {
+    "id": "demoqa-date-picker",
+    "url": "https://demoqa.com/date-picker",
+    "goal": "Set the first 'Date' field to January 15, 1990.",
+    "expect": {
+      "action_match": "01/15/1990|1/15/1990|Jan"
+    }
+  },
+  {
+    "id": "demoqa-double-click",
+    "url": "https://demoqa.com/buttons",
+    "goal": "Double-click the 'Double Click Me' button. If double-click is unsupported, press Enter on it twice.",
+    "expect": {
+      "text_match": "double click|Double Click"
+    }
+  },
+  {
+    "id": "demoqa-right-click",
+    "url": "https://demoqa.com/buttons",
+    "goal": "Right-click the 'Right Click Me' button.",
+    "expect": {
+      "text_match": "right click|Right Click"
+    }
+  },
+  {
+    "id": "tin-js-prompt",
+    "url": "https://the-internet.herokuapp.com/javascript_alerts",
+    "goal": "Click 'Click for JS Confirm' and accept the confirmation dialog.",
+    "expect": {
+      "text_match": "Ok|clicked"
+    }
+  },
+  {
+    "id": "apg-tabs",
+    "url": "https://www.w3.org/WAI/ARIA/apg/patterns/tabs/examples/tabs-manual/",
+    "goal": "Open the 'Maria Ahlefeldt' tab in the example.",
+    "expect": {
+      "text_match": "Maria|Ahlefeldt"
+    }
+  },
+  {
+    "id": "wikipedia-lang-switch",
+    "url": "https://en.wikipedia.org/wiki/Kubernetes",
+    "goal": "Switch the article to its German version (Deutsch) using the language list.",
+    "expect": {
+      "url_match": "de\\.wikipedia\\.org"
+    }
+  },
+  {
+    "id": "tin-challenging-row-edit",
+    "url": "https://the-internet.herokuapp.com/challenging_dom",
+    "goal": "In the table, click the \"edit\" link in the row whose first column value is Iuvaret5.",
+    "expect": {
+      "status": "done"
+    }
+  },
+  {
+    "id": "sortable-resort-extract",
+    "url": "https://the-internet.herokuapp.com/tables",
+    "goal": "Sort the first table by 'First Name' ascending, then report the last name of the first data row.",
+    "expect": {
+      "answer_match": "Bach"
+    }
+  },
+  {
+    "id": "tin-forgot-password",
+    "url": "https://the-internet.herokuapp.com/forgot_password",
+    "goal": "Enter 'agent@example.com' in the email field and submit the form.",
+    "expect": {
+      "status": "done"
+    }
+  },
+  {
+    "id": "multi-window-return",
+    "url": "https://the-internet.herokuapp.com/windows",
+    "goal": "Click 'Click Here' to open the new window, then return to the original page and confirm the 'Opening a new window' heading is visible.",
+    "expect": {
+      "url_match": "the-internet\\.herokuapp\\.com/windows$"
+    }
+  },
+  {
+    "id": "tin-shift-content",
+    "url": "https://the-internet.herokuapp.com/shifting_content/menu",
+    "goal": "Click the 'Home' link in the menu bar.",
+    "expect": {
+      "url_match": "herokuapp\\.com/$"
+    }
+  },
+  {
+    "id": "books-category-nav",
+    "url": "https://books.toscrape.com/",
+    "goal": "Go to the Travel category and report the price of 'It's Only the Himalayas'.",
+    "expect": {
+      "answer_match": "\u00a345\\.17"
+    }
+  }
+]

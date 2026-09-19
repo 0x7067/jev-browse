@@ -190,6 +190,8 @@ export interface TargetInfo {
   type: string;
   /** Set when another target opened this one (window.open, target=_blank). */
   openerId?: string;
+  title?: string;
+  url?: string;
 }
 
 export interface TargetList {

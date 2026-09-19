@@ -30,6 +30,10 @@ clicking the list container does nothing; if no row is a target, PRESS_ARROWDOWN
 PRESS_ENTER selects the first suggestion.
 A CLICK that opens a menu, panel, or dialog adds its items to the table — act on the
 item inside; clicking the same opener again only toggles it closed.
+FOCUS_TAB_* switches which open browser tab you are acting on — page.tabs lists them;
+switching tabs is not navigation, GO_BACK only moves history inside the current tab.
+To reach a specific page number via 'next'/pagination links, click the same control again —
+each click advances one page; the URL or a page indicator shows where you landed.
 DONE requires visible evidence that ALL requirements are satisfied on the CURRENT page, not
 on a page you intend to reach. A link or tab named after the destination is not the
 destination — if asked to open a result or section, a matching link is not enough; click it
@@ -48,6 +52,8 @@ If a required value is missing, return {"text": null}. Otherwise return {"text":
 
 export const ANSWER_VALUE = `Return a JSON object with exactly one key, answer: the direct answer to the user's question, extracted from the current page state.
 Be terse — a value, a name, a number, a short phrase. Quote page text exactly; never infer.
+Respect the goal's scope: 'first', 'last', 'N-th', 'in table X' refer to reading order/position
+in the text below — a page may contain several similar lists; answer from the scoped one only.
 If the page does not contain the answer, return {"answer": null}. No commentary.`;
 
 export const MAX_STEPS = 60;
