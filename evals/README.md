@@ -33,6 +33,46 @@ key presses, AJAX waits, disabled-until-input controls, modals, new tabs,
 range sliders, and a full Google Flights flow. `fixture-interactions.html`
 runs through `file_url` tasks for deterministic coverage.
 
+## bench-v9 vs full-v7
+
+`bench-v9-1789795504888.json` vs baseline `full-v7-1789789722092.json`
+(55 tasks, 1 run each). The verifier now reports `unverifiable` for tasks
+with no runnable expectation — an honest non-failure, excluded from the
+verified count rather than silently passed.
+
+| | full-v7 | bench-v9 |
+| --- | --- | --- |
+| verified | 54 | 36 |
+| unverifiable | 0 | 16 |
+| failed | 1 | 3 |
+| median per-task | 2583ms | 2373ms |
+| median total | 181715ms | 247005ms |
+
+The 16 unverifiable verdicts are tasks whose `expect` is empty — the old
+verifier counted them as passes; the new one declines to claim a check.
+
+**Fixed vs baseline:** github-issues (done/NO → done/yes).
+
+**New failures:**
+
+- `tin-file-upload` — done → **blocked**: the model clicked `Focus textbox`
+  four times and never triggered the upload.
+- `tin-dynamic-controls` — done/**NO**: clicked `Enable` once and declared
+  DONE ~850ms later, before the async enable produced "It's enabled".
+- `tin-key-press` — done/**NO**: clicked `Focus textbox` and declared DONE
+  without ever pressing the key (expected "You entered: TAB").
+
+All three are premature-DONE / wrong-action decision failures on text-input
+tasks; the machinery ran fine.
+
+**Notable timing deltas** (median elapsed): the typical task got faster
+(median −34ms; 12 tasks improved ≥500ms, led by wikipedia-search-nav −2.3s,
+parabank-login −2.2s), but a long tail pushed the total +36%:
+tin-nested-frames +19.1s and tin-sortable +11.3s (both blocked-expected —
+the repair consult extends how long a stuck run persists), tin-slow +16.4s
+(28 steps), hn-paginate +9.8s, demoqa-autocomplete +8.5s, europa-consent
++7.0s, tin-dynamic-loading +4.9s, fx-disabled-redeem +3.3s.
+
 ## Diagnosed issues and their fixes
 
 | Symptom (task) | Root cause | Fix |
@@ -79,9 +119,9 @@ runs through `file_url` tasks for deterministic coverage.
   observation; the 10s idle fuse is the compromise.
 - Helper-model flakiness: an empty `fieldText` answer retries once; a
   double-empty still fails the run (seen once on algolia-search).
-- sauce-checkout and todomvc-add remain unverified but nearly complete:
-  sauce reaches checkout-step-two before looping on a validation-error
-  retry; todomvc adds both todos then misses the completion checkbox.
+- sauce-checkout and todomvc-add verified in bench-v9 after the
+  generalization pass; earlier runs reached the end state but missed
+  final verification (validation-error loop / completion checkbox).
   Decision-quality limits, not machinery.
 - JS-bound interactivity with no DOM or CSS signal (tablesorter headers)
   is fundamentally invisible; `blocked` is the honest answer.
