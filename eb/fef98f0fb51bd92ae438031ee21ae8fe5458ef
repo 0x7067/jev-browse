@@ -1,0 +1,32 @@
+evals/results/lock-a-1789797396721.json
+  s_0503a55d84ed51::t_c4b943bdea5a45 1-35
+src/agent.ts
+  s_0503a55d84ed51::t_c7f76ccba2b798 550
+evals/results/lock-b-1789797396673.json
+  s_0503a55d84ed51::t_c4b943bdea5a45 1-35
+src/cli.ts
+  s_0503a55d84ed51::t_d0a81d3286dbf6 15,76-77,79,81,85-86,178-185
+  s_0503a55d84ed51::t_5edb5e199baa1e 27-33,45-48,53-55,59,62
+bundled/cli.mjs
+  s_0503a55d84ed51::t_c4b943bdea5a45 8,2851-2854,2863-2865,2869-2871,2874,2876,2887,2889-2890,2893,2945-2946
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_c4b943bdea5a45 14,2857-2860,2869-2871,2875-2877,2880,2882,2893,2895-2896,2899,2951-2952
+evals/results/regression-set-1789797346170.json
+  s_0503a55d84ed51::t_d7a713f1be8c30 1-241
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ebfef98f0fb51bd92ae438031ee21ae8fe5458ef",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
