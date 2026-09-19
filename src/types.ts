@@ -38,6 +38,10 @@ export type ObservedAction = {
   frame?: { x: number; y: number }; // iframe: viewport offset for absolute coords
   shadow?: boolean; // element lives in a shadow root
   dragTo?: number; // drag: destination node id into window.__jevFast.nodes
+  /** Element matched [draggable="true"] — a DRAG source candidate. */
+  draggable?: boolean;
+  /** Element matched [oncontextmenu] — a CONTEXT_CLICK candidate. */
+  contextMenu?: boolean;
   checked?: string;
   selected?: string;
   expanded?: string;
@@ -61,6 +65,10 @@ export interface PageState {
   pending_requests?: number;
   /** A main-frame navigation was initiated but hasn't committed yet. */
   pending_nav?: boolean;
+  /** Last auto-accepted JS dialog message, when one fired since the previous observation. */
+  dialog?: string;
+  /** Offered-id or short label of the element holding focus, when identifiable. */
+  focused?: string;
 }
 
 /** Result of executing one observed action. */
@@ -83,8 +91,10 @@ export class StalePage extends Error {
 export interface BrowserDriver {
   /** Atomic read of visible content, controls, guards, and marker. */
   observe(): Promise<PageState>;
-  /** Is `page` still the live document? With an action, compare only its guard. */
-  fresh(page: PageState, action?: ObservedAction): Promise<boolean>;
+  /** Is `page` still the live document? With an action, compare only its guard.
+   *  level "page" compares just the document key (for actions that don't care
+   *  about text churn); "full" (default) includes text and scroll. */
+  fresh(page: PageState, action?: ObservedAction, level?: "full" | "page"): Promise<boolean>;
   /** Execute an observed action. Must re-check freshness before input. */
   act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
   /** In-page event synthesis, used when trusted input delivers nothing. */

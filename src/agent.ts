@@ -73,6 +73,8 @@ export interface RunResult {
   decisions: number;
   elapsed_ms: number;
   history: HistoryEntry[];
+  /** Page text at terminal state — lets verifiers check outcomes, not claims. */
+  final_text?: string;
   error?: string;
 }
 
