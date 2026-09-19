@@ -1,0 +1,36 @@
+evals/results/ctx-fix2-1789787849834.json
+  s_0503a55d84ed51::t_20da5aa59c2702 1-68
+evals/results/ctx-fix-1789787732731.json
+  s_0503a55d84ed51::t_09ec5f165c25c3 1-63
+fixture-interactions.html
+  s_0503a55d84ed51::t_373830f73997d7 89-102,131-135
+src/snapshot.js
+  s_0503a55d84ed51::t_3b5cb910235e16 48-49
+  s_0503a55d84ed51::t_68572e8c2e335e 51
+  s_0503a55d84ed51::t_c218959783144d 83-87
+bundled/snapshot.js
+  s_0503a55d84ed51::t_20da5aa59c2702 83-87
+  s_0503a55d84ed51::t_09ec5f165c25c3 48-49,51
+evals/results/fx-new-1789787651988.json
+  s_0503a55d84ed51::t_d186ec72b6ec21 1-161
+evals/results/noise-check-1789787895889.json
+  s_0503a55d84ed51::t_9b6c0a094653f5 1-135
+evals/tasks.json
+  s_0503a55d84ed51::t_b15b63d41c9ed8 104-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "23e4f1d89e950ecf60871a4b2a51c187c31aafe2",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
