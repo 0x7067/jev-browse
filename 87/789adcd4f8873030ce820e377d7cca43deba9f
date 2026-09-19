@@ -1,0 +1,43 @@
+evals/results/full-v7-1789789722092.json
+  s_0503a55d84ed51::t_8705001804be74 1-1632
+evals/README.md
+  s_0503a55d84ed51::t_3d07ba93a3ab3b 57-59
+evals/results/todomvc-fix-1789789010191.json
+  s_0503a55d84ed51::t_2f1989990490a4 1-71
+src/cdp/browser.ts
+  s_0503a55d84ed51::t_e9262c7243b855 426-429
+src/snapshot.js
+  s_0503a55d84ed51::t_1d731acc18dc6d 37-40
+  s_0503a55d84ed51::t_d6ef8cad0ccd62 128-146
+src/agent.ts
+  s_0503a55d84ed51::t_02349a4a3073a1 592-599
+evals/results/todomvc-fix2-1789789384933.json
+  s_0503a55d84ed51::t_9b2980e8acef91 1-96
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_9083c00e5c7b8f 1399-1406
+  s_0503a55d84ed51::t_9b2980e8acef91 1906-1909,2301-2303
+bundled/snapshot.js
+  s_0503a55d84ed51::t_5ef646ae5815cc 128-146
+  s_0503a55d84ed51::t_2f1989990490a4 37-40
+bundled/cli.mjs
+  s_0503a55d84ed51::t_9b2980e8acef91 1900-1903,2295-2297
+  s_0503a55d84ed51::t_9083c00e5c7b8f 1393-1400
+src/abrowser.ts
+  s_0503a55d84ed51::t_e6945def4dbeb3 291-293
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "87789adcd4f8873030ce820e377d7cca43deba9f",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
