@@ -86,6 +86,6 @@ export interface BrowserDriver {
   /** Execute an observed action. Must re-check freshness before input. */
   act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
   /** In-page event synthesis, used when trusted input delivers nothing. */
-  domClick(action: ObservedAction, page: PageState): Promise<ActResult>;
+  domClick(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
   close(): Promise<void>;
 }

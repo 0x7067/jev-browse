@@ -1,0 +1,91 @@
+{
+  "label": "sauce-fill",
+  "started": "2026-09-19T03:31:32.219Z",
+  "tasks": {
+    "sauce-checkout": {
+      "runs": 2,
+      "verified": 2,
+      "median_ms": 10912,
+      "median_decisions": 11,
+      "median_jev_ms": 4395,
+      "median_text_ms": 5523,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 10912,
+          "steps": 11,
+          "decisions": 11,
+          "jev_ms": 4316,
+          "text_ms": 5523,
+          "final_url": "https://www.saucedemo.com/checkout-complete.html",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login",
+            "CLICK:Add to cart — Sauce Labs Backp",
+            "CLICK:Cart, 1 items (dom)",
+            "CLICK:Checkout (dom)",
+            "TYPE_TEXT:First Name (dom)",
+            "TYPE_TEXT:Last Name (dom)",
+            "TYPE_TEXT:Zip/Postal Code (dom)",
+            "CLICK:Continue (dom)",
+            "CLICK:Finish (dom)"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@2052",
+            "TYPE_TEXT:Password@3335",
+            "CLICK:Login@3757",
+            "CLICK:Add to cart — Sauce Labs Backp@4151",
+            "CLICK:Cart, 1 items@4542",
+            "CLICK:Checkout@4918",
+            "TYPE_TEXT:First Name@7009",
+            "TYPE_TEXT:Last Name@8384",
+            "TYPE_TEXT:Zip/Postal Code@9711",
+            "CLICK:Continue@10103",
+            "CLICK:Finish@10454",
+            "CLICK:Finish (dom)@10912"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 9861,
+          "steps": 11,
+          "decisions": 11,
+          "jev_ms": 4395,
+          "text_ms": 4352,
+          "final_url": "https://www.saucedemo.com/checkout-complete.html",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login",
+            "CLICK:Add to cart — Sauce Labs Backp",
+            "CLICK:Cart, 1 items (dom)",
+            "CLICK:Checkout (dom)",
+            "TYPE_TEXT:First Name (dom)",
+            "TYPE_TEXT:Last Name (dom)",
+            "TYPE_TEXT:Zip/Postal Code (dom)",
+            "CLICK:Continue (dom)",
+            "CLICK:Finish (dom)"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@1985",
+            "TYPE_TEXT:Password@3163",
+            "CLICK:Login@3547",
+            "CLICK:Add to cart — Sauce Labs Backp@4009",
+            "CLICK:Cart, 1 items@4387",
+            "CLICK:Checkout@4775",
+            "TYPE_TEXT:First Name@6225",
+            "TYPE_TEXT:Last Name@7538",
+            "TYPE_TEXT:Zip/Postal Code@8626",
+            "CLICK:Continue@9014",
+            "CLICK:Finish@9404",
+            "CLICK:Finish (dom)@9861"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 10912
+}

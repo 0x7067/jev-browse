@@ -439,14 +439,17 @@ export class Agent {
     // synthesis; an element that does nothing on click is unaffected.
     if (
       entry.page_changed === false &&
-      (action.kind === "click" || action.kind === "hover" || action.kind === "drag") &&
+      (action.kind === "click" ||
+        action.kind === "hover" ||
+        action.kind === "drag" ||
+        action.kind === "fill") &&
       action.node !== undefined &&
       !this.domRetried.has(action.node)
     ) {
       this.domRetried.add(action.node);
 
       try {
-        await this.browser.domClick(action, page);
+        await this.browser.domClick(action, page, text);
         const retried = await this.browser.observe();
 
         if (retried.fingerprint !== page.fingerprint) {

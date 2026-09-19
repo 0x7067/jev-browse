@@ -1300,10 +1300,10 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
     this.settleEntry = null;
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
-    if (entry.page_changed === false && (action.kind === "click" || action.kind === "hover" || action.kind === "drag") && action.node !== void 0 && !this.domRetried.has(action.node)) {
+    if (entry.page_changed === false && (action.kind === "click" || action.kind === "hover" || action.kind === "drag" || action.kind === "fill") && action.node !== void 0 && !this.domRetried.has(action.node)) {
       this.domRetried.add(action.node);
       try {
-        await this.browser.domClick(action, page);
+        await this.browser.domClick(action, page, text);
         const retried = await this.browser.observe();
         if (retried.fingerprint !== page.fingerprint) {
           this.page = retried;
@@ -2026,11 +2026,30 @@ var CdpBrowser = class _CdpBrowser {
    * (same document, all dispatch* calls no-op). Dispatches the pointer/mouse
    * sequence in-page; untrusted events still run ordinary handlers.
    */
-  async domClick(action, page) {
+  async domClick(action, page, text) {
     if (!await this.fresh(page, action)) {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
     if (!action.node) {
+      return { executed: action.id };
+    }
+    if (action.kind === "fill") {
+      await this.evaluate(
+        `(() => {
+          const e=window.__jevFast?.nodes.get(${action.node});
+          if (!e?.isConnected) return "stale";
+          if (e.isContentEditable) {
+            e.innerText=${JSON.stringify(text ?? "")};
+          } else {
+            const proto=e.tagName==='TEXTAREA'?HTMLTextAreaElement:HTMLInputElement;
+            Object.getOwnPropertyDescriptor(proto.prototype,'value').set.call(e,${JSON.stringify(text ?? "")});
+          }
+          e.dispatchEvent(new Event('input',{bubbles:true}));
+          e.dispatchEvent(new Event('change',{bubbles:true}));
+          return "ok";
+        })()`
+      );
+      this.afterInput = action;
       return { executed: action.id };
     }
     if (action.kind === "drag" && action.dragTo !== void 0) {
@@ -2336,9 +2355,26 @@ var AgentBrowser = class _AgentBrowser {
     this.afterInput = action;
     return { executed: action.id };
   }
-  async domClick(action, page) {
+  async domClick(action, page, text) {
     if (!await this.fresh(page, action) || action.node === void 0) {
       throw new StalePage("Page changed since this decision. Observe again.");
+    }
+    if (action.kind === "fill") {
+      await this.evaluate(`(() => {
+        const e=window.__jevFast?.nodes.get(${action.node});
+        if (!e?.isConnected) return "stale";
+        if (e.isContentEditable) {
+          e.innerText=${JSON.stringify(text ?? "")};
+        } else {
+          const proto=e.tagName==='TEXTAREA'?HTMLTextAreaElement:HTMLInputElement;
+          Object.getOwnPropertyDescriptor(proto.prototype,'value').set.call(e,${JSON.stringify(text ?? "")});
+        }
+        e.dispatchEvent(new Event('input',{bubbles:true}));
+        e.dispatchEvent(new Event('change',{bubbles:true}));
+        return "ok";
+      })()`);
+      this.afterInput = action;
+      return { executed: action.id };
     }
     const types = action.kind === "hover" ? ["mouseover", "mousemove"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
     await this.evaluate(`(() => {

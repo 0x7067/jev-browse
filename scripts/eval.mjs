@@ -88,11 +88,9 @@ function runOnce(task, env, engine) {
     // profile, which makes anonymous-state tasks non-deterministic (a logged-in
     // ParaBank page has no login form to fill).
     const profile = mkdtempSync(join(tmpdir(), "jev-eval-"));
-    const childEnv = {
-      ...env,
-      JEV_PROFILE: profile,
-      ...(task.file_url ? { JEV_ALLOW_FILE_URLS: "1" } : {}),
-    };
+    const childEnv = { ...env, JEV_PROFILE: profile };
+
+    if (task.file_url) childEnv.JEV_ALLOW_FILE_URLS = "1";
 
     const cli = spawn(
       process.execPath,

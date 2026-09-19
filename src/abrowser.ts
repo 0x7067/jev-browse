@@ -362,9 +362,32 @@ export class AgentBrowser implements BrowserDriver {
     return { executed: action.id };
   }
 
-  async domClick(action: ObservedAction, page: PageState): Promise<ActResult> {
+  async domClick(
+    action: ObservedAction,
+    page: PageState,
+    text?: string | null,
+  ): Promise<ActResult> {
     if (!(await this.fresh(page, action)) || action.node === undefined) {
       throw new StalePage("Page changed since this decision. Observe again.");
+    }
+
+    if (action.kind === "fill") {
+      await this.evaluate(`(() => {
+        const e=window.__jevFast?.nodes.get(${action.node});
+        if (!e?.isConnected) return "stale";
+        if (e.isContentEditable) {
+          e.innerText=${JSON.stringify(text ?? "")};
+        } else {
+          const proto=e.tagName==='TEXTAREA'?HTMLTextAreaElement:HTMLInputElement;
+          Object.getOwnPropertyDescriptor(proto.prototype,'value').set.call(e,${JSON.stringify(text ?? "")});
+        }
+        e.dispatchEvent(new Event('input',{bubbles:true}));
+        e.dispatchEvent(new Event('change',{bubbles:true}));
+        return "ok";
+      })()`);
+      this.afterInput = action;
+
+      return { executed: action.id };
     }
 
     const types =
