@@ -1,0 +1,473 @@
+{
+  "label": "repair-check",
+  "started": "2026-09-19T05:15:50.958Z",
+  "tasks": {
+    "tin-dynamic-loading": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 6538,
+      "median_decisions": 13,
+      "median_jev_ms": 3609,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6538,
+          "steps": 12,
+          "decisions": 13,
+          "jev_ms": 3609,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@740",
+            "WAIT:Wait for the page to update@1151",
+            "WAIT:Wait for the page to update@1531",
+            "WAIT:Wait for the page to update@1922",
+            "WAIT:Wait for the page to update@2337",
+            "WAIT:Wait for the page to update@2693",
+            "WAIT:Wait for the page to update@3119",
+            "WAIT:Wait for the page to update@3528",
+            "WAIT:Wait for the page to update@3891",
+            "WAIT:Wait for the page to update@4292",
+            "WAIT:Wait for the page to update@4719",
+            "BLOCKED:Wait for the page to update@5849",
+            "DONE:Wait for the page to update@6538"
+          ]
+        }
+      ]
+    },
+    "fx-shadow": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1745,
+      "median_decisions": 2,
+      "median_jev_ms": 927,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1745,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 927,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Shadow action"
+          ],
+          "events": [
+            "CLICK:Shadow action@951",
+            "DONE:Shadow action@1745"
+          ]
+        }
+      ]
+    },
+    "fx-hover-menu": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1926,
+      "median_decisions": 2,
+      "median_jev_ms": 1333,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1926,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 1333,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "HOVER:Hover Destinations menu (hover",
+            "CLICK:Alpine stays"
+          ],
+          "events": [
+            "HOVER:Hover Destinations menu (hover@1047",
+            "CLICK:Alpine stays@1463",
+            "CLICK:Alpine stays@1926"
+          ]
+        }
+      ]
+    },
+    "fx-iframe": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2027,
+      "median_decisions": 2,
+      "median_jev_ms": 1368,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2027,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 1368,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:Inner frame action"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@1074",
+            "CLICK:Inner frame action@1501",
+            "CLICK:Inner frame action@2027"
+          ]
+        }
+      ]
+    },
+    "fx-modal": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2339,
+      "median_decisions": 3,
+      "median_jev_ms": 1293,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2339,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1293,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Delete draft",
+            "CLICK:Confirm delete"
+          ],
+          "events": [
+            "CLICK:Delete draft@1040",
+            "CLICK:Confirm delete@1567",
+            "DONE:Confirm delete@2339"
+          ]
+        }
+      ]
+    },
+    "fx-drag": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3141,
+      "median_decisions": 1,
+      "median_jev_ms": 959,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3141,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 959,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "DRAG:Postcard"
+          ],
+          "events": [
+            "DRAG:Postcard@2658",
+            "DRAG:Postcard@3141"
+          ]
+        }
+      ]
+    },
+    "fx-context": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1434,
+      "median_decisions": 1,
+      "median_jev_ms": 916,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1434,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 916,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CONTEXT_CLICK:Right-click this tile"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Right-click this tile@978",
+            "CONTEXT_CLICK:Right-click this tile@1434"
+          ]
+        }
+      ]
+    },
+    "fx-range": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2206,
+      "median_decisions": 3,
+      "median_jev_ms": 1251,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2206,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1251,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Guests",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "CLICK:Guests@964",
+            "PRESS_ARROWRIGHT:Press arrowright@1333",
+            "DONE:Press arrowright@2206"
+          ]
+        }
+      ]
+    },
+    "todomvc-add": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 4759,
+      "median_decisions": 4,
+      "median_jev_ms": 1335,
+      "median_text_ms": 2194,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4759,
+          "steps": 5,
+          "decisions": 4,
+          "jev_ms": 1335,
+          "text_ms": 2194,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:buy milk"
+          ],
+          "events": [
+            "TYPE_TEXT:New Todo Input@2010",
+            "FOLLOW_UP:Press enter@2144",
+            "TYPE_TEXT:New Todo Input@3453",
+            "FOLLOW_UP:Press enter@3505",
+            "CLICK:buy milk@3935",
+            "DONE:buy milk@4759"
+          ]
+        }
+      ]
+    },
+    "tin-jquery-menu": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3388,
+      "median_decisions": 7,
+      "median_jev_ms": 1322,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3388,
+          "steps": 3,
+          "decisions": 7,
+          "jev_ms": 1322,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/jqueryui/menu",
+          "ops": [
+            "HOVER:Hover Enabled",
+            "HOVER:Hover Downloads",
+            "CLICK:PDF"
+          ],
+          "events": [
+            "HOVER:Hover Enabled@735",
+            "HOVER:Hover Downloads@1557",
+            "CLICK:PDF@2339",
+            "DONE:PDF@3388"
+          ]
+        }
+      ]
+    },
+    "hn-paginate": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 14299,
+      "median_decisions": 3,
+      "median_jev_ms": 1432,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 14299,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1432,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/?p=2",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:More"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@11691",
+            "SCROLL_DOWN:Scroll down@12686",
+            "CLICK:More@13842",
+            "CLICK:More@14299"
+          ]
+        }
+      ]
+    },
+    "tin-redirector": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1796,
+      "median_decisions": 1,
+      "median_jev_ms": 729,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1796,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 729,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/status_codes",
+          "ops": [
+            "CLICK:here"
+          ],
+          "events": [
+            "CLICK:here@1356",
+            "CLICK:here@1796"
+          ]
+        }
+      ]
+    },
+    "europa-consent": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 10247,
+      "median_decisions": 7,
+      "median_jev_ms": 382,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "elapsed_ms": 10247,
+          "steps": 1,
+          "decisions": 7,
+          "jev_ms": 382,
+          "text_ms": 0,
+          "final_url": "https://european-union.europa.eu/index_en",
+          "ops": [
+            "CLICK:Accept only essential cookies"
+          ],
+          "events": [
+            "CLICK:Accept only essential cookies@2667",
+            "DONE:Accept only essential cookies@10247"
+          ]
+        }
+      ]
+    },
+    "tin-context-menu": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1385,
+      "median_decisions": 1,
+      "median_jev_ms": 736,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "elapsed_ms": 1385,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 736,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/context_menu",
+          "ops": [
+            "CONTEXT_CLICK:Hover button"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Hover button@966",
+            "CONTEXT_CLICK:Hover button@1385"
+          ]
+        }
+      ]
+    },
+    "tin-js-alerts": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1284,
+      "median_decisions": 1,
+      "median_jev_ms": 725,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1284,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 725,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/javascript_alerts",
+          "ops": [
+            "CLICK:Click for JS Alert"
+          ],
+          "events": [
+            "CLICK:Click for JS Alert@832",
+            "CLICK:Click for JS Alert@1284"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 58514
+}

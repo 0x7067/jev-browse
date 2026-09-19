@@ -186,26 +186,7 @@ export class Agent {
     }
 
     if (!(await this.browser.fresh(this.page))) {
-      // A stale-redo loop records nothing and spends no budget, so the
-      // decisions cap never reaches it — count consecutive cycles and stop
-      // the storm: one hinted consult, then blocked.
-      this.staleStreak++;
-
-      if (this.staleStreak >= 8) {
-        if (this.fuseConsulted) {
-          this.phase = "blocked";
-        } else {
-          this.fuseConsulted = true;
-          this.repairHint = true;
-          this.phase = "observe";
-        }
-
-        return;
-      }
-
-      this.phase = "observe";
-
-      return;
+      throw new StalePage("Page changed since the last observation. Choose again.");
     }
 
     this.decision = null;
@@ -371,15 +352,6 @@ export class Agent {
       // retries stay forbidden.
       if (selected === "BLOCKED" && this.earlyWaits < 3) {
         this.earlyWaits++;
-
-        // A give-up claim is a stuck signal too — the first probe arms the
-        // repair hint so the re-decide tries a different approach instead of
-        // repeating the same claim.
-        if (!this.probeConsulted) {
-          this.probeConsulted = true;
-          this.repairHint = true;
-        }
-
         const entry = this.waitEntry("Wait for the page to update", page);
         const deadline = Date.now() + 10_000;
 
@@ -393,7 +365,25 @@ export class Agent {
             entry.page_changed = changed;
             entry.url = this.page.url;
             entry.elapsed_ms = this.elapsed();
-            this.phase = changed ? "decide" : "blocked";
+
+            if (changed) {
+              this.phase = "decide";
+
+              return;
+            }
+
+            // An unchanged page after a full patience window is a real
+            // give-up signal — but a single borderline claim still earns one
+            // hinted re-decide before the claim is accepted.
+            if (this.probeConsulted) {
+              this.phase = "blocked";
+
+              return;
+            }
+
+            this.probeConsulted = true;
+            this.repairHint = true;
+            this.phase = "decide";
 
             return;
           }
@@ -425,6 +415,13 @@ export class Agent {
       const dest = page.actions.find((a) => a.id === decision.target2);
 
       if (!dest?.node) throw new Error(`Drag destination ${decision.target2} is not an element`);
+
+      // Dropping an element on itself is a malformed answer, not an action —
+      // re-decide instead of executing a guaranteed no-op.
+      if (dest.node === action.node) {
+        throw new StalePage("Drag destination is the source itself. Choose again.");
+      }
+
       action = { ...action, kind: "drag", dragTo: dest.node };
     }
 
@@ -554,7 +551,16 @@ export class Agent {
       }
     }
 
-    if (decision.follow_up && decision.follow_up !== "NONE") {
+    // DONE_AFTER is only honored on actions that can complete a goal —
+    // scroll/hover/wait/navigation only position the view, so a completion
+    // prediction on them is malformed on its face and gets ignored.
+    const REVEAL_KINDS = new Set(["scroll", "wait", "hover", "back", "forward"]);
+
+    if (
+      decision.follow_up &&
+      decision.follow_up !== "NONE" &&
+      !(decision.follow_up === "DONE_AFTER" && REVEAL_KINDS.has(action.kind))
+    ) {
       this.followUp = {
         type: decision.follow_up === "DONE_AFTER" ? "DONE" : decision.follow_up,
         text,
@@ -683,8 +689,24 @@ export class Agent {
       } catch (error) {
         if (error instanceof StalePage) {
           // Re-observe and let the machine choose again on the fresh page.
+          // A stale-redo loop records nothing and spends no budget, so the
+          // decisions cap never reaches it — count consecutive cycles and
+          // stop the storm: one hinted consult, then blocked.
           this.decision = null;
-          this.phase = "observe";
+          this.staleStreak++;
+
+          if (this.staleStreak >= 8) {
+            if (this.fuseConsulted) {
+              this.phase = "blocked";
+            } else {
+              this.fuseConsulted = true;
+              this.repairHint = true;
+              this.phase = "observe";
+            }
+          } else {
+            this.phase = "observe";
+          }
+
           onEvent?.({
             type: "stale",
             status: this.status,

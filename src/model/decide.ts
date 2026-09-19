@@ -9,7 +9,7 @@ import type { TypeSafeClient, Questions, ChoiceCriteria } from "@typesafe-ai/sdk
 
 import { isFiniteNumber, isString } from "../json.ts";
 import { NEXT_ACTION, TARGET } from "../questions.ts";
-import type { JsonValue, PageState } from "../types.ts";
+import type { JsonValue, ObservedAction, PageState } from "../types.ts";
 import { actionSpace } from "./space.ts";
 
 interface RawChoiceAnswer {
@@ -121,7 +121,7 @@ async function chooseOnce(
   goal: string,
   history: any[],
 ): Promise<Decision> {
-  const { elements, targets, controls } = actionSpace(state.actions);
+  const { elements, targets, controls, dragDestinations } = actionSpace(state.actions);
 
   const labels = new Map([
     ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
@@ -161,7 +161,7 @@ async function chooseOnce(
     },
   };
 
-  for (const [operation, candidates] of Object.entries(targets)) {
+  const criteriaFor = (candidates: Record<string, ObservedAction>): ChoiceCriteria => {
     const criteria: ChoiceCriteria = {};
 
     for (const [index, a] of Object.entries(candidates)) {
@@ -169,25 +169,43 @@ async function chooseOnce(
         element: `[${index}] ${a.label}`,
         current_value: a.current_value ?? a.value ?? "",
         ...Object.fromEntries(
-          ["role", "checked", "selected", "expanded", "cls"].flatMap((k) =>
-            k in a ? [[k, a[k]]] : [],
+          ["role", "checked", "selected", "expanded", "cls", "draggable", "dropZone"].flatMap(
+            (k) => (k in a ? [[k, a[k]]] : []),
           ),
         ),
       };
     }
 
+    return criteria;
+  };
+
+  for (const [operation, candidates] of Object.entries(targets)) {
+    // DRAG's target head names the destination — a wider pool than the
+    // flagged drag sources the candidates map holds.
+    const pool = operation === "DRAG" ? dragDestinations : candidates;
+
     questions[`${operation.toLowerCase()}_target`] = {
       type: "choice",
-      criteria,
+      criteria: criteriaFor(pool),
       instructions: { goal, operation, rules: [NEXT_ACTION, TARGET] },
     };
   }
 
-  // DRAG needs both ends: drag_target (destination) and drag_source over
-  // the same candidate pool.
-  if (questions.drag_target) {
+  // DRAG needs both ends: drag_target (destination, any element) and
+  // drag_source (the flagged draggable that moves).
+  if (questions.drag_target && targets.DRAG) {
+    questions.drag_target.instructions = {
+      goal,
+      operation: "DRAG",
+      rules: [
+        NEXT_ACTION,
+        "Choose the element to drag ONTO — the destination, drop zone, or slot the goal names. Never the element being moved.",
+      ],
+    };
+
     questions.drag_source = {
-      ...questions.drag_target,
+      type: "choice",
+      criteria: criteriaFor(targets.DRAG),
       instructions: {
         goal,
         operation: "DRAG",
@@ -267,13 +285,17 @@ async function chooseOnce(
   let target2: string | null = null;
 
   if (operation in targets) {
+    // DRAG's target head names the destination pool, wider than the flagged
+    // sources in targets.DRAG.
+    const pool = operation === "DRAG" ? dragDestinations : targets[operation];
+
     // Unused target heads cannot cause an action. Validate the selected head only.
     const answer = answers[`${operation.toLowerCase()}_target`] ?? {};
-    validateChoice(answer, new Set(Object.keys(targets[operation])));
+    validateChoice(answer, new Set(Object.keys(pool)));
     target = answer.choice;
     targetProbabilities = answer.probabilities;
     targetConfidence = answer.confidence;
-    choice = targets[operation][target].id;
+    choice = pool[target].id;
 
     if (operation === "DRAG") {
       // drag_target is the destination; drag_source picks the moved element.
@@ -284,7 +306,7 @@ async function chooseOnce(
       choice = targets.DRAG[target].id;
     }
 
-    for (const [index, a] of Object.entries(targets[operation])) {
+    for (const [index, a] of Object.entries(pool)) {
       probabilities[a.id] = answer.probabilities[index];
     }
   } else {

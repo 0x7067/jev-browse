@@ -72,6 +72,10 @@ const LONG_LIVED_REQUESTS = new Set([
   "Other",
 ]);
 
+/** A request in flight longer than this is hung or long-lived noise (a CDN
+ *  stream that never completes) — it can't pin pending_requests forever. */
+const PENDING_GRACE_MS = 10_000;
+
 /** Forced page viewport. The launch window is 120px taller: headed Chrome
  *  spends the difference on browser chrome, leaving ~780px for content. */
 const VIEWPORT_W = 1120;
@@ -131,7 +135,8 @@ export class CdpBrowser implements BrowserDriver {
   private seen = new Set<string>();
   private adopted: string[] = [];
   /** In-flight request ids per session — the "is the page actually working" signal. */
-  private pending = new Map<string, Set<string>>();
+  /** In-flight requests per session: requestId → start time for age pruning. */
+  private pending = new Map<string, Map<string, number>>();
   /** Uncommitted main-frame navigations per session — click → commit is a gap. */
   private navPending = new Map<string, number>();
   /** Each session's main frame id — iframe nav events must not count as pending. */
@@ -228,7 +233,10 @@ export class CdpBrowser implements BrowserDriver {
       });
       browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
         if (sessionId && !LONG_LIVED_REQUESTS.has(String(p.type))) {
-          (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, new Set()).get(sessionId)!).add(p.requestId);
+          (
+            browser.pending.get(sessionId) ??
+            browser.pending.set(sessionId, new Map()).get(sessionId)!
+          ).set(p.requestId, Date.now());
         }
       });
       browser.socket.onEvent("Network.loadingFinished", (p, sessionId) => {
@@ -451,7 +459,7 @@ export class CdpBrowser implements BrowserDriver {
 
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
-        info.pending_requests = this.pending.get(this.session)?.size ?? 0;
+        info.pending_requests = this.pendingCount(this.session);
         info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
 
         // Report the dialog we auto-accepted since the last observation, once.
@@ -470,6 +478,25 @@ export class CdpBrowser implements BrowserDriver {
     }
 
     throw new StalePage("Page did not settle");
+  }
+
+  /** Requests still young enough to count as in-flight work; older entries
+   *  are reaped — a request that outlives the grace window is hung, not
+   *  settling. */
+  private pendingCount(session: string): number {
+    const requests = this.pending.get(session);
+
+    if (!requests) return 0;
+
+    const now = Date.now();
+    let count = 0;
+
+    for (const [id, started] of requests) {
+      if (now - started > PENDING_GRACE_MS) requests.delete(id);
+      else count++;
+    }
+
+    return count;
   }
 
   pendingNav(): boolean {
@@ -713,6 +740,19 @@ export class CdpBrowser implements BrowserDriver {
           button: kind === "context" ? "right" : "left",
           clickCount: 1,
         });
+      }
+
+      // An element clipped by the viewport edge often renders its response
+      // just out of view — bring it fully on-screen so the next observation
+      // sees what the input caused.
+      if (kind === "click" || kind === "context" || kind === "fill") {
+        await this.evaluate(`(() => {
+          const e=window.__jevFast?.nodes.get(${action.node});
+          if (!e?.isConnected) return;
+          const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView||window;
+          if (r.top<0 || r.left<0 || r.bottom>w.innerHeight || r.right>w.innerWidth)
+            e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+        })()`).catch(() => {});
       }
 
       if (kind === "fill") {

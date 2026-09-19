@@ -1,0 +1,90 @@
+{
+  "label": "repair-check",
+  "started": "2026-09-19T04:58:27.244Z",
+  "tasks": {
+    "fx-iframe": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 1384,
+      "median_decisions": 1,
+      "median_jev_ms": 929,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 1384,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 929,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "SCROLL_DOWN:Scroll down"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@939",
+            "SCROLL_DOWN:Scroll down@1384"
+          ]
+        }
+      ]
+    },
+    "hn-paginate": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 11539,
+      "median_decisions": 1,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 11539,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@11539"
+          ]
+        }
+      ]
+    },
+    "tin-js-alerts": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1434,
+      "median_decisions": 1,
+      "median_jev_ms": 950,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1434,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 950,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/javascript_alerts",
+          "ops": [
+            "CLICK:Click for JS Alert"
+          ],
+          "events": [
+            "CLICK:Click for JS Alert@994",
+            "CLICK:Click for JS Alert@1434"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 14357
+}

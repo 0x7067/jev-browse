@@ -56,9 +56,29 @@ return s?[s]:[]}).join(' ') ||
   // role or link semantics — custom widgets live on plain divs. tabindex is
   // gathered separately (tabindexSel): focus order alone isn't clickability.
   const selector='a[href],button,input,textarea,select,summary,[contenteditable="true"],'+
-    '[draggable="true"],[onclick],'+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
+    '[draggable="true"],[onclick],[ondrop],[ondragover],[ondragenter],'+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
 
   const tabindexSel='[tabindex]:not([tabindex^="-"])';
+
+  // Handler properties are invisible to selectors: el.oncontextmenu=... wires
+  // the same interactivity as the attribute, and drop zones are usually plain
+  // divs. Gather scans every element and tests these in JS.
+  const HANDLER_PROPS=['onclick','oncontextmenu','onmousedown','onkeydown','onkeypress','onmouseover'];
+  const DROP_PROPS=['ondrop','ondragover','ondragenter'];
+
+  // An unset on* handler reads null; a non-callable assignment turns into
+  // null too — a truthy read is a wired handler.
+  const hasHandlerProp=e=>{
+    for (const p of HANDLER_PROPS) if (e[p]) return true;
+
+    return false;
+  };
+
+  const hasDropProp=e=>{
+    for (const p of DROP_PROPS) if (e[p]) return true;
+
+    return false;
+  };
 
   const role = e => {
     const explicit=e.getAttribute('role');
@@ -89,9 +109,10 @@ return s?[s]:[]}).join(' ') ||
     }
 
     // No-role interactivity: click/hover handlers, focusable widgets, drag
-    // sources. They matched the selector for a reason — call them buttons
-    // so they reach the action table.
-    if (e.matches(hoverSel+',[onclick],[draggable="true"],'+tabindexSel)) return 'button';
+    // sources. They matched the candidacy test for a reason — call them
+    // buttons so they reach the action table.
+    if (e.matches(hoverSel+',[onclick],[draggable="true"],'+tabindexSel) ||
+        hasHandlerProp(e) || hasDropProp(e)) return 'button';
 
     return null;
   };
@@ -130,14 +151,20 @@ return s?[s]:[]}).join(' ') ||
   const gather=(root,fx,fy,depth)=>{
     if (depth>4) return;
 
-    for (const e of root.querySelectorAll(selector+','+tabindexSel)) {
+    for (const e of root.querySelectorAll('*')) {
+      if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
+
+      const dropZone=hasDropProp(e);
+
+      // Candidacy: selector match, a handler property, or a drop handler.
       // tabindex>=0 alone is routine focus management, not clickability —
-      // require a second signal: handler/jsaction attribute, pointer
-      // cursor, or an interactive descendant.
-      if (!e.matches(selector) &&
-          !e.matches('[onclick],[onkeydown],[onkeypress],[onmousedown],[jsaction]') &&
-          (e.ownerDocument.defaultView||window).getComputedStyle(e).cursor!=='pointer' &&
-          !e.querySelector(INTERACTIVE)) continue;
+      // it needs a second signal: handler/jsaction attribute or property,
+      // pointer cursor, or an interactive descendant.
+      if (!dropZone && !e.matches(selector) && !hasHandlerProp(e) &&
+          !(e.matches(tabindexSel) &&
+            (e.matches('[onclick],[onkeydown],[onkeypress],[onmousedown],[jsaction]') ||
+              (e.ownerDocument.defaultView||window).getComputedStyle(e).cursor==='pointer' ||
+              e.querySelector(INTERACTIVE)))) continue;
 
       // Opacity:0 custom controls (iOS toggles, styled checkboxes, material
       // switches) fail checkVisibility yet remain the real click target —
@@ -172,7 +199,10 @@ return s?[s]:[]}).join(' ') ||
           let a=e.parentElement, hops=0;
 
           while (a && hops++<6 && !hoverZones.has(a)) {
-            if (visible(a) && !a.matches(selector)) {
+            // The nearest visible ancestor is the hover target even when it
+            // is itself indexed — climbing past it lands on wrappers whose
+            // center hits dead space (or a disabled sibling menu item).
+            if (visible(a)) {
               const ar=a.getBoundingClientRect();
               const ax=fx+ar.x+ar.width/2, ay=fy+ar.y+ar.height/2;
 
@@ -205,9 +235,11 @@ return s?[s]:[]}).join(' ') ||
       const base={node:identity(e),role:rname,label:(name(e)||rname).slice(0,240),
         rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height}};
 
-      if (e.getAttribute('draggable')==='true') base.draggable=true;
+      if (e.getAttribute('draggable')==='true' || e.ondragstart) base.draggable=true;
 
-      if (e.hasAttribute('oncontextmenu')) base.contextMenu=true;
+      if (e.hasAttribute('oncontextmenu') || e.oncontextmenu) base.contextMenu=true;
+
+      if (dropZone) base.dropZone=true;
 
       // Classes often carry the only semantic signal a control has
       // (button.success is the green one). Truncate aggressively.
@@ -251,10 +283,6 @@ return s?[s]:[]}).join(' ') ||
       // choice). Offer the leaf, not the root.
       if (hoverable(e) && !e.querySelector(selector))
         actions.push({...base,kind:'hover',value:undefined,label:'Hover '+base.label});
-    }
-
-    for (const e of root.querySelectorAll('*')) {
-      if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
     }
 
     for (const f of root.querySelectorAll('iframe,frame')) {

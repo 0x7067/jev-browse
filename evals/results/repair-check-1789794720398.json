@@ -1,0 +1,317 @@
+{
+  "label": "repair-check",
+  "started": "2026-09-19T05:10:44.036Z",
+  "tasks": {
+    "fx-iframe": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2907,
+      "median_decisions": 3,
+      "median_jev_ms": 1261,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2907,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1261,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:Inner frame action"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@961",
+            "CLICK:Inner frame action@1730",
+            "DONE:Inner frame action@2907"
+          ]
+        }
+      ]
+    },
+    "fx-drag": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3253,
+      "median_decisions": 3,
+      "median_jev_ms": 1316,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3253,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1316,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "DRAG:Postcard",
+            "DRAG:Postcard"
+          ],
+          "events": [
+            "DRAG:Postcard@1093",
+            "DRAG:Postcard@2077",
+            "DONE:Postcard@3253"
+          ]
+        }
+      ]
+    },
+    "fx-context": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2121,
+      "median_decisions": 2,
+      "median_jev_ms": 918,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2121,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 918,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CONTEXT_CLICK:Right-click this tile"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Right-click this tile@930",
+            "DONE:Right-click this tile@2121"
+          ]
+        }
+      ]
+    },
+    "tin-hovers": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 2984,
+      "median_decisions": 4,
+      "median_jev_ms": 1339,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 2984,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1339,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/hovers",
+          "ops": [
+            "HOVER:Hover User Avatar name: user1 ",
+            "CLICK:View profile",
+            "GO_BACK:Go back to the previous page"
+          ],
+          "events": [
+            "HOVER:Hover User Avatar name: user1 @737",
+            "CLICK:View profile@1494",
+            "GO_BACK:Go back to the previous page@2252",
+            "DONE:Go back to the previous page@2984"
+          ]
+        }
+      ]
+    },
+    "tin-jquery-menu": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3374,
+      "median_decisions": 7,
+      "median_jev_ms": 1735,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3374,
+          "steps": 4,
+          "decisions": 7,
+          "jev_ms": 1735,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/jqueryui/menu",
+          "ops": [
+            "HOVER:Hover Enabled",
+            "HOVER:Hover Enabled",
+            "HOVER:Hover Downloads",
+            "CLICK:PDF"
+          ],
+          "events": [
+            "HOVER:Hover Enabled@796",
+            "HOVER:Hover Enabled@1177",
+            "HOVER:Hover Downloads@1495",
+            "CLICK:PDF@2308",
+            "DONE:PDF@3374"
+          ]
+        }
+      ]
+    },
+    "hn-paginate": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 15006,
+      "median_decisions": 4,
+      "median_jev_ms": 1345,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 15006,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1345,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/?p=2",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:More"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@11596",
+            "SCROLL_DOWN:Scroll down@12567",
+            "CLICK:More@13657",
+            "DONE:More@15006"
+          ]
+        }
+      ]
+    },
+    "tin-redirector": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2232,
+      "median_decisions": 2,
+      "median_jev_ms": 682,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2232,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 682,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/status_codes",
+          "ops": [
+            "CLICK:here"
+          ],
+          "events": [
+            "CLICK:here@1074",
+            "DONE:here@2232"
+          ]
+        }
+      ]
+    },
+    "europa-consent": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 10335,
+      "median_decisions": 6,
+      "median_jev_ms": 338,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "elapsed_ms": 10335,
+          "steps": 1,
+          "decisions": 6,
+          "jev_ms": 338,
+          "text_ms": 0,
+          "final_url": "https://european-union.europa.eu/index_en",
+          "ops": [
+            "CLICK:Accept only essential cookies"
+          ],
+          "events": [
+            "CLICK:Accept only essential cookies@1752",
+            "DONE:Accept only essential cookies@10335"
+          ]
+        }
+      ]
+    },
+    "tin-js-alerts": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1908,
+      "median_decisions": 2,
+      "median_jev_ms": 707,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1908,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 707,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/javascript_alerts",
+          "ops": [
+            "CLICK:Click for JS Alert"
+          ],
+          "events": [
+            "CLICK:Click for JS Alert@743",
+            "DONE:Click for JS Alert@1908"
+          ]
+        }
+      ]
+    },
+    "tin-drag-drop": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 5208,
+      "median_decisions": 7,
+      "median_jev_ms": 2526,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": "unverifiable",
+          "elapsed_ms": 5208,
+          "steps": 7,
+          "decisions": 7,
+          "jev_ms": 2526,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/drag_and_drop",
+          "ops": [
+            "DRAG:A",
+            "DRAG:A",
+            "DRAG:A",
+            "DRAG:A",
+            "DRAG:A",
+            "DRAG:A",
+            "DRAG:A"
+          ],
+          "events": [
+            "DRAG:A@762",
+            "DRAG:A@1470",
+            "DRAG:A@2189",
+            "DRAG:A@2931",
+            "DRAG:A@3652",
+            "DRAG:A@4396",
+            "DRAG:A@5176",
+            "DRAG:A@5208"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 49328
+}

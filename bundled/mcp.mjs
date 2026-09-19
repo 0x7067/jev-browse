@@ -131,7 +131,8 @@ function actionSpace(actions) {
       if (!element.operations.includes("CONTEXT_CLICK")) element.operations.push("CONTEXT_CLICK");
     }
   }
-  return { elements, targets, controls };
+  const dragDestinations = { ...targets.CLICK };
+  return { elements, targets, controls, dragDestinations };
 }
 
 // src/model/decide.ts
@@ -177,7 +178,7 @@ async function choose(client, state, goal, history) {
   throw new Error("unreachable");
 }
 async function chooseOnce(client, state, goal, history) {
-  const { elements, targets, controls } = actionSpace(state.actions);
+  const { elements, targets, controls, dragDestinations } = actionSpace(state.actions);
   const labels = /* @__PURE__ */ new Map([
     ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
     [
@@ -210,28 +211,41 @@ async function chooseOnce(client, state, goal, history) {
       instructions: { goal, rules: NEXT_ACTION }
     }
   };
-  for (const [operation2, candidates] of Object.entries(targets)) {
+  const criteriaFor = (candidates) => {
     const criteria = {};
     for (const [index, a] of Object.entries(candidates)) {
       criteria[index] = {
         element: `[${index}] ${a.label}`,
         current_value: a.current_value ?? a.value ?? "",
         ...Object.fromEntries(
-          ["role", "checked", "selected", "expanded", "cls"].flatMap(
+          ["role", "checked", "selected", "expanded", "cls", "draggable", "dropZone"].flatMap(
             (k) => k in a ? [[k, a[k]]] : []
           )
         )
       };
     }
+    return criteria;
+  };
+  for (const [operation2, candidates] of Object.entries(targets)) {
+    const pool = operation2 === "DRAG" ? dragDestinations : candidates;
     questions[`${operation2.toLowerCase()}_target`] = {
       type: "choice",
-      criteria,
+      criteria: criteriaFor(pool),
       instructions: { goal, operation: operation2, rules: [NEXT_ACTION, TARGET] }
     };
   }
-  if (questions.drag_target) {
+  if (questions.drag_target && targets.DRAG) {
+    questions.drag_target.instructions = {
+      goal,
+      operation: "DRAG",
+      rules: [
+        NEXT_ACTION,
+        "Choose the element to drag ONTO \u2014 the destination, drop zone, or slot the goal names. Never the element being moved."
+      ]
+    };
     questions.drag_source = {
-      ...questions.drag_target,
+      type: "choice",
+      criteria: criteriaFor(targets.DRAG),
       instructions: {
         goal,
         operation: "DRAG",
@@ -291,12 +305,13 @@ async function chooseOnce(client, state, goal, history) {
   let choice;
   let target2 = null;
   if (operation in targets) {
+    const pool = operation === "DRAG" ? dragDestinations : targets[operation];
     const answer = answers[`${operation.toLowerCase()}_target`] ?? {};
-    validateChoice(answer, new Set(Object.keys(targets[operation])));
+    validateChoice(answer, new Set(Object.keys(pool)));
     target = answer.choice;
     targetProbabilities = answer.probabilities;
     targetConfidence = answer.confidence;
-    choice = targets[operation][target].id;
+    choice = pool[target].id;
     if (operation === "DRAG") {
       const sourceAnswer = answers.drag_source ?? {};
       validateChoice(sourceAnswer, new Set(Object.keys(targets.DRAG)));
@@ -304,7 +319,7 @@ async function chooseOnce(client, state, goal, history) {
       target = sourceAnswer.choice;
       choice = targets.DRAG[target].id;
     }
-    for (const [index, a] of Object.entries(targets[operation])) {
+    for (const [index, a] of Object.entries(pool)) {
       probabilities[a.id] = answer.probabilities[index];
     }
   } else {
@@ -1154,19 +1169,7 @@ var Agent = class _Agent {
       return;
     }
     if (!await this.browser.fresh(this.page)) {
-      this.staleStreak++;
-      if (this.staleStreak >= 8) {
-        if (this.fuseConsulted) {
-          this.phase = "blocked";
-        } else {
-          this.fuseConsulted = true;
-          this.repairHint = true;
-          this.phase = "observe";
-        }
-        return;
-      }
-      this.phase = "observe";
-      return;
+      throw new StalePage("Page changed since the last observation. Choose again.");
     }
     this.decision = null;
     if (this.followUp) {
@@ -1275,10 +1278,6 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
       }
       if (selected === "BLOCKED" && this.earlyWaits < 3) {
         this.earlyWaits++;
-        if (!this.probeConsulted) {
-          this.probeConsulted = true;
-          this.repairHint = true;
-        }
         const entry2 = this.waitEntry("Wait for the page to update", page);
         const deadline = Date.now() + 1e4;
         for (; ; ) {
@@ -1289,7 +1288,17 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
             entry2.page_changed = changed;
             entry2.url = this.page.url;
             entry2.elapsed_ms = this.elapsed();
-            this.phase = changed ? "decide" : "blocked";
+            if (changed) {
+              this.phase = "decide";
+              return;
+            }
+            if (this.probeConsulted) {
+              this.phase = "blocked";
+              return;
+            }
+            this.probeConsulted = true;
+            this.repairHint = true;
+            this.phase = "decide";
             return;
           }
         }
@@ -1308,6 +1317,9 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
     if (decision.operation === "DRAG" && decision.target2) {
       const dest = page.actions.find((a) => a.id === decision.target2);
       if (!dest?.node) throw new Error(`Drag destination ${decision.target2} is not an element`);
+      if (dest.node === action.node) {
+        throw new StalePage("Drag destination is the source itself. Choose again.");
+      }
       action = { ...action, kind: "drag", dragTo: dest.node };
     }
     if (this.history.length >= this.maxSteps) {
@@ -1397,7 +1409,8 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
       } catch {
       }
     }
-    if (decision.follow_up && decision.follow_up !== "NONE") {
+    const REVEAL_KINDS = /* @__PURE__ */ new Set(["scroll", "wait", "hover", "back", "forward"]);
+    if (decision.follow_up && decision.follow_up !== "NONE" && !(decision.follow_up === "DONE_AFTER" && REVEAL_KINDS.has(action.kind))) {
       this.followUp = {
         type: decision.follow_up === "DONE_AFTER" ? "DONE" : decision.follow_up,
         text,
@@ -1483,7 +1496,18 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
       } catch (error) {
         if (error instanceof StalePage) {
           this.decision = null;
-          this.phase = "observe";
+          this.staleStreak++;
+          if (this.staleStreak >= 8) {
+            if (this.fuseConsulted) {
+              this.phase = "blocked";
+            } else {
+              this.fuseConsulted = true;
+              this.repairHint = true;
+              this.phase = "observe";
+            }
+          } else {
+            this.phase = "observe";
+          }
           onEvent?.({
             type: "stale",
             status: this.status,
@@ -1824,6 +1848,7 @@ var LONG_LIVED_REQUESTS = /* @__PURE__ */ new Set([
   "CSPViolationReport",
   "Other"
 ]);
+var PENDING_GRACE_MS = 1e4;
 var VIEWPORT_W = 1120;
 var VIEWPORT_H = 780;
 var SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
@@ -1857,6 +1882,7 @@ var CdpBrowser = class _CdpBrowser {
   seen = /* @__PURE__ */ new Set();
   adopted = [];
   /** In-flight request ids per session — the "is the page actually working" signal. */
+  /** In-flight requests per session: requestId → start time for age pruning. */
   pending = /* @__PURE__ */ new Map();
   /** Uncommitted main-frame navigations per session — click → commit is a gap. */
   navPending = /* @__PURE__ */ new Map();
@@ -1928,7 +1954,7 @@ var CdpBrowser = class _CdpBrowser {
       });
       browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
         if (sessionId && !LONG_LIVED_REQUESTS.has(String(p.type))) {
-          (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, /* @__PURE__ */ new Set()).get(sessionId)).add(p.requestId);
+          (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, /* @__PURE__ */ new Map()).get(sessionId)).set(p.requestId, Date.now());
         }
       });
       browser.socket.onEvent("Network.loadingFinished", (p, sessionId) => {
@@ -2095,7 +2121,7 @@ var CdpBrowser = class _CdpBrowser {
         const info = await this.evaluate(READ_STATE);
         if (info === null || info === void 0) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
-        info.pending_requests = this.pending.get(this.session)?.size ?? 0;
+        info.pending_requests = this.pendingCount(this.session);
         info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
         if (this.lastDialog) {
           info.dialog = `${this.lastDialog.type}: ${this.lastDialog.message}`.slice(0, 240);
@@ -2108,6 +2134,20 @@ var CdpBrowser = class _CdpBrowser {
       }
     }
     throw new StalePage("Page did not settle");
+  }
+  /** Requests still young enough to count as in-flight work; older entries
+   *  are reaped — a request that outlives the grace window is hung, not
+   *  settling. */
+  pendingCount(session) {
+    const requests = this.pending.get(session);
+    if (!requests) return 0;
+    const now = Date.now();
+    let count = 0;
+    for (const [id, started] of requests) {
+      if (now - started > PENDING_GRACE_MS) requests.delete(id);
+      else count++;
+    }
+    return count;
   }
   pendingNav() {
     return (this.navPending.get(this.session) ?? 0) > 0;
@@ -2293,6 +2333,16 @@ var CdpBrowser = class _CdpBrowser {
           y: target.y,
           button: kind === "context" ? "right" : "left",
           clickCount: 1
+        });
+      }
+      if (kind === "click" || kind === "context" || kind === "fill") {
+        await this.evaluate(`(() => {
+          const e=window.__jevFast?.nodes.get(${action.node});
+          if (!e?.isConnected) return;
+          const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView||window;
+          if (r.top<0 || r.left<0 || r.bottom>w.innerHeight || r.right>w.innerWidth)
+            e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+        })()`).catch(() => {
         });
       }
       if (kind === "fill") {

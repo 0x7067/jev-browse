@@ -42,6 +42,8 @@ export type ObservedAction = {
   draggable?: boolean;
   /** Element matched [oncontextmenu] — a CONTEXT_CLICK candidate. */
   contextMenu?: boolean;
+  /** Element carries a drop handler — a DRAG destination candidate. */
+  dropZone?: boolean;
   checked?: string;
   selected?: string;
   expanded?: string;

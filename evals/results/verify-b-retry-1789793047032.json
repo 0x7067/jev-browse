@@ -1,0 +1,239 @@
+{
+  "label": "verify-b-retry",
+  "started": "2026-09-19T04:42:31.020Z",
+  "tasks": {
+    "fx-iframe": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 1389,
+      "median_decisions": 1,
+      "median_jev_ms": 930,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 1389,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 930,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "SCROLL_DOWN:Scroll down"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@943",
+            "SCROLL_DOWN:Scroll down@1388"
+          ]
+        }
+      ]
+    },
+    "hn-paginate": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 11524,
+      "median_decisions": 1,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 11524,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@11523"
+          ]
+        }
+      ]
+    },
+    "tin-redirector": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 11187,
+      "median_decisions": 1,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 11187,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/redirector",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@11187"
+          ]
+        }
+      ]
+    },
+    "tin-slow": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 18041,
+      "median_decisions": 11,
+      "median_jev_ms": 3522,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": "unverifiable",
+          "elapsed_ms": 18041,
+          "steps": 11,
+          "decisions": 11,
+          "jev_ms": 3522,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/slow",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "WAIT:Wait for the page to update@866",
+            "WAIT:Wait for the page to update@3825",
+            "WAIT:Wait for the page to update@4199",
+            "WAIT:Wait for the page to update@4636",
+            "WAIT:Wait for the page to update@5093",
+            "WAIT:Wait for the page to update@5469",
+            "WAIT:Wait for the page to update@5887",
+            "WAIT:Wait for the page to update@6295",
+            "WAIT:Wait for the page to update@6714",
+            "WAIT:Wait for the page to update@7100",
+            "BLOCKED:Wait for the page to update@18041"
+          ]
+        }
+      ]
+    },
+    "crates-search": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3908,
+      "median_decisions": 4,
+      "median_jev_ms": 299,
+      "median_text_ms": 994,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3908,
+          "steps": 2,
+          "decisions": 4,
+          "jev_ms": 299,
+          "text_ms": 994,
+          "final_url": "https://crates.io/search?q=serde",
+          "ops": [
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search@2445",
+            "FOLLOW_UP:Press enter@2515",
+            "DONE:Press enter@3908"
+          ]
+        }
+      ]
+    },
+    "tin-js-alerts": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 11123,
+      "median_decisions": 1,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 11123,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/javascript_alerts",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@11123"
+          ]
+        }
+      ]
+    },
+    "flights-zurich-london": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 11344,
+      "median_decisions": 12,
+      "median_jev_ms": 3693,
+      "median_text_ms": 4010,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 11344,
+          "steps": 10,
+          "decisions": 12,
+          "jev_ms": 3693,
+          "text_ms": 4010,
+          "final_url": "https://www.google.com/travel/flights/search?tfs=CBwQAhojEgoyMDI2LTA5LTIwagwIAxIIL20vMDg5NjZyBwgBEgNMQ1lAAUgBcAGCAQsI____________AZgBAg&hl=en",
+          "ops": [
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:One way",
+            "TYPE_TEXT:Where from?",
+            "CLICK:Zürich, Switzerland",
+            "TYPE_TEXT:Where to? ",
+            "FOLLOW_UP:London, United Kingdom Toggle ",
+            "TYPE_TEXT:Departure",
+            "CLICK:Sunday, September 20, 2026",
+            "CLICK:Done. Search for one-way fligh",
+            "CLICK:Search"
+          ],
+          "events": [
+            "CLICK:Change ticket type. Round trip@930",
+            "CLICK:One way@1403",
+            "TYPE_TEXT:Where from?@3146",
+            "CLICK:Zürich, Switzerland@4118",
+            "TYPE_TEXT:Where to? @6472",
+            "FOLLOW_UP:London, United Kingdom Toggle @6650",
+            "TYPE_TEXT:Departure@8646",
+            "CLICK:Sunday, September 20, 2026@9107",
+            "CLICK:Done. Search for one-way fligh@9581",
+            "CLICK:Search@10713",
+            "CLICK:Search@11344"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 68516
+}

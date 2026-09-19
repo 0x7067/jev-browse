@@ -1,0 +1,35 @@
+{
+  "label": "repair-check",
+  "started": "2026-09-19T05:10:23.029Z",
+  "tasks": {
+    "europa-consent": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 9772,
+      "median_decisions": 5,
+      "median_jev_ms": 346,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "elapsed_ms": 9772,
+          "steps": 1,
+          "decisions": 5,
+          "jev_ms": 346,
+          "text_ms": 0,
+          "final_url": "https://european-union.europa.eu/index_en",
+          "ops": [
+            "CLICK:Accept only essential cookies"
+          ],
+          "events": [
+            "CLICK:Accept only essential cookies@1426",
+            "DONE:Accept only essential cookies@9772"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 9772
+}

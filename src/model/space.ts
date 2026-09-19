@@ -109,5 +109,11 @@ export function actionSpace(actions: ObservedAction[]) {
     }
   }
 
-  return { elements, targets, controls };
+  // A drag destination is wherever the source lands — drop zones are often
+  // plain elements with no interactive signal of their own, so the dest
+  // pool is the whole indexed set, not the flagged sources. dropZone flags
+  // only make otherwise-invisible targets reachable.
+  const dragDestinations = { ...targets.CLICK };
+
+  return { elements, targets, controls, dragDestinations };
 }
