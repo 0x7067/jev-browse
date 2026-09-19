@@ -83,5 +83,13 @@ export function actionSpace(actions: ObservedAction[]) {
     group[target] = action;
   }
 
+  // Right-click shares the click candidate set — any clickable element can
+  // host a context menu or a right-click handler. Drag sources and targets
+  // come from the same pool.
+  if (targets.CLICK) {
+    targets.CONTEXT_CLICK = targets.CLICK;
+    targets.DRAG = targets.CLICK;
+  }
+
   return { elements, targets, controls };
 }

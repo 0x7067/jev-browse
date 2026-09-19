@@ -1,0 +1,95 @@
+{
+  "label": "context",
+  "started": "2026-09-19T03:02:19.426Z",
+  "tasks": {
+    "tin-context-menu": {
+      "runs": 2,
+      "verified": 2,
+      "median_ms": 1244,
+      "median_decisions": 1,
+      "median_jev_ms": 755,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1244,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 755,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/context_menu",
+          "ops": [
+            "CONTEXT_CLICK:Elemental Selenium"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Elemental Selenium@814",
+            "CONTEXT_CLICK:Elemental Selenium@1244"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1172,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 728,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/context_menu",
+          "ops": [
+            "CONTEXT_CLICK:Elemental Selenium"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Elemental Selenium@740",
+            "CONTEXT_CLICK:Elemental Selenium@1172"
+          ]
+        }
+      ]
+    },
+    "tin-js-alerts": {
+      "runs": 2,
+      "verified": 2,
+      "median_ms": 1454,
+      "median_decisions": 1,
+      "median_jev_ms": 962,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1176,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 693,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/javascript_alerts",
+          "ops": [
+            "CLICK:Click for JS Alert"
+          ],
+          "events": [
+            "CLICK:Click for JS Alert@744",
+            "CLICK:Click for JS Alert@1176"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1454,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 962,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/javascript_alerts",
+          "ops": [
+            "CLICK:Click for JS Alert"
+          ],
+          "events": [
+            "CLICK:Click for JS Alert@1014",
+            "CLICK:Click for JS Alert@1454"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 2698
+}

@@ -14,6 +14,8 @@ export type JsonObject = { [key: string]: JsonValue };
 
 export type ActionKind =
   | "click"
+  | "context"
+  | "drag"
   | "fill"
   | "select"
   | "scroll"
@@ -35,6 +37,7 @@ export type ObservedAction = {
   key?: string; // press: key name
   frame?: { x: number; y: number }; // iframe: viewport offset for absolute coords
   shadow?: boolean; // element lives in a shadow root
+  dragTo?: number; // drag: destination node id into window.__jevFast.nodes
   checked?: string;
   selected?: string;
   expanded?: string;

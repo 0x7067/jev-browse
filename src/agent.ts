@@ -323,9 +323,24 @@ export class Agent {
       return;
     }
 
-    const action = page.actions.find((a) => a.id === selected);
+    let action = page.actions.find((a) => a.id === selected);
 
     if (!action) throw new Error(`Decision selected unknown action ${selected}`);
+
+    // CONTEXT_CLICK shares the click candidate set — re-tag the resolved
+    // element so the driver dispatches a right-button press, not a click.
+    if (decision.operation === "CONTEXT_CLICK") {
+      action = { ...action, kind: "context" };
+    }
+
+    // DRAG resolves two ends: the choice is the source, target2 the
+    // destination. Re-tag with the destination node for the driver.
+    if (decision.operation === "DRAG" && decision.target2) {
+      const dest = page.actions.find((a) => a.id === decision.target2);
+
+      if (!dest?.node) throw new Error(`Drag destination ${decision.target2} is not an element`);
+      action = { ...action, kind: "drag", dragTo: dest.node };
+    }
 
     if (this.history.length >= this.maxSteps) {
       this.phase = "blocked";
@@ -424,7 +439,7 @@ export class Agent {
     // synthesis; an element that does nothing on click is unaffected.
     if (
       entry.page_changed === false &&
-      (action.kind === "click" || action.kind === "hover") &&
+      (action.kind === "click" || action.kind === "hover" || action.kind === "drag") &&
       action.node !== undefined &&
       !this.domRetried.has(action.node)
     ) {

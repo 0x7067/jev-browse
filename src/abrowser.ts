@@ -312,7 +312,27 @@ export class AgentBrowser implements BrowserDriver {
     const selector = `[${TAG_ATTR}="${action.node}"]`;
 
     try {
-      if (kind === "click") {
+      if (kind === "drag" && action.dragTo !== undefined) {
+        await this.evaluate(`(() => {
+          const c=window.__jevFast;
+          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          if (!src || !dst) return "stale";
+          const dt=new DataTransfer();
+          const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
+          fire("dragstart",src); fire("dragenter",dst); fire("dragover",dst);
+          fire("drop",dst); fire("dragend",src);
+          return "ok";
+        })()`);
+      } else if (kind === "context") {
+        await this.evaluate(`(() => {
+          const e=document.querySelector(${JSON.stringify(selector)});
+          if (!e) return "stale";
+          const r=e.getBoundingClientRect();
+          e.dispatchEvent(new MouseEvent("contextmenu",{bubbles:true,cancelable:true,
+            clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:2}));
+          return "ok";
+        })()`);
+      } else if (kind === "click") {
         await this.run(["click", selector]);
       } else if (kind === "hover") {
         await this.run(["hover", selector]);

@@ -178,6 +178,15 @@ export class CdpBrowser implements BrowserDriver {
       }
 
       browser.socket = await CdpSocket.connect(wsUrl);
+      // A JS dialog (alert/confirm/prompt) blocks the whole page until
+      // answered — accept and keep the run moving.
+      browser.socket.onEvent("Page.javascriptDialogOpening", (_p, sessionId) => {
+        if (sessionId) {
+          browser.socket
+            .call("Page.handleJavaScriptDialog", { accept: true }, sessionId)
+            .catch(() => {});
+        }
+      });
       browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
         if (sessionId) (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, new Set()).get(sessionId)!).add(p.requestId);
       });
@@ -200,6 +209,7 @@ export class CdpBrowser implements BrowserDriver {
         })
       ).sessionId;
       browser.seen.add(browser.target);
+      await browser.call("Page.enable").catch(() => {});
       await browser.call("Network.enable").catch(() => {});
 
       // Tabs that pre-date the run (e.g. the launch tab) are not adoptable.
@@ -275,6 +285,7 @@ export class CdpBrowser implements BrowserDriver {
         this.target = t.targetId;
         this.session = sessionId;
         this.adopted.push(t.targetId);
+        await this.call("Page.enable").catch(() => {});
         await this.call("Network.enable").catch(() => {});
       } catch {
         // tab raced away
@@ -479,13 +490,53 @@ export class CdpBrowser implements BrowserDriver {
       return { executed: action.id };
     }
 
+    if (kind === "drag" && action.dragTo !== undefined) {
+      const dest = await this.evaluate<{ x: number; y: number } | null>(`(() => {
+        const e=window.__jevFast?.nodes.get(${action.dragTo});
+        if (!e?.isConnected) return null;
+        const r=e.getBoundingClientRect();
+        return {x:r.x+r.width/2,y:r.y+r.height/2};
+      })()`);
+
+      if (!dest) throw new StalePage("Drag destination changed. Observe again.");
+
+      // Real mouse drag: press on the source, ease toward the destination,
+      // release. Stepped moves let hover-based handlers see a path.
+      await this.call("Input.dispatchMouseEvent", {
+        type: "mousePressed",
+        x: target.x,
+        y: target.y,
+        button: "left",
+        clickCount: 1,
+      });
+
+      for (let i = 1; i <= 8; i++) {
+        await this.call("Input.dispatchMouseEvent", {
+          type: "mouseMoved",
+          x: target.x + ((dest.x - target.x) * i) / 8,
+          y: target.y + ((dest.y - target.y) * i) / 8,
+        });
+      }
+
+      await this.call("Input.dispatchMouseEvent", {
+        type: "mouseReleased",
+        x: dest.x,
+        y: dest.y,
+        button: "left",
+        clickCount: 1,
+      });
+      this.afterInput = action;
+
+      return { executed: action.id };
+    }
+
     if (kind !== "select") {
       for (const type of ["mousePressed", "mouseReleased"]) {
         await this.call("Input.dispatchMouseEvent", {
           type,
           x: target.x,
           y: target.y,
-          button: "left",
+          button: kind === "context" ? "right" : "left",
           clickCount: 1,
         });
       }
@@ -533,6 +584,25 @@ export class CdpBrowser implements BrowserDriver {
     }
 
     if (!action.node) {
+      return { executed: action.id };
+    }
+
+    if (action.kind === "drag" && action.dragTo !== undefined) {
+      // HTML5 DnD runs on its own event family — synthesize the sequence.
+      await this.evaluate(
+        `(() => {
+          const c=window.__jevFast;
+          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          if (!src || !dst) return "stale";
+          const dt=new DataTransfer();
+          const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
+          fire("dragstart",src); fire("dragenter",dst); fire("dragover",dst);
+          fire("drop",dst); fire("dragend",src);
+          return "ok";
+        })()`,
+      );
+      this.afterInput = action;
+
       return { executed: action.id };
     }
 

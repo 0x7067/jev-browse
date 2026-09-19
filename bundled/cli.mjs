@@ -107,6 +107,10 @@ function actionSpace(actions) {
     }
     group[target] = action;
   }
+  if (targets.CLICK) {
+    targets.CONTEXT_CLICK = targets.CLICK;
+    targets.DRAG = targets.CLICK;
+  }
   return { elements, targets, controls };
 }
 
@@ -157,6 +161,14 @@ async function chooseOnce(client, state, goal, history) {
   const labels = /* @__PURE__ */ new Map([
     ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
     [
+      "CONTEXT_CLICK",
+      "Right-click an element to open a context menu or trigger its right-click handler."
+    ],
+    [
+      "DRAG",
+      "Drag one element onto another \u2014 kanban cards, sortable lists, drop zones."
+    ],
+    [
       "TYPE_TEXT",
       "Enter or replace text in an editable field. A small LLM will supply the value from the goal."
     ],
@@ -195,6 +207,19 @@ async function chooseOnce(client, state, goal, history) {
       type: "choice",
       criteria,
       instructions: { goal, operation: operation2, rules: [NEXT_ACTION, TARGET] }
+    };
+  }
+  if (questions.drag_target) {
+    questions.drag_source = {
+      ...questions.drag_target,
+      instructions: {
+        goal,
+        operation: "DRAG",
+        rules: [
+          NEXT_ACTION,
+          "Choose the element to drag FROM \u2014 the card, file, or handle that moves."
+        ]
+      }
     };
   }
   const followUps = {
@@ -237,6 +262,7 @@ async function chooseOnce(client, state, goal, history) {
   let targetConfidence = null;
   let probabilities = {};
   let choice;
+  let target2 = null;
   if (operation in targets) {
     const answer = answers[`${operation.toLowerCase()}_target`] ?? {};
     validateChoice(answer, new Set(Object.keys(targets[operation])));
@@ -244,6 +270,13 @@ async function chooseOnce(client, state, goal, history) {
     targetProbabilities = answer.probabilities;
     targetConfidence = answer.confidence;
     choice = targets[operation][target].id;
+    if (operation === "DRAG") {
+      const sourceAnswer = answers.drag_source ?? {};
+      validateChoice(sourceAnswer, new Set(Object.keys(targets.DRAG)));
+      target2 = choice;
+      target = sourceAnswer.choice;
+      choice = targets.DRAG[target].id;
+    }
     for (const [index, a] of Object.entries(targets[operation])) {
       probabilities[a.id] = answer.probabilities[index];
     }
@@ -257,6 +290,7 @@ async function chooseOnce(client, state, goal, history) {
     choice,
     operation,
     target,
+    target2,
     follow_up: followUp,
     confidence: operationAnswer.confidence,
     probabilities,
@@ -1180,8 +1214,16 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
       this.phase = selected === "DONE" ? "done" : "blocked";
       return;
     }
-    const action = page.actions.find((a) => a.id === selected);
+    let action = page.actions.find((a) => a.id === selected);
     if (!action) throw new Error(`Decision selected unknown action ${selected}`);
+    if (decision.operation === "CONTEXT_CLICK") {
+      action = { ...action, kind: "context" };
+    }
+    if (decision.operation === "DRAG" && decision.target2) {
+      const dest = page.actions.find((a) => a.id === decision.target2);
+      if (!dest?.node) throw new Error(`Drag destination ${decision.target2} is not an element`);
+      action = { ...action, kind: "drag", dragTo: dest.node };
+    }
     if (this.history.length >= this.maxSteps) {
       this.phase = "blocked";
       throw new Error(`Stopped at the ${this.maxSteps}-action budget`);
@@ -1252,7 +1294,7 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
     this.settleEntry = null;
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
-    if (entry.page_changed === false && (action.kind === "click" || action.kind === "hover") && action.node !== void 0 && !this.domRetried.has(action.node)) {
+    if (entry.page_changed === false && (action.kind === "click" || action.kind === "hover" || action.kind === "drag") && action.node !== void 0 && !this.domRetried.has(action.node)) {
       this.domRetried.add(action.node);
       try {
         await this.browser.domClick(action, page);
@@ -1660,6 +1702,12 @@ var CdpBrowser = class _CdpBrowser {
         }
       }
       browser.socket = await CdpSocket.connect(wsUrl);
+      browser.socket.onEvent("Page.javascriptDialogOpening", (_p, sessionId) => {
+        if (sessionId) {
+          browser.socket.call("Page.handleJavaScriptDialog", { accept: true }, sessionId).catch(() => {
+          });
+        }
+      });
       browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
         if (sessionId) (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, /* @__PURE__ */ new Set()).get(sessionId)).add(p.requestId);
       });
@@ -1678,6 +1726,8 @@ var CdpBrowser = class _CdpBrowser {
         flatten: true
       })).sessionId;
       browser.seen.add(browser.target);
+      await browser.call("Page.enable").catch(() => {
+      });
       await browser.call("Network.enable").catch(() => {
       });
       const { targetInfos } = await browser.socket.call("Target.getTargets").catch(() => ({ targetInfos: [] }));
@@ -1735,6 +1785,8 @@ var CdpBrowser = class _CdpBrowser {
         this.target = t.targetId;
         this.session = sessionId;
         this.adopted.push(t.targetId);
+        await this.call("Page.enable").catch(() => {
+        });
         await this.call("Network.enable").catch(() => {
         });
       } catch {
@@ -1893,13 +1945,45 @@ var CdpBrowser = class _CdpBrowser {
       this.afterInput = action;
       return { executed: action.id };
     }
+    if (kind === "drag" && action.dragTo !== void 0) {
+      const dest = await this.evaluate(`(() => {
+        const e=window.__jevFast?.nodes.get(${action.dragTo});
+        if (!e?.isConnected) return null;
+        const r=e.getBoundingClientRect();
+        return {x:r.x+r.width/2,y:r.y+r.height/2};
+      })()`);
+      if (!dest) throw new StalePage("Drag destination changed. Observe again.");
+      await this.call("Input.dispatchMouseEvent", {
+        type: "mousePressed",
+        x: target.x,
+        y: target.y,
+        button: "left",
+        clickCount: 1
+      });
+      for (let i = 1; i <= 8; i++) {
+        await this.call("Input.dispatchMouseEvent", {
+          type: "mouseMoved",
+          x: target.x + (dest.x - target.x) * i / 8,
+          y: target.y + (dest.y - target.y) * i / 8
+        });
+      }
+      await this.call("Input.dispatchMouseEvent", {
+        type: "mouseReleased",
+        x: dest.x,
+        y: dest.y,
+        button: "left",
+        clickCount: 1
+      });
+      this.afterInput = action;
+      return { executed: action.id };
+    }
     if (kind !== "select") {
       for (const type of ["mousePressed", "mouseReleased"]) {
         await this.call("Input.dispatchMouseEvent", {
           type,
           x: target.x,
           y: target.y,
-          button: "left",
+          button: kind === "context" ? "right" : "left",
           clickCount: 1
         });
       }
@@ -1941,6 +2025,22 @@ var CdpBrowser = class _CdpBrowser {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
     if (!action.node) {
+      return { executed: action.id };
+    }
+    if (action.kind === "drag" && action.dragTo !== void 0) {
+      await this.evaluate(
+        `(() => {
+          const c=window.__jevFast;
+          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          if (!src || !dst) return "stale";
+          const dt=new DataTransfer();
+          const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
+          fire("dragstart",src); fire("dragenter",dst); fire("dragover",dst);
+          fire("drop",dst); fire("dragend",src);
+          return "ok";
+        })()`
+      );
+      this.afterInput = action;
       return { executed: action.id };
     }
     const types = action.kind === "hover" ? ["mouseover", "mousemove"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
@@ -2183,7 +2283,27 @@ var AgentBrowser = class _AgentBrowser {
     }
     const selector = `[${TAG_ATTR}="${action.node}"]`;
     try {
-      if (kind === "click") {
+      if (kind === "drag" && action.dragTo !== void 0) {
+        await this.evaluate(`(() => {
+          const c=window.__jevFast;
+          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          if (!src || !dst) return "stale";
+          const dt=new DataTransfer();
+          const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
+          fire("dragstart",src); fire("dragenter",dst); fire("dragover",dst);
+          fire("drop",dst); fire("dragend",src);
+          return "ok";
+        })()`);
+      } else if (kind === "context") {
+        await this.evaluate(`(() => {
+          const e=document.querySelector(${JSON.stringify(selector)});
+          if (!e) return "stale";
+          const r=e.getBoundingClientRect();
+          e.dispatchEvent(new MouseEvent("contextmenu",{bubbles:true,cancelable:true,
+            clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:2}));
+          return "ok";
+        })()`);
+      } else if (kind === "click") {
         await this.run(["click", selector]);
       } else if (kind === "hover") {
         await this.run(["hover", selector]);

@@ -52,6 +52,8 @@ export interface Decision {
   choice: string;
   operation: string;
   target: string | null;
+  /** DRAG: the destination action id; the choice is the source. */
+  target2?: string | null;
   /** Speculative next step, resolved against the post-action state. */
   follow_up?: string;
   confidence: number;
@@ -124,6 +126,14 @@ async function chooseOnce(
   const labels = new Map([
     ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
     [
+      "CONTEXT_CLICK",
+      "Right-click an element to open a context menu or trigger its right-click handler.",
+    ],
+    [
+      "DRAG",
+      "Drag one element onto another — kanban cards, sortable lists, drop zones.",
+    ],
+    [
       "TYPE_TEXT",
       "Enter or replace text in an editable field. A small LLM will supply the value from the goal.",
     ],
@@ -170,6 +180,22 @@ async function chooseOnce(
       type: "choice",
       criteria,
       instructions: { goal, operation, rules: [NEXT_ACTION, TARGET] },
+    };
+  }
+
+  // DRAG needs both ends: drag_target (destination) and drag_source over
+  // the same candidate pool.
+  if (questions.drag_target) {
+    questions.drag_source = {
+      ...questions.drag_target,
+      instructions: {
+        goal,
+        operation: "DRAG",
+        rules: [
+          NEXT_ACTION,
+          "Choose the element to drag FROM — the card, file, or handle that moves.",
+        ],
+      },
     };
   }
 
@@ -227,6 +253,8 @@ async function chooseOnce(
   let probabilities: Record<string, number> = {};
   let choice: string;
 
+  let target2: string | null = null;
+
   if (operation in targets) {
     // Unused target heads cannot cause an action. Validate the selected head only.
     const answer = answers[`${operation.toLowerCase()}_target`] ?? {};
@@ -235,6 +263,15 @@ async function chooseOnce(
     targetProbabilities = answer.probabilities;
     targetConfidence = answer.confidence;
     choice = targets[operation][target].id;
+
+    if (operation === "DRAG") {
+      // drag_target is the destination; drag_source picks the moved element.
+      const sourceAnswer = answers.drag_source ?? {};
+      validateChoice(sourceAnswer, new Set(Object.keys(targets.DRAG)));
+      target2 = choice;
+      target = sourceAnswer.choice;
+      choice = targets.DRAG[target].id;
+    }
 
     for (const [index, a] of Object.entries(targets[operation])) {
       probabilities[a.id] = answer.probabilities[index];
@@ -259,6 +296,7 @@ async function chooseOnce(
     choice,
     operation,
     target,
+    target2,
     follow_up: followUp,
     confidence: operationAnswer.confidence,
     probabilities,

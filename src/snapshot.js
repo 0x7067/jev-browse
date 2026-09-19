@@ -46,7 +46,7 @@ return s?[s]:[]}).join(' ') ||
     '[class*="tooltip"],[class*="hover"]';
 
   const selector='a[href],button,input,textarea,select,summary,[contenteditable="true"],'+
-    roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
+    '[draggable="true"],'+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
 
   const role = e => {
     const explicit=e.getAttribute('role');

@@ -1,0 +1,101 @@
+{
+  "label": "drag",
+  "started": "2026-09-19T03:09:35.466Z",
+  "tasks": {
+    "tin-context-menu": {
+      "runs": 2,
+      "verified": 2,
+      "median_ms": 1215,
+      "median_decisions": 1,
+      "median_jev_ms": 729,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1215,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 729,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/context_menu",
+          "ops": [
+            "CONTEXT_CLICK:Elemental Selenium"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Elemental Selenium@776",
+            "CONTEXT_CLICK:Elemental Selenium@1215"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1182,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 729,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/context_menu",
+          "ops": [
+            "CONTEXT_CLICK:Elemental Selenium"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Elemental Selenium@746",
+            "CONTEXT_CLICK:Elemental Selenium@1182"
+          ]
+        }
+      ]
+    },
+    "tin-drag-drop": {
+      "runs": 2,
+      "verified": 1,
+      "median_ms": 5075,
+      "median_decisions": 6,
+      "median_jev_ms": 753,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1380,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 753,
+          "text_ms": 0,
+          "final_url": "about:blank",
+          "ops": [
+            "DRAG:Elemental Selenium"
+          ],
+          "events": [
+            "DRAG:Elemental Selenium@914",
+            "DRAG:Elemental Selenium@1380"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 5075,
+          "steps": 4,
+          "decisions": 6,
+          "jev_ms": 747,
+          "text_ms": 0,
+          "final_url": "https://elementalselenium.com/",
+          "ops": [
+            "DRAG:Elemental Selenium",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "DRAG:Elemental Selenium@902",
+            "BLOCKED:Wait for the page to update@2730",
+            "BLOCKED:Wait for the page to update@3735",
+            "BLOCKED:Wait for the page to update@4741",
+            "BLOCKED:Wait for the page to update@5075"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 6290
+}

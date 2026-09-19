@@ -69,3 +69,7 @@ runs through `file_url` tasks for deterministic coverage.
   are decision-quality limits of the current decision model.
 - JS-bound interactivity with no DOM or CSS signal (tablesorter headers)
   is fundamentally invisible; `blocked` is the honest answer.
+- DRAG target selection is model-variable — the mechanism (real mouse drag
+  + HTML5 synthesis fallback) works, but the model can pick wrong ends.
+- No right-click *menu reading*: CONTEXT_CLICK fires the context event,
+  but OS-native menus are outside the DOM and can't be observed.
