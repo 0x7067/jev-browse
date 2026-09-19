@@ -1,0 +1,58 @@
+evals/tasks.json
+  s_0503a55d84ed51::t_b52b650cbd2813 250-253
+  s_0503a55d84ed51::t_bc5e5278103d04 243-249,254-272
+evals/results/repair2-1789785863192.json
+  s_0503a55d84ed51::t_ff8b7681d8b4df 1-171
+src/cdp/browser.ts
+  s_0503a55d84ed51::t_d4608f522b83fd 136,157-166,168,170-172,174-177
+  s_0503a55d84ed51::t_e35ac6294b3477 66-72,74-89,104
+  s_0503a55d84ed51::t_24cc5973e7898c 73,167,169,173
+  s_0503a55d84ed51::t_41a603d31d5ab8 7
+evals/results/lobsters-1789785379012.json
+  s_0503a55d84ed51::t_bb2308a4fd4121 1-40
+evals/results/realworld-v1-1789785327088.json
+  s_0503a55d84ed51::t_03ac3069f2d3bb 1-207
+evals/results/repair-1789785787968.json
+  s_0503a55d84ed51::t_a3433c74b245d5 1-482
+evals/results/full-v5-1789786162495.json
+  s_0503a55d84ed51::t_e4e1aef16c06df 1-1444
+evals/README.md
+  s_0503a55d84ed51::t_fe67b6c32a8507 53-55
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_a3433c74b245d5 1035,1122-1125,1292-1301
+  s_0503a55d84ed51::t_ff8b7681d8b4df 1167,1333,1358-1367,1369-1371
+  s_0503a55d84ed51::t_886f60d66c447c 1403,1587-1604,1610,1637,1649-1663
+  s_0503a55d84ed51::t_e4e1aef16c06df 1036,1102,1127,1368
+src/agent.ts
+  s_0503a55d84ed51::t_0e86d6c113efca 102,216-223,487,492-494,496-503
+  s_0503a55d84ed51::t_434dccfa5f8f47 103,194,225,591
+  s_0503a55d84ed51::t_1548febf096d60 295-298,547-548,579-590,592-594
+  s_0503a55d84ed51::t_2630b4061502c1 495
+bundled/cli.mjs
+  s_0503a55d84ed51::t_a3433c74b245d5 1032,1119-1122,1289-1298
+  s_0503a55d84ed51::t_ff8b7681d8b4df 1164,1330,1355-1364,1366-1368
+  s_0503a55d84ed51::t_e4e1aef16c06df 1033,1099,1124,1365
+  s_0503a55d84ed51::t_886f60d66c447c 1400,1584-1601,1607,1634,1646-1660
+.claude-plugin/marketplace.json
+  s_0503a55d84ed51::t_414971fddedee1 8,15
+package.json
+  s_0503a55d84ed51::t_edb81ad12175c3 3
+plugin.json
+  s_0503a55d84ed51::t_ad4353dc81a70e 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "86eedb974a28a378e4f2001944d895a51e104fce",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
