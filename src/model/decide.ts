@@ -251,6 +251,8 @@ async function chooseOnce(
     text: state.text,
     ...(state.focused !== undefined && { focused: state.focused }),
     ...(state.dialog !== undefined && { dialog: state.dialog }),
+    ...(state.downloads?.length && { downloads: state.downloads }),
+    ...(state.challenge && { challenge: "bot/captcha challenge detected on this page" }),
   };
 
   const result = await client.systemOne({

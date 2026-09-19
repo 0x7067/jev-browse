@@ -3,37 +3,50 @@
     "id": "example-link",
     "url": "https://example.com",
     "goal": "Open the 'More information' link. Stop once the page about example domains on iana.org is visible.",
-    "expect": { "url_match": "iana\\.org" }
+    "expect": {
+      "url_match": "iana\\.org"
+    }
   },
   {
     "id": "hn-comments",
     "url": "https://news.ycombinator.com",
     "goal": "Open the comments page of the top story.",
-    "expect": { "url_match": "news\\.ycombinator\\.com/item\\?id=\\d+" }
+    "expect": {
+      "url_match": "news\\.ycombinator\\.com/item\\?id=\\d+"
+    }
   },
   {
     "id": "algolia-search",
     "url": "https://hn.algolia.com/",
     "goal": "Search for \"openai codex\" and open the first story result.",
-    "expect": { "url_not_match": "hn\\.algolia\\.com" }
+    "expect": {
+      "url_not_match": "hn\\.algolia\\.com"
+    }
   },
   {
     "id": "wikipedia-godel",
     "url": "https://en.wikipedia.org/wiki/Main_Page",
-    "goal": "Find and open the Wikipedia article about Gödel's incompleteness theorems.",
-    "expect": { "url_match": "incompleteness" }
+    "goal": "Find and open the Wikipedia article about G\u00f6del's incompleteness theorems.",
+    "expect": {
+      "url_match": "incompleteness"
+    }
   },
   {
     "id": "httpbin-form",
     "url": "https://httpbin.org/forms/post",
     "goal": "Fill the customer name field with \"Ada Lovelace\" and submit the form.",
-    "expect": { "url_match": "httpbin\\.org/post" }
+    "expect": {
+      "url_match": "httpbin\\.org/post"
+    }
   },
   {
     "id": "tin-login",
     "url": "https://the-internet.herokuapp.com/login",
     "goal": "Log in with username \"tomsmith\" and password \"SuperSecretPassword!\" and stop when the secure area is visible.",
-    "expect": { "url_match": "/secure", "text_match": "You logged into a secure area" }
+    "expect": {
+      "url_match": "/secure",
+      "text_match": "You logged into a secure area"
+    }
   },
   {
     "id": "tin-dropdown",
@@ -45,13 +58,17 @@
     "id": "tin-dynamic-loading",
     "url": "https://the-internet.herokuapp.com/dynamic_loading/2",
     "goal": "Click Start, wait for \"Hello World!\" to appear, and stop when it is visible.",
-    "expect": { "text_match": "Hello World!" }
+    "expect": {
+      "text_match": "Hello World!"
+    }
   },
   {
     "id": "tin-dynamic-controls",
     "url": "https://the-internet.herokuapp.com/dynamic_controls",
     "goal": "Click the Enable button, wait for the text input to become enabled, type \"hello\" into it, and stop.",
-    "expect": { "text_match": "It's enabled" }
+    "expect": {
+      "text_match": "It's enabled"
+    }
   },
   {
     "id": "tin-iframe",
@@ -64,70 +81,90 @@
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Scroll to the shadow DOM section, click the \"Shadow action\" button inside the shadow root, and stop when DONE is visible.",
-    "expect": { "text_match": "DONE\\(shadow\\)" }
+    "expect": {
+      "text_match": "DONE\\(shadow\\)"
+    }
   },
   {
     "id": "fx-hover-menu",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Open the Destinations menu and pick \"Alpine stays\". Stop when DONE is shown.",
-    "expect": { "text_match": "DONE: alpine picked" }
+    "expect": {
+      "text_match": "DONE: alpine picked"
+    }
   },
   {
     "id": "fx-iframe",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Scroll to the iframe section, click the button inside the frame, and stop when DONE is visible.",
-    "expect": { "text_match": "DONE\\(frame\\)" }
+    "expect": {
+      "text_match": "DONE\\(frame\\)"
+    }
   },
   {
     "id": "fx-modal",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Open the modal dialog and confirm deleting the draft. Stop when DONE is shown.",
-    "expect": { "text_match": "DONE: draft deleted" }
+    "expect": {
+      "text_match": "DONE: draft deleted"
+    }
   },
   {
     "id": "fx-new-tab",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Open the help page in a new tab and stop when the help page is visible.",
-    "expect": { "text_match": "DONE: help visible" }
+    "expect": {
+      "text_match": "DONE: help visible"
+    }
   },
   {
     "id": "fx-disabled-redeem",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Enter a code in the code field, click Redeem, and stop when DONE is shown.",
-    "expect": { "text_match": "DONE: code redeemed" }
+    "expect": {
+      "text_match": "DONE: code redeemed"
+    }
   },
   {
     "id": "fx-composer",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Write a note in the Message composer and send it. Stop when DONE is shown.",
-    "expect": { "text_match": "DONE:" }
+    "expect": {
+      "text_match": "DONE:"
+    }
   },
   {
     "id": "fx-drag",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Drag the Postcard onto the Drop zone and stop when DONE is shown.",
-    "expect": { "text_match": "DONE: postcard dropped" }
+    "expect": {
+      "text_match": "DONE: postcard dropped"
+    }
   },
   {
     "id": "fx-context",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Right-click the tile that says 'Right-click this tile' and stop when DONE is shown.",
-    "expect": { "text_match": "DONE: context menu opened" }
+    "expect": {
+      "text_match": "DONE: context menu opened"
+    }
   },
   {
     "id": "fx-range",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Move the Guests slider to 6 or more and stop when DONE is shown.",
-    "expect": { "text_match": "DONE: guests=" }
+    "expect": {
+      "text_match": "DONE: guests="
+    }
   },
   {
     "id": "tin-checkboxes",
@@ -139,31 +176,42 @@
     "id": "tin-hovers",
     "url": "https://the-internet.herokuapp.com/hovers",
     "goal": "Hover over the first user avatar, click its \"View profile\" link, and stop once the user1 profile page is visible.",
-    "expect": { "url_match": "users/1" }
+    "expect": {
+      "url_match": "users/1"
+    }
   },
   {
     "id": "tin-file-upload",
     "url": "https://the-internet.herokuapp.com/upload",
     "goal": "Upload the file /etc/hosts using the file chooser and submit the form.",
-    "expect": { "text_match": "File Uploaded" }
+    "expect": {
+      "text_match": "File Uploaded"
+    }
   },
   {
     "id": "tin-key-press",
     "url": "https://the-internet.herokuapp.com/key_presses",
     "goal": "Click into the target field and press the Tab key, then stop.",
-    "expect": { "text_match": "You entered: TAB" }
+    "expect": {
+      "text_match": "You entered: TAB"
+    }
   },
   {
     "id": "sauce-checkout",
     "url": "https://www.saucedemo.com/",
     "goal": "Log in with username \"standard_user\" and password \"secret_sauce\", add the Sauce Labs Backpack to the cart, and complete checkout with first name \"Ada\", last name \"Lovelace\", postal code \"12345\". Stop when the order confirmation is visible.",
-    "expect": { "url_match": "checkout-complete", "text_match": "Thank you for your order" }
+    "expect": {
+      "url_match": "checkout-complete",
+      "text_match": "Thank you for your order"
+    }
   },
   {
     "id": "todomvc-add",
     "url": "https://todomvc.com/examples/react/dist/",
     "goal": "Add two todos: \"buy milk\" and \"walk dog\", then mark \"buy milk\" as completed.",
-    "expect": { "text_match": "buy milk[\\s\\S]*walk dog" }
+    "expect": {
+      "text_match": "buy milk[\\s\\S]*walk dog"
+    }
   },
   {
     "id": "tin-infinite-scroll",
@@ -175,19 +223,25 @@
     "id": "tin-sortable",
     "url": "https://the-internet.herokuapp.com/tables",
     "goal": "Sort the first table by the \"Last Name\" column header.",
-    "expect": { "status": "blocked" }
+    "expect": {
+      "status": "blocked"
+    }
   },
   {
     "id": "tin-nested-frames",
     "url": "https://the-internet.herokuapp.com/nested_frames",
     "goal": "Click any button or link inside the nested frames and stop.",
-    "expect": { "status": "blocked" }
+    "expect": {
+      "status": "blocked"
+    }
   },
   {
     "id": "tin-jquery-menu",
     "url": "https://the-internet.herokuapp.com/jqueryui/menu",
     "goal": "Hover through the menu and click any file-format option under Downloads.",
-    "expect": { "action_match": "PDF|CSV|Excel" }
+    "expect": {
+      "action_match": "PDF|CSV|Excel"
+    }
   },
   {
     "id": "tin-horizontal-slider",
@@ -205,7 +259,10 @@
     "id": "tin-windows",
     "url": "https://the-internet.herokuapp.com/windows",
     "goal": "Open the new window via the link and stop when the new page is visible.",
-    "expect": { "url_match": "windows/new", "text_match": "New Window" }
+    "expect": {
+      "url_match": "windows/new",
+      "text_match": "New Window"
+    }
   },
   {
     "id": "demoqa-autocomplete",
@@ -229,19 +286,25 @@
     "id": "hn-paginate",
     "url": "https://news.ycombinator.com/",
     "goal": "Go to the second page of stories via the More link and stop.",
-    "expect": { "url_match": "p=2" }
+    "expect": {
+      "url_match": "p=2"
+    }
   },
   {
     "id": "tin-redirector",
     "url": "https://the-internet.herokuapp.com/redirector",
     "goal": "Follow the redirect link and stop when the status codes page loads.",
-    "expect": { "url_match": "status_codes" }
+    "expect": {
+      "url_match": "status_codes"
+    }
   },
   {
     "id": "tin-notification",
     "url": "https://the-internet.herokuapp.com/notification_message_rendered",
     "goal": "Click the link to load a notification message and stop.",
-    "expect": { "text_match": "Action" }
+    "expect": {
+      "text_match": "Action"
+    }
   },
   {
     "id": "tin-dynamic-content",
@@ -259,19 +322,25 @@
     "id": "wikipedia-search-nav",
     "url": "https://en.wikipedia.org/",
     "goal": "Search Wikipedia for \"Turing machine\", open the article, then stop on the article page.",
-    "expect": { "url_match": "wiki/Turing" }
+    "expect": {
+      "url_match": "wiki/Turing"
+    }
   },
   {
     "id": "lobsters-comments",
     "url": "https://lobste.rs/",
     "goal": "Open the comments page of the top story and stop.",
-    "expect": { "url_match": "lobste.rs/s/" }
+    "expect": {
+      "url_match": "lobste.rs/s/"
+    }
   },
   {
     "id": "crates-search",
     "url": "https://crates.io/",
     "goal": "Search crates.io for \"serde\" and stop on the results page.",
-    "expect": { "url_match": "q=serde|search" }
+    "expect": {
+      "url_match": "q=serde|search"
+    }
   },
   {
     "id": "europa-consent",
@@ -289,7 +358,9 @@
     "id": "books-toscrape",
     "url": "https://books.toscrape.com/",
     "goal": "Open any book's detail page and stop.",
-    "expect": { "url_match": "catalogue" }
+    "expect": {
+      "url_match": "catalogue"
+    }
   },
   {
     "id": "tin-large-dom",
@@ -307,7 +378,9 @@
     "id": "tin-js-alerts",
     "url": "https://the-internet.herokuapp.com/javascript_alerts",
     "goal": "Click the JS Alert button and stop.",
-    "expect": { "text_match": "clicked an alert" }
+    "expect": {
+      "text_match": "clicked an alert"
+    }
   },
   {
     "id": "tin-drag-drop",
@@ -319,24 +392,34 @@
     "id": "parabank-login",
     "url": "https://parabank.parasoft.com/parabank/index.htm",
     "goal": "Log in with username \"john\" and password \"demo\" and stop when the accounts page shows.",
-    "expect": { "url_match": "overview", "text_match": "Accounts Overview" }
+    "expect": {
+      "url_match": "overview",
+      "text_match": "Accounts Overview"
+    }
   },
   {
     "id": "parabank-transfer",
     "url": "https://parabank.parasoft.com/parabank/index.htm",
     "goal": "Log in with username \"john\" and password \"demo\", open Transfer Funds, transfer 50 dollars between the first two accounts, and stop when the transfer confirmation shows.",
-    "expect": { "url_match": "transfer", "text_match": "Transfer Complete" }
+    "expect": {
+      "url_match": "transfer",
+      "text_match": "Transfer Complete"
+    }
   },
   {
     "id": "github-issues",
     "url": "https://github.com/nodejs/node",
     "goal": "Open the Issues tab of this repository.",
-    "expect": { "url_match": "/issues" }
+    "expect": {
+      "url_match": "/issues"
+    }
   },
   {
     "id": "flights-zurich-london",
     "url": "https://www.google.com/travel/flights?hl=en",
     "goal": "Find one-way flights from Zurich to London on September 20, 2026, for one adult in economy. Stop when matching flight options are visible.",
-    "expect": { "url_match": "flights/search" }
+    "expect": {
+      "url_match": "tfs="
+    }
   }
 ]

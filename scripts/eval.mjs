@@ -44,7 +44,7 @@ function loadEnvFile(path, env) {
 }
 
 function parseArgs(argv) {
-  const args = { repeat: 1, label: null, tasks: null, compare: null };
+  const args = { repeat: 1, label: null, tasks: null, compare: null, file: "tasks.json" };
 
   for (let i = 0; i < argv.length; i++) {
     const val = () => argv[++i];
@@ -54,6 +54,7 @@ function parseArgs(argv) {
       case "--label": args.label = val(); break;
       case "--tasks": args.tasks = val().split(","); break;
       case "--engine": args.engine = val(); break;
+      case "--file": args.file = val(); break;
       case "--compare": args.compare = [val(), val()]; i++; break;
       default: throw new Error(`Unknown argument: ${argv[i]}`);
     }
@@ -62,7 +63,7 @@ function parseArgs(argv) {
   return args;
 }
 
-const VERIFIABLE_KEYS = ["status", "url_match", "url_not_match", "text_match", "action_match"];
+const VERIFIABLE_KEYS = ["status", "url_match", "url_not_match", "text_match", "action_match", "answer_match", "download_match"];
 
 // A task with no runnable expectation can't be verified — reported
 // "unverifiable", not silently counted as a pass.
@@ -84,9 +85,17 @@ function verify(task, result, opsText) {
 
   if (exp.url_not_match && new RegExp(exp.url_not_match).test(url)) return false;
 
-  if (exp.text_match && !new RegExp(exp.text_match).test(result.final_text ?? "")) return false;
+  // Page text keeps element-level newlines; match on the collapsed form so
+  // "items left" still matches when the DOM splits it across lines.
+  if (exp.text_match && !new RegExp(exp.text_match).test((result.final_text ?? "").replace(/\s+/g, " "))) return false;
 
   if (exp.action_match && !new RegExp(exp.action_match).test(opsText)) return false;
+
+  // The agent's final answer (question goals) and downloaded filenames are
+  // verifiable signals, like url/text — a DONE claim is not proof.
+  if (exp.answer_match !== undefined && !new RegExp(exp.answer_match).test(result.answer ?? "")) return false;
+
+  if (exp.download_match !== undefined && !(result.downloads ?? []).some((f) => new RegExp(exp.download_match).test(f))) return false;
 
   return true;
 }
@@ -197,7 +206,7 @@ async function main() {
     return;
   }
 
-  const all = JSON.parse(readFileSync(join(ROOT, "evals", "tasks.json"), "utf8"));
+  const all = JSON.parse(readFileSync(join(ROOT, "evals", args.file), "utf8"));
   const tasks = args.tasks ? all.filter((t) => args.tasks.includes(t.id)) : all;
 
   if (!tasks.length) throw new Error("No tasks selected");

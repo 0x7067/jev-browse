@@ -42,8 +42,10 @@ return s?[s]:[]}).join(' ') ||
       e.getAttribute('title') || e.getAttribute('placeholder') || '';
   };
 
+  // listbox is deliberately absent: it is the suggestion CONTAINER — clicking
+  // it steals focus and dead-ends; its option/menuitem children are the acts.
   const roles=['button','link','checkbox','radio','switch','tab','menuitem','menuitemradio',
-    'menuitemcheckbox','option','listbox','treeitem','gridcell','cell','columnheader',
+    'menuitemcheckbox','option','treeitem','gridcell','cell','columnheader',
     'rowheader','combobox','textbox','searchbox','spinbutton','slider','scrollbar'];
 
   // Popup/hover handlers mark elements that reveal content — indexed so they
@@ -52,11 +54,16 @@ return s?[s]:[]}).join(' ') ||
   // utilities make them match arbitrary elements.
   const hoverSel='[aria-haspopup],[onmouseover],[oncontextmenu]';
 
+  // Sortable/drag handles wired by delegated mouse listeners (jQuery UI,
+  // dnd-kit, SortableJS) carry no per-element handler signal — the library's
+  // class names are the only mark. They index as DRAG sources below.
+  const dragHandleSel='.ui-sortable-handle,[aria-grabbed],[class*="drag-handle"],[class*="sortable-handle"],[draggable="true"]';
+
   // [onclick], [draggable] and handler attributes mark interactivity with no
   // role or link semantics — custom widgets live on plain divs. tabindex is
   // gathered separately (tabindexSel): focus order alone isn't clickability.
   const selector='a[href],button,input,textarea,select,summary,[contenteditable="true"],'+
-    '[draggable="true"],[onclick],[ondrop],[ondragover],[ondragenter],'+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
+    '[draggable="true"],[onclick],[ondrop],[ondragover],[ondragenter],'+dragHandleSel+','+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
 
   const tabindexSel='[tabindex]:not([tabindex^="-"])';
 
@@ -113,7 +120,7 @@ return s?[s]:[]}).join(' ') ||
     // No-role interactivity: click/hover handlers, focusable widgets, drag
     // sources. They matched the candidacy test for a reason — call them
     // buttons so they reach the action table.
-    if (e.matches(hoverSel+',[onclick],[draggable="true"],'+tabindexSel) ||
+    if (e.matches(hoverSel+',[onclick],[draggable="true"],'+tabindexSel+','+dragHandleSel) ||
         hasHandlerProp(e) || hasDropProp(e)) return 'button';
 
     return null;
@@ -162,11 +169,24 @@ return s?[s]:[]}).join(' ') ||
       // tabindex>=0 alone is routine focus management, not clickability —
       // it needs a second signal: handler/jsaction attribute or property,
       // pointer cursor, or an interactive descendant.
-      if (!dropZone && !e.matches(selector) && !hasHandlerProp(e) &&
-          !(e.matches(tabindexSel) &&
+      const isCandidate = dropZone || e.matches(selector) || hasHandlerProp(e) ||
+          (e.matches(tabindexSel) &&
             (e.matches('[onclick],[onkeydown],[onkeypress],[onmousedown],[jsaction]') ||
               (e.ownerDocument.defaultView||window).getComputedStyle(e).cursor==='pointer' ||
-              e.querySelector(INTERACTIVE)))) continue;
+              e.querySelector(INTERACTIVE)));
+
+      // Independently scrollable regions (feeds, panes, menu lists, modal
+      // bodies) get their own SCROLL actions — the page-level wheel can't
+      // reach content trapped inside them. Plain layout containers qualify:
+      // candidacy is not required, only real overflow.
+      if (!isCandidate && panes.size < 10 && e.scrollHeight > e.clientHeight + 60 &&
+          e.clientHeight >= 80 && e.clientHeight < innerHeight * 0.95 &&
+          ['auto','scroll'].includes((e.ownerDocument.defaultView||window).getComputedStyle(e).overflowY) &&
+          e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) {
+        panes.set(e,{fx,fy});
+      }
+
+      if (!isCandidate) continue;
 
       // Opacity:0 custom controls (iOS toggles, styled checkboxes, material
       // switches) fail checkVisibility yet remain the real click target —
@@ -237,7 +257,7 @@ return s?[s]:[]}).join(' ') ||
       const base={node:identity(e),role:rname,label:(name(e)||rname).slice(0,240),
         rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height}};
 
-      if (e.getAttribute('draggable')==='true' || e.ondragstart) base.draggable=true;
+      if (e.getAttribute('draggable')==='true' || e.ondragstart || e.matches(dragHandleSel)) base.draggable=true;
 
       if (e.hasAttribute('oncontextmenu') || e.oncontextmenu) base.contextMenu=true;
 
@@ -305,7 +325,37 @@ return s?[s]:[]}).join(' ') ||
     }
   };
 
+  // Scrollable-region offers, filled during gather (element → frame offset).
+  const panes=new Map();
+
   gather(document,0,0,0);
+
+  // Emit element-scoped scrolls for independently scrollable regions. Each
+  // gets a named operation id (scroll_pane_<n>) so the operation head picks
+  // the pane directly — there is no element-level SCROLL target head.
+  for (const [e,off] of panes) {
+    const r=e.getBoundingClientRect();
+
+    if (!r.width || !r.height) continue;
+
+    const nm=(name(e)||(e.getAttribute('class')||'').split(/\s+/).slice(0,3).join(' ')||e.tagName.toLowerCase())
+      .replace(/\s+/g,' ').trim().slice(0,80);
+
+    const base={node:identity(e),role:'region',
+      rect:{x:off.fx+r.x,y:off.fy+r.y,w:r.width,h:r.height}};
+
+    if (off.fx||off.fy) base.frame={x:off.fx,y:off.fy};
+
+    if (e.getRootNode() instanceof ShadowRoot) base.shadow=true;
+
+    const delta=Math.round(e.clientHeight*0.8);
+
+    if (e.scrollTop+e.clientHeight<e.scrollHeight-2)
+      actions.push({...base,id:'scroll_pane_down_'+base.node,kind:'scroll',delta,label:'Scroll "'+nm+'" down'});
+
+    if (e.scrollTop>2)
+      actions.push({...base,id:'scroll_pane_up_'+base.node,kind:'scroll',delta:-delta,label:'Scroll "'+nm+'" up'});
+  }
 
   // Emit hover offers on the visible ancestors of hidden interactive content.
   for (const [a,off] of hoverZones) {
@@ -382,6 +432,16 @@ return s?[s]:[]}).join(' ') ||
 
   let text=words.join('\n').slice(0,6000);
   const height=document.documentElement.scrollHeight, page_key=cache.pageKey();
+
+  // Bot/CAPTCHA challenges advertise themselves in text and markup. Flagged
+  // only on control-sparse pages — a normal page merely mentioning 'captcha'
+  // is not a wall.
+  const challenge=actions.length<=10 && (
+    /just a moment|verifying you are|verify you are (a )?human|checking your (browser|connection)|are you a (robot|human)|unusual traffic|complete the (captcha|security)|enter the characters|i'?m not a robot|attention required|cf-chl|h-captcha|g-recaptcha|please verify/i
+      .test(text+' '+document.title) ||
+    !!document.querySelector('iframe[src*="captcha"],iframe[src*="challenges.cloudflare"],.h-captcha,.g-recaptcha,#cf-please-wait,[class*="cf-chl"],[data-sitekey]')
+  ) || undefined;
+
   // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
   const semantics=actions.map(({rect: _rect,...action})=>action);
 
@@ -394,7 +454,9 @@ return s?[s]:[]}).join(' ') ||
   if (omitted_actions>0)
     text+='\n['+omitted_actions+' more interactive elements not shown — scroll or narrow the page]';
 
-  actions.forEach((a,i)=>a.id='e'+(i+1));
+  // Element-scroll actions carry their own operation-shaped ids (picked as
+  // controls, not targets) — keep them; everything else takes eN.
+  actions.forEach((a,i)=>{ if (!a.id) a.id='e'+(i+1) });
 
   // Guards pay a synchronous-layout innerText cost — compute them only for
   // elements that survived the cap.
@@ -421,6 +483,10 @@ return s?[s]:[]}).join(' ') ||
                    'arrowleft','arrowright','home','end','pageup','pagedown','space'])
     actions.push({id:'press_'+k,kind:'press',key:k,label:'Press '+k});
 
-  return {url:location.href,title:document.title,w:innerWidth,h:innerHeight,text,
+  const state={url:location.href,title:document.title,w:innerWidth,h:innerHeight,text,
     scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused};
+
+  if (challenge) state.challenge=true;
+
+  return state;
 })()

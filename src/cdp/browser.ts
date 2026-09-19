@@ -5,7 +5,8 @@
  */
 
 import { execSync, spawn, type ChildProcess } from "node:child_process";
-import { homedir } from "node:os";
+import { mkdtempSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { fingerprint } from "../json.ts";
@@ -145,6 +146,10 @@ export class CdpBrowser implements BrowserDriver {
   private lastDialog: { type: string; message: string } | null = null;
   /** CDP key modifier for select-all — Meta (4) on a macOS browser, Control (2) else. */
   private selectAllModifier = 2;
+  /** guid → suggested filename while a download is in flight. */
+  private downloadGuids = new Map<string, string>();
+  /** Filenames of completed downloads, in finish order. */
+  private downloads: string[] = [];
 
   private constructor() {}
 
@@ -217,6 +222,19 @@ export class CdpBrowser implements BrowserDriver {
       }
 
       browser.socket = await CdpSocket.connect(wsUrl);
+
+      // Route downloads into a scratch dir so goals can ask for files. Only on
+      // launches we own — an attached browser keeps the user's behavior.
+      if (browser.proc) {
+        await browser.socket
+          .call("Browser.setDownloadBehavior", {
+            behavior: "allow",
+            downloadPath: mkdtempSync(join(tmpdir(), "jev-downloads-")),
+            eventsEnabled: true,
+          })
+          .catch(() => {});
+      }
+
       // A JS dialog (alert/confirm/prompt) blocks the whole page until
       // answered — accept and keep the run moving. The message is kept so the
       // next observation reports what was auto-accepted.
@@ -264,6 +282,19 @@ export class CdpBrowser implements BrowserDriver {
           browser.navPending.set(sessionId, 0);
         }
       });
+      // Download bookkeeping: willBegin names the file by guid, progress
+      // 'completed' makes it observable on the next page state.
+      browser.socket.onEvent("Browser.downloadWillBegin", (p) => {
+        browser.downloadGuids.set(String(p.guid), String(p.suggestedFilename ?? p.url ?? "download"));
+      });
+      browser.socket.onEvent("Browser.downloadProgress", (p) => {
+        const name = browser.downloadGuids.get(String(p.guid));
+
+        if (name && p.state === "completed") browser.downloads.push(name);
+
+        if (name && p.state !== "inProgress") browser.downloadGuids.delete(String(p.guid));
+      });
+
       browser.target = (
         await browser.socket.call<{ targetId: string }>("Target.createTarget", {
           url: "about:blank",
@@ -462,6 +493,8 @@ export class CdpBrowser implements BrowserDriver {
         info.pending_requests = this.pendingCount(this.session);
         info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
 
+        if (this.downloads.length) info.downloads = [...this.downloads];
+
         // Report the dialog we auto-accepted since the last observation, once.
         if (this.lastDialog) {
           info.dialog = `${this.lastDialog.type}: ${this.lastDialog.message}`.slice(0, 240);
@@ -544,7 +577,47 @@ export class CdpBrowser implements BrowserDriver {
     const kind = action.kind;
 
     if (kind === "wait") {
-      await sleep(100);
+      // WAIT asks the page to update, not a fixed nap: hold for the marker
+      // to move (delayed fetches, timed renders) and surface the change as
+      // stale so the run re-observes. The cap bounds a truly static page.
+      const deadline = Date.now() + 1600;
+
+      while (Date.now() < deadline) {
+        await sleep(160);
+
+        if (!(await this.fresh(page))) {
+          throw new StalePage("Page updated during WAIT. Observe again.");
+        }
+      }
+
+      return { executed: action.id };
+    }
+
+    if (kind === "scroll" && action.node !== undefined) {
+      // Region scroll: wheel at the pane's center so its own scroll handler
+      // (lazy lists, feeds) sees real input. Delta scales to the pane, not
+      // the viewport.
+      const point = await this.evaluate<{ x: number; y: number; delta: number } | null>(
+        `(() => {
+          const e=window.__jevFast?.nodes.get(${action.node});
+          if (!e?.isConnected) return null;
+          const r=e.getBoundingClientRect();
+          if (!r.width || !r.height) return null;
+          const sign=Math.sign(${action.delta ?? 0})||1;
+          return {x:r.x+r.width/2,y:r.y+r.height/2,delta:Math.round(sign*e.clientHeight*0.8)};
+        })()`,
+      );
+
+      if (!point) throw new StalePage("Scroll region is gone. Observe again.");
+
+      await this.call("Input.dispatchMouseEvent", {
+        type: "mouseWheel",
+        x: point.x,
+        y: point.y,
+        deltaX: 0,
+        deltaY: point.delta,
+      });
+      this.afterInput = action;
 
       return { executed: action.id };
     }

@@ -71,6 +71,10 @@ export interface PageState {
   dialog?: string;
   /** Offered-id or short label of the element holding focus, when identifiable. */
   focused?: string;
+  /** Filenames that finished downloading during the run (CDP engine). */
+  downloads?: string[];
+  /** Page looks like a CAPTCHA/bot challenge. */
+  challenge?: boolean;
 }
 
 /** Result of executing one observed action. */

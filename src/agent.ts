@@ -43,7 +43,7 @@ function atWordBoundary(haystack: string, needle: string): boolean {
 import { choose, type Decision } from "./model/decide.ts";
 import { warmModelEndpoints } from "./model/endpoints.ts";
 import { actionSpace } from "./model/space.ts";
-import { fieldContext, fieldText } from "./model/text.ts";
+import { extractAnswer, fieldContext, fieldText } from "./model/text.ts";
 import { makeClient } from "./env.ts";
 import { StalePage, type BrowserDriver, type JsonValue, type PageState } from "./types.ts";
 
@@ -88,6 +88,10 @@ export interface RunResult {
   history: HistoryEntry[];
   /** Page text at terminal state — lets verifiers check outcomes, not claims. */
   final_text?: string;
+  /** Direct answer for interrogative/extractive goals, extracted at done. */
+  answer?: string;
+  /** Filenames downloaded during the run. */
+  downloads?: string[];
   error?: string;
 }
 
@@ -117,7 +121,7 @@ export class Agent {
   private settleEntry: HistoryEntry | null = null;
   private probeConsulted = false;
   private fuseConsulted = false;
-  private doneConsulted = false;
+  private doneConsults = 0;
   private repairHint: string | null = null;
   private staleStreak = 0;
   private lastOperation: string | null = null;
@@ -241,40 +245,101 @@ export class Agent {
     // plainly, then consume it — the hint applies to exactly this decide.
     // The history already shows the failed pattern; the model needs the
     // nudge to try a different approach instead of repeating it once more.
-    const repair = this.repairHint;
+    const toggle = this.toggleHint();
+    const repair = this.repairHint ?? toggle;
     this.repairHint = null;
 
     const goal = repair ? `${this.goal}\n\n${repair}` : this.goal;
 
-    this.decision = await choose(this.client, this.page, goal, this.history);
+    // A toggle loop is structural, not just a wording problem — the same
+    // control keeps winning the decide. Present this one consult without it:
+    // the next observation puts it back if it was really needed.
+    const page = toggle
+      ? {
+          ...this.page,
+          actions: this.page.actions.filter(
+            (a) =>
+              a.label !==
+              this.history[this.history.length - 1]?.action.replace(/ \(dom\)$/, ""),
+          ),
+        }
+      : this.page;
+
+    this.decision = await choose(this.client, page, goal, this.history);
     this.decisions.push(this.decision);
     this.lastOperation = this.decision.operation;
     this.phase = "act";
   }
 
   /**
-   * A done claim with almost no executed actions behind an imperative goal
-   * is a claim without evidence — one confirmation consult before accepting;
-   * a second claim stands. Observe-only goals skip the consult entirely.
+   * A done claim behind an imperative goal is a claim without evidence when
+   * the run barely acted — or when it only navigated (scroll/hover/wait)
+   * and never touched the element the goal names. One confirmation consult
+   * before accepting; a second claim stands. Observe-only goals skip it.
    */
   private prematureDone(): boolean {
-    const acted = this.history.filter((h) => h.operation !== "WAIT").length;
+    const acted = this.history.filter((h) => h.operation !== "WAIT");
+    const MUTATING = new Set(["click", "context", "select", "fill", "drag", "press"]);
+    const unproven = acted.length < 2 || !acted.some((h) => MUTATING.has(h.kind));
 
-    if (this.doneConsulted || acted >= 2) return false;
+    // Consult twice at most: the second consult names this the last check,
+    // then a repeated claim stands. Observe-only goals skip it entirely.
+    if (this.doneConsults >= 2 || !unproven) return false;
 
     if (
-      !/\b(click|type|press|select|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark)\b/i.test(
+      !/\b(click|type|press|select|activate|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark|complete|choose|toggle|switch)\b/i.test(
         this.goal,
       )
     ) {
       return false;
     }
 
-    this.doneConsulted = true;
+    this.doneConsults++;
     this.repairHint =
-      "You have barely acted yet. If the goal asks you to interact with the page, do it — a done claim without evidence is premature. Claim DONE again only if the goal state is already visibly satisfied.";
+      this.doneConsults === 1
+        ? "If the goal asks you to interact with the page, do it — a done claim without evidence is premature. Claim DONE again only if the goal state is already visibly satisfied."
+        : "Final check — the goal's action still has no effect on the page. If it is already satisfied, claim DONE; otherwise act on the element now.";
 
     return true;
+  }
+
+  /** Detect a click-toggle loop: the same control clicked twice in a row
+   *  with the page changing each time means it opened then closed — the
+   *  reveal is in the table and the model keeps pressing the switch. */
+  private toggleHint(): string | null {
+    const tail = this.history.slice(-2);
+
+    // history labels carry a " (dom)" suffix when the in-page retry was the
+    // path that landed — normalize before comparing.
+    const norm = (s: string) => s.replace(/ \(dom\)$/, "");
+
+    if (
+      tail.length === 2 &&
+      tail[0].kind === "click" &&
+      tail[1].kind === "click" &&
+      norm(tail[0].action) === norm(tail[1].action) &&
+      tail[0].page_changed === true &&
+      tail[1].page_changed === true
+    ) {
+      return `"${norm(tail[1].action)}" is a toggle: clicking it again just re-closes what it opened. The items it revealed are in the table — act on one of them instead.`;
+    }
+
+    return null;
+  }
+
+  /** One-line nudge for a give-up claim, tailored to what the run hasn't
+   *  tried — a taller-than-viewport page never scrolled is the common miss. */
+  private giveUpHint(page: PageState): string {
+    const base =
+      "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";
+
+    const scrolled = this.history.some((h) => h.kind === "scroll");
+
+    if (!scrolled && (page.scroll?.height ?? 0) > page.h * 1.1) {
+      return base + " The page extends below the visible area and you have not scrolled — the goal's content is likely below the fold.";
+    }
+
+    return base;
   }
 
   /** Map a speculative follow-up to an action id on the current page. */
@@ -404,8 +469,7 @@ export class Agent {
             }
 
             this.probeConsulted = true;
-            this.repairHint =
-              "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";
+            this.repairHint = this.giveUpHint(page);
             this.phase = "decide";
 
             return;
@@ -742,8 +806,7 @@ export class Agent {
               this.phase = "blocked";
             } else {
               this.fuseConsulted = true;
-              this.repairHint =
-                "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";
+              this.repairHint = this.giveUpHint(this.page);
               this.phase = "observe";
             }
           } else {
@@ -781,7 +844,48 @@ export class Agent {
       }
     }
 
-    return {
+    // Truth before reporting: a committing navigation or a trailing render
+    // can outlive the last observation (SPA URL commits land after the DONE
+    // stability window). One final read so final_url/final_text describe the
+    // page the run actually ended on.
+    if (this.status !== "ready") {
+      try {
+        // SPA commits can land a beat after the DONE confirm window — re-read
+        // until url/title settle, bounded so reporting never hangs.
+        for (let i = 0; i < 8; i++) {
+          const latest = await this.browser.observe();
+
+          const settled =
+            latest.url === this.page.url &&
+            latest.title === this.page.title &&
+            Boolean(latest.text);
+
+          this.page = latest;
+
+          if (settled) break;
+
+          await sleep(350);
+        }
+      } catch {
+        // keep the last good page
+      }
+    }
+
+    // Interrogative goals earn a direct answer, not just a done claim —
+    // extraction is best-effort and never fails an otherwise-good run.
+    let answer: string | undefined;
+
+    if (this.status === "done" && Agent.goalAsksForAnswer(this.goal)) {
+      try {
+        const extracted = await extractAnswer(this.goal, this.page);
+
+        answer = extracted.answer ?? undefined;
+      } catch {
+        // no configured helper or an unusable answer — report without it
+      }
+    }
+
+    const result: RunResult = {
       status: this.status === "ready" ? "blocked" : this.status,
       goal: this.goal,
       url: this.startUrl,
@@ -792,6 +896,20 @@ export class Agent {
       history: this.history,
       final_text: this.page.text.slice(0, 2000),
     };
+
+    if (answer !== undefined) result.answer = answer;
+
+    if (this.page.downloads?.length) result.downloads = this.page.downloads;
+
+    return result;
+  }
+
+  /** True when the goal asks for information rather than only a state —
+   *  those runs extract an answer off the terminal page. */
+  private static goalAsksForAnswer(goal: string): boolean {
+    return /\?|\b(what|which|who|whom|whose|when|where|why|how (many|much|old|tall|long|far))\b|\b(name|list|report|tell me|find out|extract|read)\b[^\n]{0,80}\b(price|version|date|number|name|title|count|population|email|phone|author|score|address|link|url|size|status|message|text|error|reason|value|winner|top|latest|first|total)s?\b/i.test(
+      goal,
+    );
   }
 
   async close(): Promise<void> {
