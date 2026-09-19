@@ -117,7 +117,8 @@ export class Agent {
   private settleEntry: HistoryEntry | null = null;
   private probeConsulted = false;
   private fuseConsulted = false;
-  private repairHint = false;
+  private doneConsulted = false;
+  private repairHint: string | null = null;
   private staleStreak = 0;
   private lastOperation: string | null = null;
   private phase: Phase = "observe";
@@ -200,6 +201,13 @@ export class Agent {
 
       if (fu.type === "DONE") {
         await this.confirmDone(this.page);
+
+        if (this.prematureDone()) {
+          this.phase = "decide";
+
+          return;
+        }
+
         this.phase = "done";
 
         return;
@@ -234,16 +242,39 @@ export class Agent {
     // The history already shows the failed pattern; the model needs the
     // nudge to try a different approach instead of repeating it once more.
     const repair = this.repairHint;
-    this.repairHint = false;
+    this.repairHint = null;
 
-    const goal = repair
-      ? `${this.goal}\n\nYour recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.`
-      : this.goal;
+    const goal = repair ? `${this.goal}\n\n${repair}` : this.goal;
 
     this.decision = await choose(this.client, this.page, goal, this.history);
     this.decisions.push(this.decision);
     this.lastOperation = this.decision.operation;
     this.phase = "act";
+  }
+
+  /**
+   * A done claim with almost no executed actions behind an imperative goal
+   * is a claim without evidence — one confirmation consult before accepting;
+   * a second claim stands. Observe-only goals skip the consult entirely.
+   */
+  private prematureDone(): boolean {
+    const acted = this.history.filter((h) => h.operation !== "WAIT").length;
+
+    if (this.doneConsulted || acted >= 2) return false;
+
+    if (
+      !/\b(click|type|press|select|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark)\b/i.test(
+        this.goal,
+      )
+    ) {
+      return false;
+    }
+
+    this.doneConsulted = true;
+    this.repairHint =
+      "You have barely acted yet. If the goal asks you to interact with the page, do it — a done claim without evidence is premature. Claim DONE again only if the goal state is already visibly satisfied.";
+
+    return true;
   }
 
   /** Map a speculative follow-up to an action id on the current page. */
@@ -382,7 +413,8 @@ export class Agent {
             }
 
             this.probeConsulted = true;
-            this.repairHint = true;
+            this.repairHint =
+              "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";
             this.phase = "decide";
 
             return;
@@ -392,6 +424,12 @@ export class Agent {
 
       if (selected === "DONE") {
         await this.confirmDone(page);
+
+        if (this.prematureDone()) {
+          this.phase = "decide";
+
+          return;
+        }
       }
 
       this.phase = selected === "DONE" ? "done" : "blocked";
@@ -615,7 +653,8 @@ export class Agent {
     } else if (!this.fuseConsulted) {
       // Repair before verdict: one consult with the stuck signal spelled out.
       this.fuseConsulted = true;
-      this.repairHint = true;
+      this.repairHint =
+        "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";
       this.phase = "decide";
     } else {
       this.phase = "blocked";
@@ -700,7 +739,8 @@ export class Agent {
               this.phase = "blocked";
             } else {
               this.fuseConsulted = true;
-              this.repairHint = true;
+              this.repairHint =
+                "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";
               this.phase = "observe";
             }
           } else {

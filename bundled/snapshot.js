@@ -104,8 +104,10 @@ return s?[s]:[]}).join(' ') ||
 
       if (e.type==='range') return 'slider';
 
+      if (e.type==='file') return 'file';
+
       if (['text','email','url','tel','password','date','time','datetime-local',
-           'month','week','file'].includes(e.type)) return 'textbox';
+           'month','week'].includes(e.type)) return 'textbox';
     }
 
     // No-role interactivity: click/hover handlers, focusable widgets, drag
@@ -273,9 +275,16 @@ return s?[s]:[]}).join(' ') ||
         const value='value' in e ? String(e.value) :
           e.isContentEditable || rname==='combobox' ? e.innerText.trim() : '';
 
-        actions.push({...base,kind:editable?'fill':'click',value});
+        // File inputs: fill is the only sane action — TYPE_TEXT carries the
+        // path into DOM.setFileInputFiles; a click opens a native chooser we
+        // cannot drive, so no click or Focus companion is offered.
+        if (e.type==='file') {
+          actions.push({...base,kind:'fill',value});
+        } else {
+          actions.push({...base,kind:editable?'fill':'click',value});
 
-        if (editable) actions.push({...base,kind:'click',value,label:'Focus '+base.label});
+          if (editable) actions.push({...base,kind:'click',value,label:'Focus '+base.label});
+        }
       }
 
       // A container's hover duplicates its offered descendants — hovering

@@ -29,6 +29,7 @@ Escape closes dialogs, arrows move in pickers and sliders. Before using arrows o
 CLICK it once to focus it (the click may set an intermediate value), then PRESS_ARROWLEFT/RIGHT
 to reach the requested value. HOVER reveals hover-only menus before they can be clicked.
 GO_BACK/GO_FORWARD navigate history. If an action opened a new tab, continue there.
+A file input takes TYPE_TEXT with the file path \u2014 never CLICK it (a native chooser opens).
 Content the goal names but the table doesn't show is usually behind a HOVER target or
 below the fold \u2014 try revealing actions before concluding the task is impossible.
 DONE requires visible evidence that ALL requirements are satisfied on the CURRENT page, not
@@ -1116,7 +1117,8 @@ var Agent = class _Agent {
   settleEntry = null;
   probeConsulted = false;
   fuseConsulted = false;
-  repairHint = false;
+  doneConsulted = false;
+  repairHint = null;
   staleStreak = 0;
   lastOperation = null;
   phase = "observe";
@@ -1177,6 +1179,10 @@ var Agent = class _Agent {
       this.followUp = null;
       if (fu.type === "DONE") {
         await this.confirmDone(this.page);
+        if (this.prematureDone()) {
+          this.phase = "decide";
+          return;
+        }
         this.phase = "done";
         return;
       }
@@ -1202,14 +1208,31 @@ var Agent = class _Agent {
       }
     }
     const repair = this.repairHint;
-    this.repairHint = false;
+    this.repairHint = null;
     const goal = repair ? `${this.goal}
 
-Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.` : this.goal;
+${repair}` : this.goal;
     this.decision = await choose(this.client, this.page, goal, this.history);
     this.decisions.push(this.decision);
     this.lastOperation = this.decision.operation;
     this.phase = "act";
+  }
+  /**
+   * A done claim with almost no executed actions behind an imperative goal
+   * is a claim without evidence — one confirmation consult before accepting;
+   * a second claim stands. Observe-only goals skip the consult entirely.
+   */
+  prematureDone() {
+    const acted = this.history.filter((h) => h.operation !== "WAIT").length;
+    if (this.doneConsulted || acted >= 2) return false;
+    if (!/\b(click|type|press|select|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark)\b/i.test(
+      this.goal
+    )) {
+      return false;
+    }
+    this.doneConsulted = true;
+    this.repairHint = "You have barely acted yet. If the goal asks you to interact with the page, do it \u2014 a done claim without evidence is premature. Claim DONE again only if the goal state is already visibly satisfied.";
+    return true;
   }
   /** Map a speculative follow-up to an action id on the current page. */
   resolveFollowUp(fu) {
@@ -1297,7 +1320,7 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
               return;
             }
             this.probeConsulted = true;
-            this.repairHint = true;
+            this.repairHint = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
             this.phase = "decide";
             return;
           }
@@ -1305,6 +1328,10 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
       }
       if (selected === "DONE") {
         await this.confirmDone(page);
+        if (this.prematureDone()) {
+          this.phase = "decide";
+          return;
+        }
       }
       this.phase = selected === "DONE" ? "done" : "blocked";
       return;
@@ -1439,7 +1466,7 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
       this.phase = "decide";
     } else if (!this.fuseConsulted) {
       this.fuseConsulted = true;
-      this.repairHint = true;
+      this.repairHint = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
       this.phase = "decide";
     } else {
       this.phase = "blocked";
@@ -1502,7 +1529,7 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
               this.phase = "blocked";
             } else {
               this.fuseConsulted = true;
-              this.repairHint = true;
+              this.repairHint = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
               this.phase = "observe";
             }
           } else {

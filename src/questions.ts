@@ -16,6 +16,7 @@ Escape closes dialogs, arrows move in pickers and sliders. Before using arrows o
 CLICK it once to focus it (the click may set an intermediate value), then PRESS_ARROWLEFT/RIGHT
 to reach the requested value. HOVER reveals hover-only menus before they can be clicked.
 GO_BACK/GO_FORWARD navigate history. If an action opened a new tab, continue there.
+A file input takes TYPE_TEXT with the file path — never CLICK it (a native chooser opens).
 Content the goal names but the table doesn't show is usually behind a HOVER target or
 below the fold — try revealing actions before concluding the task is impossible.
 DONE requires visible evidence that ALL requirements are satisfied on the CURRENT page, not
