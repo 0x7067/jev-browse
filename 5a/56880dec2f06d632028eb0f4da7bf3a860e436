@@ -1,0 +1,35 @@
+evals/tasks.json
+  s_0503a55d84ed51::t_2cd2de4fa774eb 318-329
+evals/README.md
+  s_0503a55d84ed51::t_39528d9ebf3ca2 69-72
+  s_0503a55d84ed51::t_53968de17b6129 56-58
+evals/results/realworld-v2-1789788104689.json
+  s_0503a55d84ed51::t_551af2c01c842c 1-102
+evals/results/parabank-1789788149334.json
+  s_0503a55d84ed51::t_3bf8f227e1eac8 1-80
+evals/results/iso-check-1789788266044.json
+  s_0503a55d84ed51::t_e512f392a76bd1 1-201
+scripts/eval.mjs
+  s_0503a55d84ed51::t_2de0e35003d415 19-20
+  s_0503a55d84ed51::t_d974e055871cd4 87-95
+evals/results/parabank-iso-1789788215435.json
+  s_0503a55d84ed51::t_7bc1751ad715af 1-79
+evals/results/full-v6-1789788601297.json
+  s_0503a55d84ed51::t_ce91c1284dfdae 1-1666
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5a56880dec2f06d632028eb0f4da7bf3a860e436",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
