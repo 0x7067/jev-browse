@@ -87,6 +87,24 @@ return s?[s]:[]}).join(' ') ||
     return false;
   };
 
+  // addEventListener-bound handlers are invisible to selectors and on* props.
+  // The injected init script records them in a per-realm WeakMap — iframe
+  // elements register into their own realm's map, so read via ownerDocument.
+  const listenSet=e=>((e.ownerDocument.defaultView||window).__jevListeners)?.get(e);
+
+  const CLICK_EVENTS=['click','dblclick','mousedown','mouseup','contextmenu'];
+  const HOVER_EVENTS=['mouseover','mouseenter'];
+
+  const listenedClick=e=>{
+    const s=listenSet(e);
+    return !!s && CLICK_EVENTS.some(k=>s.has(k));
+  };
+
+  const listenedHover=e=>{
+    const s=listenSet(e);
+    return !!s && HOVER_EVENTS.some(k=>s.has(k));
+  };
+
   const role = e => {
     const explicit=e.getAttribute('role');
 
@@ -121,7 +139,7 @@ return s?[s]:[]}).join(' ') ||
     // sources. They matched the candidacy test for a reason — call them
     // buttons so they reach the action table.
     if (e.matches(hoverSel+',[onclick],[draggable="true"],'+tabindexSel+','+dragHandleSel) ||
-        hasHandlerProp(e) || hasDropProp(e)) return 'button';
+        hasHandlerProp(e) || hasDropProp(e) || listenSet(e)) return 'button';
 
     return null;
   };
@@ -150,9 +168,9 @@ return s?[s]:[]}).join(' ') ||
   const INTERACTIVE='a[href],button,select,input,textarea,summary,'+
     roles.map(role=>'[role="'+role+'"]').join(',');
 
-  // Only real hover-reveal signals qualify. Ancestors of hidden interactive
-  // descendants are offered separately via hoverZones.
-  const hoverable=e=>e.matches(hoverSel);
+  // Only real hover-reveal signals qualify: popup handler signals and
+  // listener-registered mouseover/mouseenter bindings both count.
+  const hoverable=e=>e.matches(hoverSel)||listenedHover(e);
 
   // Piercing gather: same-origin iframes recurse with accumulated viewport
   // offsets; open shadow roots recurse in the same coordinate space. `frame`
@@ -164,12 +182,17 @@ return s?[s]:[]}).join(' ') ||
       if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
 
       const dropZone=hasDropProp(e);
+      // Click-capable by any signal; hover-listened elements that can't be
+      // clicked are offered as hover actions instead (revealing menus).
+      const clickCapable = dropZone || e.matches(selector) || hasHandlerProp(e) ||
+          listenedClick(e) || e.matches(tabindexSel);
 
       // Candidacy: selector match, a handler property, or a drop handler.
       // tabindex>=0 alone is routine focus management, not clickability —
       // it needs a second signal: handler/jsaction attribute or property,
       // pointer cursor, or an interactive descendant.
       const isCandidate = dropZone || e.matches(selector) || hasHandlerProp(e) ||
+          listenedClick(e) || listenedHover(e) ||
           (e.matches(tabindexSel) &&
             (e.matches('[onclick],[onkeydown],[onkeypress],[onmousedown],[jsaction]') ||
               (e.ownerDocument.defaultView||window).getComputedStyle(e).cursor==='pointer' ||
@@ -301,7 +324,7 @@ return s?[s]:[]}).join(' ') ||
         if (e.type==='file') {
           actions.push({...base,kind:'fill',value});
         } else {
-          actions.push({...base,kind:editable?'fill':'click',value});
+          actions.push({...base,kind:editable?'fill':clickCapable?'click':'hover',value});
 
           if (editable) actions.push({...base,kind:'click',value,label:'Focus '+base.label});
         }
@@ -309,8 +332,9 @@ return s?[s]:[]}).join(' ') ||
 
       // A container's hover duplicates its offered descendants — hovering
       // the specific child is the useful action (menu roots swallow the
-      // choice). Offer the leaf, not the root.
-      if (hoverable(e) && !e.querySelector(selector))
+      // choice). Offer the leaf, not the root. A hover-only element already
+      // emitted 'hover' as its main action — skip the duplicate offer.
+      if (clickCapable && hoverable(e) && !e.querySelector(selector))
         actions.push({...base,kind:'hover',value:undefined,label:'Hover '+base.label});
     }
 

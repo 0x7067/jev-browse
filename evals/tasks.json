@@ -224,7 +224,7 @@
     "url": "https://the-internet.herokuapp.com/tables",
     "goal": "Sort the first table by the \"Last Name\" column header.",
     "expect": {
-      "status": "blocked"
+      "status": "done"
     }
   },
   {

@@ -1,0 +1,213 @@
+[
+  {
+    "id": "tin-add-remove",
+    "url": "https://the-internet.herokuapp.com/add_remove_elements/",
+    "goal": "Click 'Add Element' to create a Delete button, then click the new Delete button to remove it.",
+    "expect": {
+      "status": "done"
+    }
+  },
+  {
+    "id": "tin-basic-auth",
+    "url": "https://admin:admin@the-internet.herokuapp.com/basic_auth",
+    "goal": "Confirm the page shows the authenticated congratulations message and stop.",
+    "expect": {
+      "text_match": "Congratulations"
+    }
+  },
+  {
+    "id": "tin-status-301",
+    "url": "https://the-internet.herokuapp.com/status_codes/301",
+    "goal": "Stop when the page finishes loading.",
+    "expect": {
+      "text_match": "301 status code"
+    }
+  },
+  {
+    "id": "tin-sortable-tables",
+    "url": "https://the-internet.herokuapp.com/tables",
+    "goal": "In the first table, click the 'Last Name' column header to sort ascending, and stop when the table is sorted by last name.",
+    "expect": {
+      "action_match": "Last Name",
+      "text_match": "Bach"
+    }
+  },
+  {
+    "id": "tin-key-presses",
+    "url": "https://the-internet.herokuapp.com/key_presses",
+    "goal": "Click the input field, type the letter 'b', and stop when the page reports the key pressed.",
+    "expect": {
+      "text_match": "You entered"
+    }
+  },
+  {
+    "id": "tin-new-window",
+    "url": "https://the-internet.herokuapp.com/windows",
+    "goal": "Click the link to open a new window and stop once the new window is open.",
+    "expect": {
+      "status": "done"
+    }
+  },
+  {
+    "id": "tin-nested-frame-text",
+    "url": "https://the-internet.herokuapp.com/nested_frames",
+    "goal": "Stop once the frameset is loaded; the visible frame content is what matters.",
+    "expect": {
+      "status": "done"
+    }
+  },
+  {
+    "id": "tin-dynamic-2",
+    "url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+    "goal": "Click Start, wait for the element to finish loading, and stop when 'Hello World!' is visible.",
+    "expect": {
+      "text_match": "Hello World"
+    }
+  },
+  {
+    "id": "quotes-tag-filter",
+    "url": "https://quotes.toscrape.com/",
+    "goal": "Click the 'love' tag in the Top Ten tags box and stop when the page shows only love-tagged quotes.",
+    "expect": {
+      "url_match": "tag/love"
+    }
+  },
+  {
+    "id": "books-page2-answer",
+    "url": "https://books.toscrape.com/",
+    "goal": "Go to page 2 of the catalog. What is the price of the book 'In Her Wake'? Report just the price.",
+    "expect": {
+      "answer_match": "\u00a312\\.84",
+      "url_match": "page-2"
+    }
+  },
+  {
+    "id": "sauce-full-checkout",
+    "url": "https://www.saucedemo.com/",
+    "goal": "Log in as standard_user with password secret_sauce, add 'Sauce Labs Backpack' to the cart, checkout with first name 'Test', last name 'User', postal code '90210', and stop when the order confirmation shows.",
+    "expect": {
+      "url_match": "checkout-complete",
+      "text_match": "Thank you"
+    }
+  },
+  {
+    "id": "demoqa-practice-form",
+    "url": "https://demoqa.com/automation-practice-form",
+    "goal": "Fill the form: first name 'Jane', last name 'Doe', email 'jane@example.com', select gender Female, mobile number '5551234567', then submit the form and stop when the confirmation dialog appears.",
+    "expect": {
+      "text_match": "Thanks for submitting"
+    }
+  },
+  {
+    "id": "github-file-view",
+    "url": "https://github.com/0x7067/jev-browse",
+    "goal": "Open the repository's package.json file page and stop when its contents are visible.",
+    "expect": {
+      "url_match": "blob/"
+    }
+  },
+  {
+    "id": "hn-story-comments",
+    "url": "https://news.ycombinator.com/",
+    "goal": "Open the comments page for the top story and stop on it.",
+    "expect": {
+      "url_match": "item\\?id="
+    }
+  },
+  {
+    "id": "todomvc-clear",
+    "url": "https://demo.playwright.dev/todomvc/#/",
+    "goal": "Add two todos 'alpha' and 'beta', complete 'alpha', then click 'Clear completed' and stop.",
+    "expect": {
+      "text_match": "items? left"
+    }
+  },
+  {
+    "id": "tin-checkboxes-v2",
+    "url": "https://the-internet.herokuapp.com/checkboxes",
+    "goal": "Check 'checkbox 1' and uncheck 'checkbox 2', then stop.",
+    "expect": {
+      "action_match": "checkbox"
+    }
+  },
+  {
+    "id": "parabank-open-account",
+    "url": "https://parabank.parasoft.com/parabank/index.htm",
+    "goal": "Log in with username 'john' and password 'demo', open 'Open New Account', create a CHECKING account, and stop when the new account confirmation shows.",
+    "expect": {
+      "text_match": "Account Opened|Congratulations"
+    }
+  },
+  {
+    "id": "jqueryui-datepicker-v2",
+    "url": "https://jqueryui.com/datepicker/",
+    "goal": "In the datepicker demo, pick the 15th day of the displayed month and stop when the input is filled.",
+    "expect": {
+      "status": "done"
+    }
+  },
+  {
+    "id": "react-select-multi",
+    "url": "https://react-select.com/home",
+    "goal": "In the first 'Single' select, choose the option 'Ocean' and stop.",
+    "expect": {
+      "action_match": "Ocean"
+    }
+  },
+  {
+    "id": "tin-download-file",
+    "url": "https://the-internet.herokuapp.com/download",
+    "goal": "Download the file 'evidence.txt' and stop.",
+    "expect": {
+      "download_match": "evidence\\.txt"
+    }
+  },
+  {
+    "id": "infinite-scroll-count",
+    "url": "https://the-internet.herokuapp.com/infinite_scroll",
+    "goal": "Scroll down twice to load more paragraphs and stop once additional content has loaded.",
+    "expect": {
+      "status": "done"
+    }
+  },
+  {
+    "id": "tin-js-alert-confirm",
+    "url": "https://the-internet.herokuapp.com/javascript_alerts",
+    "goal": "Click the 'Click for JS Confirm' button, accept the dialog, and stop when the result shows 'You clicked: Ok'.",
+    "expect": {
+      "text_match": "You clicked: Ok"
+    }
+  },
+  {
+    "id": "crates-browse",
+    "url": "https://crates.io/categories/network-programming",
+    "goal": "Sort the crates by 'Recent Downloads' and stop when the list re-sorts.",
+    "expect": {
+      "status": "done"
+    }
+  },
+  {
+    "id": "wiki-toc-nav",
+    "url": "https://en.wikipedia.org/wiki/Machine_learning",
+    "goal": "Click the 'History' link in the table of contents and stop when the History section is in view.",
+    "expect": {
+      "url_match": "#History|machine_learning"
+    }
+  },
+  {
+    "id": "tin-context-click",
+    "url": "https://the-internet.herokuapp.com/context_menu",
+    "goal": "Right-click the hot spot box and dismiss the alert that appears.",
+    "expect": {
+      "status": "done"
+    }
+  },
+  {
+    "id": "demoqa-menu-hover",
+    "url": "https://demoqa.com/menu",
+    "goal": "Hover through the Main Item 2 menu to reveal 'SUB SUB LIST', hover 'Sub Sub Item 1', and stop.",
+    "expect": {
+      "status": "done"
+    }
+  }
+]

@@ -310,6 +310,33 @@ export class CdpBrowser implements BrowserDriver {
       browser.seen.add(browser.target);
       await browser.call("Page.enable").catch(() => {});
       await browser.call("Network.enable").catch(() => {});
+
+      // Record addEventListener bindings before page scripts run — elements
+      // wired via JS listeners (no attribute, no on* prop, no cursor style)
+      // are invisible to selectors; the snapshot reads this per-realm map.
+      await browser
+        .call("Page.addScriptToEvaluateOnNewDocument", {
+          source: `(() => {
+            const map = new WeakMap();
+            const orig = EventTarget.prototype.addEventListener;
+
+            EventTarget.prototype.addEventListener = function (type, listener, options) {
+              if (this instanceof Element && typeof type === "string") {
+                let s = map.get(this);
+
+                if (!s) map.set(this, (s = new Set()));
+
+                s.add(type);
+              }
+
+              return orig.call(this, type, listener, options);
+            };
+
+            Object.defineProperty(window, "__jevListeners", { value: map, configurable: true });
+          })()`,
+        })
+        .catch(() => {});
+
       await browser.learnMainFrame();
 
       // The select-all shortcut must match the browser's OS, not the agent's.
