@@ -1,0 +1,25 @@
+.claude-plugin/marketplace.json
+  s_4aa6e3487e48ff::t_9bc901ac172802 8,15
+evals/README.md
+  s_4aa6e3487e48ff::t_b35234f2d9a78c 36-75,122-124
+package.json
+  s_4aa6e3487e48ff::t_127b29a990746a 3
+plugin.json
+  s_4aa6e3487e48ff::t_3fa44da730d81f 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "45c9ff7c54e5d0698ac7c62ccb0570310240c442",
+  "prompts": {},
+  "sessions": {
+    "s_4aa6e3487e48ff": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dfffc91b-a322-4ee9-ad4e-9a3d2c965de0",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
