@@ -163,6 +163,60 @@
     "expect": { "status": "blocked" }
   },
   {
+    "id": "tin-jquery-menu",
+    "url": "https://the-internet.herokuapp.com/jqueryui/menu",
+    "goal": "Hover through the menu and click any file-format option under Downloads.",
+    "expect": { "url_match": "menu" }
+  },
+  {
+    "id": "tin-horizontal-slider",
+    "url": "https://the-internet.herokuapp.com/horizontal_slider",
+    "goal": "Move the slider to 4 or higher and stop.",
+    "expect": {}
+  },
+  {
+    "id": "tin-entry-ad",
+    "url": "https://the-internet.herokuapp.com/entry_ad",
+    "goal": "Close the modal ad that appears and stop.",
+    "expect": {}
+  },
+  {
+    "id": "tin-windows",
+    "url": "https://the-internet.herokuapp.com/windows",
+    "goal": "Open the new window via the link and stop when the new page is visible.",
+    "expect": { "url_match": "windows/new" }
+  },
+  {
+    "id": "demoqa-autocomplete",
+    "url": "https://demoqa.com/auto-complete",
+    "goal": "Type \"re\" in the multiple-color field and pick a suggestion, then stop.",
+    "expect": {}
+  },
+  {
+    "id": "jqueryui-datepicker",
+    "url": "https://jqueryui.com/datepicker/",
+    "goal": "Open the date picker in the demo frame and click a day, then stop.",
+    "expect": {}
+  },
+  {
+    "id": "tin-shifting-content",
+    "url": "https://the-internet.herokuapp.com/shifting_content/menu",
+    "goal": "Use the menu link to reach the Gallery page and stop when it loads.",
+    "expect": { "status": "blocked" }
+  },
+  {
+    "id": "tin-challenging-dom",
+    "url": "https://the-internet.herokuapp.com/challenging_dom",
+    "goal": "Click any of the three colored buttons at the top of the page and stop.",
+    "expect": {}
+  },
+  {
+    "id": "hn-paginate",
+    "url": "https://news.ycombinator.com/",
+    "goal": "Go to the second page of stories via the More link and stop.",
+    "expect": { "url_match": "p=2" }
+  },
+  {
     "id": "github-issues",
     "url": "https://github.com/nodejs/node",
     "goal": "Open the Issues tab of this repository.",

@@ -1,0 +1,94 @@
+{
+  "label": "followup3",
+  "started": "2026-09-19T02:18:06.807Z",
+  "tasks": {
+    "flights-zurich-london": {
+      "runs": 2,
+      "verified": 2,
+      "median_ms": 10368,
+      "median_decisions": 13,
+      "median_jev_ms": 3618,
+      "median_text_ms": 2602,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 10368,
+          "steps": 10,
+          "decisions": 13,
+          "jev_ms": 3618,
+          "text_ms": 2339,
+          "final_url": "https://www.google.com/travel/flights/search?tfs=CBwQAhooEgoyMDI2LTA5LTIwagwIAxIIL20vMDg5NjZyDAgDEggvbS8wNGpwbEABSAFwAYIBCwj___________8BmAEC&hl=en",
+          "ops": [
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:One way",
+            "TYPE_TEXT:Where from?",
+            "CLICK:Zürich, Switzerland",
+            "TYPE_TEXT:Where to? ",
+            "FOLLOW_UP:London, United Kingdom",
+            "CLICK:Focus Departure",
+            "CLICK:Sunday, September 20, 2026",
+            "CLICK:Done. Search for one-way fligh",
+            "CLICK:Search"
+          ],
+          "events": [
+            "CLICK:Change ticket type. Round trip@1134",
+            "CLICK:One way@1567",
+            "TYPE_TEXT:Where from?@3712",
+            "CLICK:Where from?@4018",
+            "CLICK:Zürich, Switzerland@4506",
+            "TYPE_TEXT:Zürich, Switzerland@4959",
+            "TYPE_TEXT:Where to? @6536",
+            "TYPE_TEXT:London, United Kingdom@6639",
+            "CLICK:London, United Kingdom@7021",
+            "CLICK:Focus Departure@7574",
+            "CLICK:Sunday, September 20, 2026@8032",
+            "CLICK:Done. Search for one-way fligh@8531",
+            "WAIT:Done. Search for one-way fligh@9462",
+            "CLICK:Search@9942",
+            "CLICK:Search@10368"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 9685,
+          "steps": 10,
+          "decisions": 11,
+          "jev_ms": 3184,
+          "text_ms": 2602,
+          "final_url": "https://www.google.com/travel/flights/search?tfs=CBwQAhojEgoyMDI2LTA5LTIwagcIARIDWlJIcgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg&hl=en",
+          "ops": [
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:One way",
+            "TYPE_TEXT:Where from?",
+            "FOLLOW_UP:Zurich Airport (ZRH)",
+            "TYPE_TEXT:Where to? ",
+            "FOLLOW_UP:London, United Kingdom",
+            "CLICK:Focus Departure",
+            "CLICK:Sunday, September 20, 2026",
+            "CLICK:Done. Search for one-way fligh",
+            "CLICK:Search"
+          ],
+          "events": [
+            "CLICK:Change ticket type. Round trip@1024",
+            "CLICK:One way@1432",
+            "TYPE_TEXT:Where from?@3552",
+            "TYPE_TEXT:Zurich Airport (ZRH)@3688",
+            "TYPE_TEXT:Zurich Airport (ZRH)@4133",
+            "TYPE_TEXT:Where to? @5969",
+            "TYPE_TEXT:London, United Kingdom@6079",
+            "CLICK:London, United Kingdom@6464",
+            "CLICK:Focus Departure@6936",
+            "CLICK:Sunday, September 20, 2026@7366",
+            "CLICK:Done. Search for one-way fligh@7862",
+            "WAIT:Done. Search for one-way fligh@8782",
+            "CLICK:Search@9259",
+            "CLICK:Search@9685"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 10368
+}

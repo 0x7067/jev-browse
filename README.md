@@ -120,6 +120,10 @@ with `--allow-file-urls` or `JEV_ALLOW_FILE_URLS=1`.
 
 - **One request per decision cycle.** Operation and target heads share the
   same observed state.
+- **Speculative follow-ups.** Each decision also predicts its conventional
+  continuation — autocomplete pick after typing, Enter to submit, or "this
+  completes the goal". When the post-action page matches the prediction,
+  the follow-up executes without a second decision round-trip.
 - **No screenshots in the agent loop.** Jev consumes structured state; the
   demo video uses a separate CDP screencast.
 - **One browser call per snapshot.** `snapshot.js` reads visible controls,
@@ -131,6 +135,10 @@ with `--allow-file-urls` or `JEV_ALLOW_FILE_URLS=1`.
 - **Mutations never retry.** Execution is logged before the post-action
   observation. `TYPE_TEXT` values are cached only while the helper input is
   identical and discarded after a successful mutation.
+- **Fallback input.** When trusted `Input.dispatch*` events deliver
+  nothing (a canceled provisional navigation can kill the renderer's input
+  pipeline), an executed click or hover retries once via in-page event
+  synthesis before counting a strike.
 - **Bounded runs.** `MAX_STEPS` actions (default 60), twice that many model
   calls, and three consecutive no-change non-wait actions ends in `blocked`.
 - **Runs serialize on a pid lock.** `~/.jev-browse/run.lock` fails fast

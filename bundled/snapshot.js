@@ -151,6 +151,12 @@ return s?[s]:[]}).join(' ') ||
       const base={node:identity(e),role:rname,label:(name(e)||rname).slice(0,240),
         rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height}};
 
+      // Classes often carry the only semantic signal a control has
+      // (button.success is the green one). Truncate aggressively.
+      const cls=(e.getAttribute('class')||'').trim().replace(/\s+/g,' ');
+
+      if (cls) base.cls=cls.slice(0,80);
+
       if (frame) base.frame=frame;
 
       if (shadow) base.shadow=true;
@@ -182,7 +188,11 @@ return s?[s]:[]}).join(' ') ||
         if (editable) actions.push({...base,kind:'click',value,label:'Focus '+base.label});
       }
 
-      if (hoverable(e)) actions.push({...base,kind:'hover',value:undefined,label:'Hover '+base.label});
+      // A container's hover duplicates its offered descendants — hovering
+      // the specific child is the useful action (menu roots swallow the
+      // choice). Offer the leaf, not the root.
+      if (hoverable(e) && !e.querySelector(selector))
+        actions.push({...base,kind:'hover',value:undefined,label:'Hover '+base.label});
     }
 
     for (const e of root.querySelectorAll('*')) {

@@ -42,6 +42,7 @@ export interface HistoryEntry {
   executed_ms: number;
   elapsed_ms: number;
   pending_requests?: number;
+  follow_up?: string;
 }
 
 export interface RunResult {
@@ -66,6 +67,7 @@ export class Agent {
   private earlyWaits = 0;
   private fingerprints: string[] = [];
   private domRetried = new Set<number>();
+  private followUp: { type: string; text: string | null; prevIds: Set<string> } | null = null;
   private textCalls: any[] = [];
   private pendingText: [unknown, string, { model: string; latency_ms: number }] | null = null;
   private status: "ready" | "done" | "blocked" = "ready";
@@ -108,7 +110,10 @@ export class Agent {
   private async tick(): Promise<void> {
     try {
       await this.predict();
-      await this.act();
+
+      // predict() can settle the run itself — a resolved DONE follow-up or a
+      // fuse leaves status non-ready and no decision to act on.
+      if (this.status === "ready") await this.act();
     } catch (error) {
       if (error instanceof StalePage) {
         // Re-observe and let the loop choose again on the fresh page.
@@ -138,8 +143,92 @@ export class Agent {
       throw new Error("Reached the model-call budget");
     }
 
+    // A confident speculation skips the decision call entirely: resolve the
+    // follow-up against the post-action state into a synthetic decision, and
+    // let the normal act path execute it (freshness, entries, fuses intact).
+    if (this.followUp) {
+      const fu = this.followUp;
+      this.followUp = null;
+
+      if (fu.type === "DONE") {
+        await sleep(400);
+
+        if (await this.browser.fresh(this.page)) {
+          this.status = "done";
+
+          return;
+        }
+      } else {
+        const resolved = this.resolveFollowUp(fu);
+
+        if (resolved) {
+          this.decision = {
+            choice: resolved,
+            operation: "FOLLOW_UP",
+            target: null,
+            confidence: 1,
+            probabilities: { [resolved]: 1 },
+            operation_probabilities: {},
+            target_probabilities: {},
+            target_confidence: null,
+            raw_answers: null,
+            model: "follow-up",
+            usage: null,
+            latency_ms: 0,
+          };
+
+          return;
+        }
+      }
+    }
+
     this.decision = await choose(this.client, this.page, this.goal, this.history);
     this.decisions.push(this.decision);
+  }
+
+  /** Map a speculative follow-up to an action id on the current page. */
+  private resolveFollowUp(fu: {
+    type: string;
+    text: string | null;
+    prevIds: Set<string>;
+  }): string | null {
+    if (fu.type === "PRESS_ENTER") {
+      return this.page.actions.find((a) => a.id === "press_enter")?.id ?? null;
+    }
+
+    if (fu.type === "CLICK_MATCH_TYPED") {
+      // Autocomplete suggestions are the elements that appeared in response
+      // to typing — ids absent from the pre-typed set. Prefer a suggestion
+      // whose label matches the typed text; without text, resolve only an
+      // unambiguous single newcomer — page chrome appearing mid-typing is
+      // not the suggestion.
+      const appeared = this.page.actions.filter(
+        (a) => a.kind === "click" && a.node !== undefined && !fu.prevIds.has(a.id),
+      );
+
+      if (fu.text) {
+        const tokens = fu.text
+          .toLowerCase()
+          .split(/[^\p{L}\p{N}]+/u)
+          .filter((t) => t.length >= 3);
+
+        const matched = appeared.find((a) =>
+          tokens.some((t) => a.label.toLowerCase().includes(t)),
+        );
+
+        if (matched) return matched.id;
+
+        const labeled = this.page.actions.find(
+          (a) => a.kind === "click" && a.label.toLowerCase().includes(fu.text!.toLowerCase()),
+        );
+
+        if (labeled) return labeled.id;
+      }
+
+      if (appeared.length === 1) return appeared[0].id;
+    }
+
+    return null;
   }
 
   private async act(): Promise<void> {
@@ -255,6 +344,7 @@ export class Agent {
       text_latency_ms: helper?.latency_ms ?? 0,
       operation: decision.operation,
       target: decision.target,
+      follow_up: decision.follow_up,
       page_changed: null,
       url: page.url,
       usage: decision.usage,
@@ -291,6 +381,14 @@ export class Agent {
       } catch {
         // StalePage or a dead element — the no-change path below stands.
       }
+    }
+
+    if (decision.follow_up && decision.follow_up !== "NONE") {
+      this.followUp = {
+        type: decision.follow_up === "DONE_AFTER" ? "DONE" : decision.follow_up,
+        text,
+        prevIds: new Set(page.actions.map((a) => a.id)),
+      };
     }
 
     entry.pending_requests = this.page.pending_requests ?? 0;

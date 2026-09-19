@@ -46,6 +46,10 @@ runs through `file_url` tasks for deterministic coverage.
 | nested-frames invisible | `<frame>` elements aren't `iframe`s; frameset docs have no `<body>` text | `iframe,frame` recursion for actions AND visible text |
 | detail↔list wandering (saucedemo) | alternation isn't always period-2 — polluted SPA history breaks fingerprint cycles | revisit fuse: same fingerprint seen 4× in 14 distinct observations → blocked |
 | model clicks "Focus X" instead of Enter (todomvc) | editable companion click labeled "Open X" read like an item to open | renamed to "Focus {label}" |
+| model can't identify "the green button" (challenging_dom) | control color lives in CSS classes, invisible to labels | `cls` exposed in choice criteria (`button success` ≈ green) |
+| container hovers swallow the target (jquery-menu) | menu root and its items both offered `Hover` | container hover offers dropped when an offered descendant exists |
+| premature BLOCKED on below-fold content (hn-paginate, jquery-menu) | goals name elements not yet visible | `NEXT_ACTION` teaches: hidden content sits behind HOVER/scroll — try revealing before BLOCKED |
+| extra decision per autocomplete pick | type→suggestion chains are predictable | `follow_up` question head: CLICK_MATCH_TYPED / PRESS_ENTER / DONE_AFTER resolved on the post-action state |
 
 ## Known limits (not bugs)
 

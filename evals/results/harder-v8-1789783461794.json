@@ -1,0 +1,133 @@
+{
+  "label": "harder-v8",
+  "started": "2026-09-19T02:03:57.901Z",
+  "tasks": {
+    "jqueryui-datepicker": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5098,
+      "median_decisions": 8,
+      "median_jev_ms": 2436,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5098,
+          "steps": 5,
+          "decisions": 8,
+          "jev_ms": 2436,
+          "text_ms": 0,
+          "final_url": "https://jqueryui.com/datepicker/#default",
+          "ops": [
+            "CLICK:Default functionality",
+            "CLICK:Focus textbox",
+            "CLICK:Focus textbox",
+            "CLICK:1",
+            "CLICK:Focus textbox"
+          ],
+          "events": [
+            "CLICK:Default functionality@1138",
+            "CLICK:Focus textbox@1790",
+            "CLICK:Focus textbox@2181",
+            "CLICK:Focus textbox@2624",
+            "CLICK:1@3278",
+            "DONE:1@3682",
+            "CLICK:Focus textbox@4196",
+            "DONE:Focus textbox@5098"
+          ]
+        }
+      ]
+    },
+    "tin-shifting-content": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 1866,
+      "median_decisions": 2,
+      "median_jev_ms": 665,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 1866,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 665,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/gallery/",
+          "ops": [
+            "CLICK:Gallery"
+          ],
+          "events": [
+            "CLICK:Gallery@1142",
+            "DONE:Gallery@1866"
+          ]
+        }
+      ]
+    },
+    "tin-challenging-dom": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 3775,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 3775,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/challenging_dom",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1436",
+            "BLOCKED:Wait for the page to update@2461",
+            "BLOCKED:Wait for the page to update@3485",
+            "BLOCKED:Wait for the page to update@3775"
+          ]
+        }
+      ]
+    },
+    "hn-paginate": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 4835,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4835,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1984",
+            "BLOCKED:Wait for the page to update@3303",
+            "BLOCKED:Wait for the page to update@4448",
+            "BLOCKED:Wait for the page to update@4835"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 15574
+}

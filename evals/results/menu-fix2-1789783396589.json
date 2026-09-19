@@ -1,0 +1,89 @@
+{
+  "label": "menu-fix2",
+  "started": "2026-09-19T02:02:59.229Z",
+  "tasks": {
+    "tin-jquery-menu": {
+      "runs": 3,
+      "verified": 3,
+      "median_ms": 3488,
+      "median_decisions": 7,
+      "median_jev_ms": 1527,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3488,
+          "steps": 3,
+          "decisions": 7,
+          "jev_ms": 1527,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/jqueryui/menu",
+          "ops": [
+            "HOVER:Hover button",
+            "HOVER:Hover Downloads",
+            "CLICK:PDF"
+          ],
+          "events": [
+            "HOVER:Hover button@1037",
+            "HOVER:Hover button@1349",
+            "HOVER:Hover Downloads@1684",
+            "CLICK:Hover Downloads@1988",
+            "CLICK:PDF@2402",
+            "DONE:PDF@2738",
+            "DONE:PDF@3488"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3196,
+          "steps": 3,
+          "decisions": 7,
+          "jev_ms": 1317,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/jqueryui/menu#",
+          "ops": [
+            "HOVER:Hover button",
+            "CLICK:Downloads",
+            "CLICK:PDF"
+          ],
+          "events": [
+            "HOVER:Hover button@787",
+            "BLOCKED:Hover button@1077",
+            "CLICK:Downloads@1402",
+            "HOVER:Downloads@1737",
+            "CLICK:PDF@2070",
+            "DONE:PDF@2377",
+            "DONE:PDF@3196"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3657,
+          "steps": 3,
+          "decisions": 7,
+          "jev_ms": 1729,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/jqueryui/menu",
+          "ops": [
+            "HOVER:Hover button",
+            "HOVER:Hover Downloads",
+            "CLICK:PDF"
+          ],
+          "events": [
+            "HOVER:Hover button@1057",
+            "BLOCKED:Hover button@1355",
+            "HOVER:Hover Downloads@1728",
+            "CLICK:Hover Downloads@2092",
+            "CLICK:PDF@2576",
+            "DONE:PDF@2894",
+            "DONE:PDF@3657"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 3488
+}

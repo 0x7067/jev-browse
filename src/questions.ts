@@ -16,6 +16,8 @@ Escape closes dialogs, arrows move in pickers and sliders. Before using arrows o
 CLICK it once to focus it (the click may set an intermediate value), then PRESS_ARROWLEFT/RIGHT
 to reach the requested value. HOVER reveals hover-only menus before they can be clicked.
 GO_BACK/GO_FORWARD navigate history. If an action opened a new tab, continue there.
+Content the goal names but the table doesn't show is usually behind a HOVER target or
+below the fold — try revealing actions before concluding the task is impossible.
 DONE requires visible evidence that ALL requirements are satisfied. If asked to open a result,
 a matching link is not enough. BLOCKED means no supported operation can make progress.`;
 

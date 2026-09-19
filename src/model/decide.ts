@@ -52,6 +52,8 @@ export interface Decision {
   choice: string;
   operation: string;
   target: string | null;
+  /** Speculative next step, resolved against the post-action state. */
+  follow_up?: string;
   confidence: number;
   probabilities: Record<string, number>;
   operation_probabilities: Record<string, number>;
@@ -157,7 +159,7 @@ async function chooseOnce(
         element: `[${index}] ${a.label}`,
         current_value: a.current_value ?? a.value ?? "",
         ...Object.fromEntries(
-          ["role", "checked", "selected", "expanded"].flatMap((k) =>
+          ["role", "checked", "selected", "expanded", "cls"].flatMap((k) =>
             k in a ? [[k, a[k]]] : [],
           ),
         ),
@@ -170,6 +172,29 @@ async function chooseOnce(
       instructions: { goal, operation, rules: [NEXT_ACTION, TARGET] },
     };
   }
+
+  // Speculation: common sequences (type → pick suggestion, fill → submit)
+  // can execute without a second decision round-trip when the model is
+  // confident. Resolution is deferred to the post-action observation; an
+  // unresolvable prediction falls back to a normal decide.
+  const followUps: ChoiceCriteria = {
+    NONE: "The next step can't be predicted confidently.",
+    CLICK_MATCH_TYPED:
+      "After typing, the next step is clicking the suggestion or result whose label contains the typed text.",
+    PRESS_ENTER: "After this action, the next step is pressing Enter to submit.",
+    DONE_AFTER: "This action completes every part of the goal.",
+  };
+
+  questions.follow_up = {
+    type: "choice",
+    criteria: followUps,
+    instructions: {
+      goal,
+      rules: [
+        "Predict what immediately follows the action you chose. Only pick a non-NONE prediction when the follow-up is a conventional, unambiguous consequence — autocomplete pick after typing, Enter to submit, or the goal is visibly complete.",
+      ],
+    },
+  };
 
   const started = performance.now();
 
@@ -219,10 +244,22 @@ async function chooseOnce(
     probabilities[choice] = operationAnswer.probabilities[operation];
   }
 
+  // Speculation is best-effort: an absent or malformed follow-up is NONE,
+  // never a reason to discard an otherwise valid decision.
+  const followUpAnswer = answers.follow_up;
+
+  const followUp =
+    followUpAnswer &&
+    isString(followUpAnswer.choice) &&
+    followUpAnswer.choice in followUps
+      ? followUpAnswer.choice
+      : "NONE";
+
   return {
     choice,
     operation,
     target,
+    follow_up: followUp,
     confidence: operationAnswer.confidence,
     probabilities,
     operation_probabilities: operationAnswer.probabilities,

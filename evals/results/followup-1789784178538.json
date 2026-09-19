@@ -1,0 +1,125 @@
+{
+  "label": "followup",
+  "started": "2026-09-19T02:14:22.974Z",
+  "tasks": {
+    "algolia-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 12468,
+      "median_decisions": 6,
+      "median_jev_ms": 1281,
+      "median_text_ms": 1311,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 12468,
+          "steps": 6,
+          "decisions": 6,
+          "jev_ms": 1281,
+          "text_ms": 1311,
+          "final_url": "https://news.ycombinator.com/item?id=43708025",
+          "ops": [
+            "TYPE_TEXT:Search stories by title, url o",
+            "FOLLOW_UP:Press enter",
+            "WAIT:Wait for the page to update",
+            "FOLLOW_UP:Press enter",
+            "CLICK:OpenAI   Codex  CLI: Lightweig",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:@845",
+            "TYPE_TEXT:Search stories by title, url o@2885",
+            "TYPE_TEXT:Press enter@3015",
+            "WAIT:Wait for the page to update@3537",
+            "WAIT:Press enter@3734",
+            "CLICK:OpenAI   Codex  CLI: Lightweig@5535",
+            "CLICK:Press enter@5620",
+            "DONE:Press enter@10707",
+            "DONE:Press enter@12468"
+          ]
+        }
+      ]
+    },
+    "tin-login": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5103,
+      "median_decisions": 4,
+      "median_jev_ms": 1380,
+      "median_text_ms": 2163,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5103,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1380,
+          "text_ms": 2163,
+          "final_url": "https://the-internet.herokuapp.com/secure",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@1941",
+            "TYPE_TEXT:Password@3377",
+            "CLICK:Login@4405",
+            "DONE:Login@5103"
+          ]
+        }
+      ]
+    },
+    "flights-zurich-london": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 84722,
+      "median_decisions": 12,
+      "median_jev_ms": 4615,
+      "median_text_ms": 2057,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 84722,
+          "steps": 10,
+          "decisions": 12,
+          "jev_ms": 4615,
+          "text_ms": 2057,
+          "final_url": "https://www.google.com/travel/flights/search?tfs=CBwQAhojEgoyMDI2LTA5LTIwagcIARIDWlJIcgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg&hl=en",
+          "ops": [
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:One way",
+            "TYPE_TEXT:Where from?",
+            "FOLLOW_UP:Zurich Airport (ZRH)",
+            "TYPE_TEXT:Where to? ",
+            "FOLLOW_UP:London, United Kingdom",
+            "CLICK:Focus Departure",
+            "CLICK:Sunday, September 20, 2026",
+            "CLICK:Done. Search for one-way fligh",
+            "CLICK:Search"
+          ],
+          "events": [
+            "CLICK:Change ticket type. Round trip@1759",
+            "CLICK:One way@25873",
+            "TYPE_TEXT:Where from?@61922",
+            "TYPE_TEXT:Zurich Airport (ZRH)@74535",
+            "TYPE_TEXT:Where to? @77598",
+            "TYPE_TEXT:London, United Kingdom@77807",
+            "CLICK:London, United Kingdom@78313",
+            "CLICK:Focus Departure@78860",
+            "CLICK:Sunday, September 20, 2026@79321",
+            "CLICK:Done. Search for one-way fligh@79866",
+            "WAIT:Done. Search for one-way fligh@80867",
+            "CLICK:Search@81351",
+            "WAIT:Search@83702",
+            "DONE:Search@84722"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 102293
+}

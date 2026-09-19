@@ -1,0 +1,159 @@
+{
+  "label": "harder-v9",
+  "started": "2026-09-19T02:06:02.503Z",
+  "tasks": {
+    "tin-shifting-content": {
+      "runs": 2,
+      "verified": 0,
+      "median_ms": 2265,
+      "median_decisions": 3,
+      "median_jev_ms": 1160,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 2265,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1160,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/shifting_content/menu",
+          "ops": [
+            "CLICK:Gallery",
+            "GO_BACK:Go back to the previous page"
+          ],
+          "events": [
+            "CLICK:Gallery@1070",
+            "GO_BACK:Go back to the previous page@1414",
+            "DONE:Go back to the previous page@2265"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 2211,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1103,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/shifting_content/menu",
+          "ops": [
+            "CLICK:Gallery",
+            "GO_BACK:Go back to the previous page"
+          ],
+          "events": [
+            "CLICK:Gallery@1064",
+            "GO_BACK:Go back to the previous page@1488",
+            "DONE:Go back to the previous page@2211"
+          ]
+        }
+      ]
+    },
+    "tin-challenging-dom": {
+      "runs": 2,
+      "verified": 0,
+      "median_ms": 3972,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 3972,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/challenging_dom",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1560",
+            "BLOCKED:Wait for the page to update@2618",
+            "BLOCKED:Wait for the page to update@3658",
+            "BLOCKED:Wait for the page to update@3972"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 3835,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/challenging_dom",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1462",
+            "BLOCKED:Wait for the page to update@2485",
+            "BLOCKED:Wait for the page to update@3529",
+            "BLOCKED:Wait for the page to update@3835"
+          ]
+        }
+      ]
+    },
+    "hn-paginate": {
+      "runs": 2,
+      "verified": 0,
+      "median_ms": 4501,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4501,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1771",
+            "BLOCKED:Wait for the page to update@2914",
+            "BLOCKED:Wait for the page to update@4044",
+            "BLOCKED:Wait for the page to update@4501"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4375,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1697",
+            "BLOCKED:Wait for the page to update@2833",
+            "BLOCKED:Wait for the page to update@3982",
+            "BLOCKED:Wait for the page to update@4375"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 10738
+}

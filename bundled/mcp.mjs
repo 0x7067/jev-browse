@@ -26,6 +26,8 @@ Escape closes dialogs, arrows move in pickers and sliders. Before using arrows o
 CLICK it once to focus it (the click may set an intermediate value), then PRESS_ARROWLEFT/RIGHT
 to reach the requested value. HOVER reveals hover-only menus before they can be clicked.
 GO_BACK/GO_FORWARD navigate history. If an action opened a new tab, continue there.
+Content the goal names but the table doesn't show is usually behind a HOVER target or
+below the fold \u2014 try revealing actions before concluding the task is impossible.
 DONE requires visible evidence that ALL requirements are satisfied. If asked to open a result,
 a matching link is not enough. BLOCKED means no supported operation can make progress.`;
 var TARGET = `Choose the best observed target if the next operation is the one specified in this question.
@@ -186,7 +188,7 @@ async function chooseOnce(client, state, goal, history) {
         element: `[${index}] ${a.label}`,
         current_value: a.current_value ?? a.value ?? "",
         ...Object.fromEntries(
-          ["role", "checked", "selected", "expanded"].flatMap(
+          ["role", "checked", "selected", "expanded", "cls"].flatMap(
             (k) => k in a ? [[k, a[k]]] : []
           )
         )
@@ -198,6 +200,22 @@ async function chooseOnce(client, state, goal, history) {
       instructions: { goal, operation: operation2, rules: [NEXT_ACTION, TARGET] }
     };
   }
+  const followUps = {
+    NONE: "The next step can't be predicted confidently.",
+    CLICK_MATCH_TYPED: "After typing, the next step is clicking the suggestion or result whose label contains the typed text.",
+    PRESS_ENTER: "After this action, the next step is pressing Enter to submit.",
+    DONE_AFTER: "This action completes every part of the goal."
+  };
+  questions.follow_up = {
+    type: "choice",
+    criteria: followUps,
+    instructions: {
+      goal,
+      rules: [
+        "Predict what immediately follows the action you chose. Only pick a non-NONE prediction when the follow-up is a conventional, unambiguous consequence \u2014 autocomplete pick after typing, Enter to submit, or the goal is visibly complete."
+      ]
+    }
+  };
   const started = performance.now();
   const result = await client.systemOne({
     state: {
@@ -236,10 +254,13 @@ async function chooseOnce(client, state, goal, history) {
     choice = operation in controls ? controls[operation].id : operation;
     probabilities[choice] = operationAnswer.probabilities[operation];
   }
+  const followUpAnswer = answers.follow_up;
+  const followUp = followUpAnswer && isString(followUpAnswer.choice) && followUpAnswer.choice in followUps ? followUpAnswer.choice : "NONE";
   return {
     choice,
     operation,
     target,
+    follow_up: followUp,
     confidence: operationAnswer.confidence,
     probabilities,
     operation_probabilities: operationAnswer.probabilities,
@@ -1006,6 +1027,7 @@ var Agent = class _Agent {
   earlyWaits = 0;
   fingerprints = [];
   domRetried = /* @__PURE__ */ new Set();
+  followUp = null;
   textCalls = [];
   pendingText = null;
   status = "ready";
@@ -1041,7 +1063,7 @@ var Agent = class _Agent {
   async tick() {
     try {
       await this.predict();
-      await this.act();
+      if (this.status === "ready") await this.act();
     } catch (error) {
       if (error instanceof StalePage) {
         this.decision = null;
@@ -1062,8 +1084,62 @@ var Agent = class _Agent {
     if (this.decisions.length >= this.maxSteps * 2) {
       throw new Error("Reached the model-call budget");
     }
+    if (this.followUp) {
+      const fu = this.followUp;
+      this.followUp = null;
+      if (fu.type === "DONE") {
+        await sleep3(400);
+        if (await this.browser.fresh(this.page)) {
+          this.status = "done";
+          return;
+        }
+      } else {
+        const resolved = this.resolveFollowUp(fu);
+        if (resolved) {
+          this.decision = {
+            choice: resolved,
+            operation: "FOLLOW_UP",
+            target: null,
+            confidence: 1,
+            probabilities: { [resolved]: 1 },
+            operation_probabilities: {},
+            target_probabilities: {},
+            target_confidence: null,
+            raw_answers: null,
+            model: "follow-up",
+            usage: null,
+            latency_ms: 0
+          };
+          return;
+        }
+      }
+    }
     this.decision = await choose(this.client, this.page, this.goal, this.history);
     this.decisions.push(this.decision);
+  }
+  /** Map a speculative follow-up to an action id on the current page. */
+  resolveFollowUp(fu) {
+    if (fu.type === "PRESS_ENTER") {
+      return this.page.actions.find((a) => a.id === "press_enter")?.id ?? null;
+    }
+    if (fu.type === "CLICK_MATCH_TYPED") {
+      const appeared = this.page.actions.filter(
+        (a) => a.kind === "click" && a.node !== void 0 && !fu.prevIds.has(a.id)
+      );
+      if (fu.text) {
+        const tokens = fu.text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 3);
+        const matched = appeared.find(
+          (a) => tokens.some((t) => a.label.toLowerCase().includes(t))
+        );
+        if (matched) return matched.id;
+        const labeled = this.page.actions.find(
+          (a) => a.kind === "click" && a.label.toLowerCase().includes(fu.text.toLowerCase())
+        );
+        if (labeled) return labeled.id;
+      }
+      if (appeared.length === 1) return appeared[0].id;
+    }
+    return null;
   }
   async act() {
     const decision = this.decision;
@@ -1145,6 +1221,7 @@ var Agent = class _Agent {
       text_latency_ms: helper?.latency_ms ?? 0,
       operation: decision.operation,
       target: decision.target,
+      follow_up: decision.follow_up,
       page_changed: null,
       url: page.url,
       usage: decision.usage,
@@ -1166,6 +1243,13 @@ var Agent = class _Agent {
         }
       } catch {
       }
+    }
+    if (decision.follow_up && decision.follow_up !== "NONE") {
+      this.followUp = {
+        type: decision.follow_up === "DONE_AFTER" ? "DONE" : decision.follow_up,
+        text,
+        prevIds: new Set(page.actions.map((a) => a.id))
+      };
     }
     entry.pending_requests = this.page.pending_requests ?? 0;
     entry.url = this.page.url;
