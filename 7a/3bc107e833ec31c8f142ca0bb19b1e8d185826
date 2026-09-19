@@ -1,0 +1,44 @@
+bundled/cli.mjs
+  s_0503a55d84ed51::t_04c6ab3d33539a 26
+  s_0503a55d84ed51::t_b783ef1e0aab96 1176-1179,1214-1229,1325
+  s_0503a55d84ed51::t_3ad90b08e95754 1114-1115,1205,1208,1317,1326-1328,1463,1526
+  s_0503a55d84ed51::t_cc384f36d62a79 1230
+evals/results/zerodone2-1789796121907.json
+  s_0503a55d84ed51::t_b783ef1e0aab96 1-248
+evals/results/postbench-1789795858707.json
+  s_0503a55d84ed51::t_04c6ab3d33539a 1-146
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_b783ef1e0aab96 1182-1185,1220-1235,1331
+  s_0503a55d84ed51::t_04c6ab3d33539a 32
+  s_0503a55d84ed51::t_3ad90b08e95754 1120-1121,1211,1214,1323,1332-1334,1469,1532
+  s_0503a55d84ed51::t_583907afa03e4c 1236
+src/snapshot.js
+  s_0503a55d84ed51::t_c81889b86dba15 107-108,110,278-284,286-287
+src/agent.ts
+  s_0503a55d84ed51::t_3f37076f13b0ef 120-121,245,247,416-417,427,429-432
+  s_0503a55d84ed51::t_65980ae92eede2 255-279
+  s_0503a55d84ed51::t_5a9b0abda853a2 656-657,742-743
+  s_0503a55d84ed51::t_e0f342e2f31620 204-210,428
+evals/results/zerodone-1789795972844.json
+  s_0503a55d84ed51::t_3ad90b08e95754 1-187
+src/questions.ts
+  s_0503a55d84ed51::t_7f8c8cf59bf460 19
+bundled/snapshot.js
+  s_0503a55d84ed51::t_04c6ab3d33539a 107-108,110,278-284,286-287
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7a3bc107e833ec31c8f142ca0bb19b1e8d185826",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
