@@ -1,0 +1,36 @@
+evals/results/parabank3-1789797081791.json
+  s_0503a55d84ed51::t_1cbcd1faca01d2 1-143
+evals/README.md
+  s_0503a55d84ed51::t_57f59fea816bf1 108-111
+src/agent.ts
+  s_0503a55d84ed51::t_a1b3613b5a2541 542-552
+  s_0503a55d84ed51::t_7f2140ae646f1f 322-329,332,335,342-345,348-350
+evals/results/bench-v10-1789796667012.json
+  s_0503a55d84ed51::t_97aa73c46906b6 1-1934
+evals/results/confirmdone-1789796885114.json
+  s_0503a55d84ed51::t_26087124259dc5 1-218
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_26087124259dc5 1259-1266,1269,1271,1277-1279,1281-1282
+  s_0503a55d84ed51::t_1cbcd1faca01d2 1414-1418
+bundled/cli.mjs
+  s_0503a55d84ed51::t_1cbcd1faca01d2 1408-1412
+  s_0503a55d84ed51::t_26087124259dc5 1253-1260,1263,1265,1271-1273,1275-1276
+evals/results/final-sweep-1789797270605.json
+  s_0503a55d84ed51::t_87bfd6d9e9c4e4 1-275
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cd1e9eb2e74c6593bdf481ad32c6eeb5620670a3",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
