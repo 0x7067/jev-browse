@@ -1,0 +1,73 @@
+src/abrowser.ts
+  s_0503a55d84ed51::t_7af41327bf38dc 315-326
+  s_0503a55d84ed51::t_bef1cefafcb290 327-335
+src/cdp/browser.ts
+  s_0503a55d84ed51::t_36716a0fe80131 590-608
+  s_0503a55d84ed51::t_34fa58dec35dd4 539
+  s_0503a55d84ed51::t_a7e6b63ab60de5 181-189,212,288
+  s_0503a55d84ed51::t_ab69240f1ab398 493-532
+evals/results/drag-1789787392854.json
+  s_0503a55d84ed51::t_281e58f060af3c 1-101
+evals/results/harder-v13-1789786625412.json
+  s_0503a55d84ed51::t_7866a0d5a4ee0d 1-123
+evals/results/context-1789786952626.json
+  s_0503a55d84ed51::t_bbc825de2c1808 1-95
+src/model/decide.ts
+  s_0503a55d84ed51::t_09f87174b85ab3 299
+  s_0503a55d84ed51::t_7b5f1e3fa6217a 186-201,256-257,267-274
+  s_0503a55d84ed51::t_a7c5dca958c61a 55-56,128,131-134
+  s_0503a55d84ed51::t_a4b2ebf7325640 129-130,135
+  s_0503a55d84ed51::t_20f3da94107dbb 275
+bundled/cli.mjs
+  s_0503a55d84ed51::t_281e58f060af3c 110-113,163,166-169,212-224,265,273-279,293,1221-1225,1297,1948-1977,2030-2045,2286-2297
+  s_0503a55d84ed51::t_bbc825de2c1808 164-165,170,1217,1219-1220,1226,1705-1710,1729-1730,1788-1789,1979,1986,2298-2306
+  s_0503a55d84ed51::t_93de312c18cedc 1978
+src/types.ts
+  s_0503a55d84ed51::t_bd6204fecc18f6 18
+  s_0503a55d84ed51::t_edd92d4065ef5a 40
+  s_0503a55d84ed51::t_e4a05b1c58f014 17
+src/model/space.ts
+  s_0503a55d84ed51::t_9eea37234035fd 87-92
+  s_0503a55d84ed51::t_08a6aa857ea03f 86,93
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_281e58f060af3c 116-119,169,172-175,218-230,271,279-285,299,1227-1231,1303,1954-1983,2036-2051,2292-2303
+  s_0503a55d84ed51::t_bbc825de2c1808 170-171,176,1223,1225-1226,1232,1711-1716,1735-1736,1794-1795,1985,1992,2304-2312
+  s_0503a55d84ed51::t_4c6cb9498d25af 1984
+src/snapshot.js
+  s_0503a55d84ed51::t_8a08c4b1efbc8f 49
+evals/tasks.json
+  s_0503a55d84ed51::t_ff36e904fa1d94 294-295
+  s_0503a55d84ed51::t_57861c22b1160a 282-289
+  s_0503a55d84ed51::t_de1fc842259e8a 267-281,290-293,296
+evals/README.md
+  s_0503a55d84ed51::t_c38a70f2f4cfe3 72-75
+bundled/snapshot.js
+  s_0503a55d84ed51::t_281e58f060af3c 49
+src/agent.ts
+  s_0503a55d84ed51::t_6ba9bd67c4d811 326,330-334
+  s_0503a55d84ed51::t_920141875bc093 336-344
+  s_0503a55d84ed51::t_62fff7f91848af 442
+  s_0503a55d84ed51::t_d36282e9fa17a3 335
+.claude-plugin/marketplace.json
+  s_0503a55d84ed51::t_507fd3a749d9ee 8,15
+package.json
+  s_0503a55d84ed51::t_c8e4b84ffd8b0a 3
+plugin.json
+  s_0503a55d84ed51::t_ab2739e1337072 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e428c9b281ff2f8c11e1a13c8480c94e94f6636b",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
