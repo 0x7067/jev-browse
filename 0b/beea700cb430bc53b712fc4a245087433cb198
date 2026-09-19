@@ -1,0 +1,25 @@
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_4bf762bbfbf295 34-37
+src/questions.ts
+  s_0503a55d84ed51::t_349badbe347c5f 21-24
+evals/results/done-prompt-1789790078246.json
+  s_0503a55d84ed51::t_4bf762bbfbf295 1-183
+bundled/cli.mjs
+  s_0503a55d84ed51::t_4bf762bbfbf295 28-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0bbeea700cb430bc53b712fc4a245087433cb198",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
