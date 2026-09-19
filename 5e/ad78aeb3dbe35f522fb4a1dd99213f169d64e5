@@ -1,0 +1,34 @@
+src/agent.ts
+  s_0503a55d84ed51::t_d7c7edc9ecceaa 311-326
+src/cdp/browser.ts
+  s_0503a55d84ed51::t_9cfe00148c699c 373-376
+  s_0503a55d84ed51::t_254bb90967fc05 110-111,211-213
+  s_0503a55d84ed51::t_405adbf9c9eb9d 201-210,214,359
+bundled/cli.mjs
+  s_0503a55d84ed51::t_6cbb2421bff57a 1209-1217,1672-1673,1739-1749,1866,1875-1876
+  s_0503a55d84ed51::t_262f4414d7b9e3 1877
+src/types.ts
+  s_0503a55d84ed51::t_7b337e62ce508f 62-63
+  s_0503a55d84ed51::t_37e3590cfdde18 92-94
+evals/results/navwait-1789789980014.json
+  s_0503a55d84ed51::t_6cbb2421bff57a 1-208
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_6cbb2421bff57a 1215-1223,1678-1679,1745-1755,1872,1881-1882
+  s_0503a55d84ed51::t_747ecbe778b742 1883
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5ead78aeb3dbe35f522fb4a1dd99213f169d64e5",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
