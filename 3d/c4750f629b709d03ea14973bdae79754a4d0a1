@@ -1,0 +1,29 @@
+scripts/eval.mjs
+  s_0503a55d84ed51::t_7e78eb56f67c5d 83,94,196
+  s_0503a55d84ed51::t_5aa30cbe21d798 55
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_7ec369d799ca4f 5-7,2457-2466,2552
+evals/results/abrowser-smoke-1789786342198.json
+  s_0503a55d84ed51::t_b5c5e9163dfa57 1-121
+src/mcp.ts
+  s_0503a55d84ed51::t_66ff6f1e4d3b8a 41-42
+  s_0503a55d84ed51::t_47c12eb8a42bfe 36-40,43-46
+  s_0503a55d84ed51::t_ca43cdf21bd1b5 15-17,160
+  s_0503a55d84ed51::t_60b8a1e9525ef6 47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3dc4750f629b709d03ea14973bdae79754a4d0a1",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
