@@ -1256,35 +1256,30 @@ ${repair}` : this.goal;
   }
   // --- act -----------------------------------------------------------------
   /**
-   * Confirm a DONE claim. While navigation or requests are still in flight
-   * the claim verifies the page the action just left: poll freshness through
-   * a commit window — a committed navigation or Turbo-style DOM swap fails
-   * fresh() and sends the machine back to decide on the new page, and signals
-   * still pending at the deadline mean the claim came mid-flight. Once
-   * nothing is in flight, require the page to stay put across a short
-   * stability window, not just one freshness check.
+   * Confirm a DONE claim. A click-triggered navigation in flight means the
+   * claim verifies the page the action just left: poll freshness through a
+   * commit window — the commit fails fresh() and sends the machine back to
+   * decide on the new page. The deadline falls through, never vetoes: busy
+   * pages (perpetual connections, stuck counters) would otherwise loop a
+   * done claim forever. The stability window below is the real arbiter —
+   * requests in flight (Turbo-style swaps land without navigation events)
+   * widen it, because a swap during the claim fails fresh().
    */
   async confirmDone(page) {
-    if (page.pending_nav || this.browser.pendingNav?.() || (page.pending_requests ?? 0) > 0) {
+    if (page.pending_nav || this.browser.pendingNav?.()) {
       const deadline = Date.now() + 2500;
-      for (; ; ) {
+      while (Date.now() < deadline && this.browser.pendingNav?.()) {
         if (!await this.browser.fresh(page)) {
           throw new StalePage("Navigation committed while confirming DONE. Choose again.");
         }
-        if (!this.browser.pendingNav?.()) {
-          const current = await this.browser.observe();
-          if (current.fingerprint !== page.fingerprint) {
-            throw new StalePage("Page changed while confirming DONE. Choose again.");
-          }
-          if ((current.pending_requests ?? 0) === 0) break;
-        }
-        if (Date.now() >= deadline) {
-          throw new StalePage("Page still settling when the DONE window expired. Choose again.");
-        }
         await sleep3(120);
       }
+      if (!await this.browser.fresh(page)) {
+        throw new StalePage("Page changed while confirming DONE. Choose again.");
+      }
     }
-    await sleep3(400);
+    const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
+    await sleep3(window_);
     if (!await this.browser.fresh(page)) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }
@@ -1416,6 +1411,11 @@ ${repair}` : this.goal;
     const { action, page, text, decision } = ctx;
     this.settleContext = null;
     this.settleEntry = null;
+    if (["click", "context", "select", "press"].includes(action.kind)) {
+      const navDeadline = Date.now() + 2500;
+      for (let i = 0; i < 2 && !this.browser.pendingNav?.(); i++) await sleep3(80);
+      while (this.browser.pendingNav?.() && Date.now() < navDeadline) await sleep3(120);
+    }
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
     const doc = String(Array.isArray(page.page_key) ? page.page_key[0] : page.page_key);

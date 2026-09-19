@@ -105,6 +105,10 @@ the repair consult extends how long a stuck run persists), tin-slow +16.4s
 | parabank-transfer blocked at login; earlier cross-run weirdness | the shared profile persists cookies/SPA sessions — a logged-in page has no login form; carts and todos leak between runs | fresh `mkdtemp` profile per eval run (`JEV_PROFILE`) |
 | saucedemo checkout forms fail on empty fields | `TYPE_TEXT` relies on `Input.insertText` — dead on the same canceled-nav pipeline that kills clicks | dom-fill fallback: prototype-setter value + input/change events |
 | todomvc burns 120 model calls, zero progress | opacity:0 todo checkbox: indexed via hit-test rescue but `act()`'s checkVisibility bail staled every attempt | `act()` drops the visibility gate — the covered check (`elementFromPoint`) is the real arbiter; sibling-label naming gives it a real label |
+| flights loops to 60-step budget on done claims | Google Flights holds perpetual connections — `pending_requests>0` never cleared, so every DONE wait hit the deadline→StalePage loop | deadline falls through to fingerprint stability; requests widen the window instead of vetoing |
+| premature done on multi-step goals (tin-key-press, tin-dynamic-controls) | model speculates DONE_AFTER after one action on a two-part goal | done claims on imperative goals with <2 executed actions earn one confirmation consult |
+| tin-file-upload blocked | file inputs were textboxes with a Focus click (native chooser) | fill-only surface, role 'file', TYPE_TEXT → `DOM.setFileInputFiles` |
+| parabank-transfer blocked (intermittent) | the site's transfer page 500s — final_text shows "internal error has occurred" | environmental flake; agent reaches the page and reports honestly |
 | invisible elements were uniformly dropped | `checkVisibility` misses opacity:0 custom controls (iOS toggles, styled checkboxes, material switches) | hit-test rescue in `gather()` — element wins its own center point → indexed |
 | conduit (realworld) unreachable | demo backends are dead — shell renders, no forms | environmental; dropped |
 | opencart blocked post-nav | Cloudflare interstitial | environmental; dropped |

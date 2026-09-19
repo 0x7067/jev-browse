@@ -1,0 +1,143 @@
+{
+  "label": "parabank3",
+  "started": "2026-09-19T05:49:30.043Z",
+  "tasks": {
+    "parabank-login": {
+      "runs": 2,
+      "verified": 2,
+      "unverifiable": 0,
+      "median_ms": 5852,
+      "median_decisions": 5,
+      "median_jev_ms": 1915,
+      "median_text_ms": 2339,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5852,
+          "steps": 4,
+          "decisions": 5,
+          "jev_ms": 1915,
+          "text_ms": 2339,
+          "final_url": "https://parabank.parasoft.com/parabank/overview.htm",
+          "ops": [
+            "TYPE_TEXT:textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Log In",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "TYPE_TEXT:textbox@2297",
+            "TYPE_TEXT:textbox@3677",
+            "CLICK:Log In@4510",
+            "WAIT:Wait for the page to update@5107",
+            "DONE:Wait for the page to update@5852"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5737,
+          "steps": 4,
+          "decisions": 5,
+          "jev_ms": 1881,
+          "text_ms": 2337,
+          "final_url": "https://parabank.parasoft.com/parabank/overview.htm",
+          "ops": [
+            "TYPE_TEXT:textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Log In",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "TYPE_TEXT:textbox@2287",
+            "TYPE_TEXT:textbox@3699",
+            "CLICK:Log In@4078",
+            "WAIT:Wait for the page to update@5035",
+            "DONE:Wait for the page to update@5737"
+          ]
+        }
+      ]
+    },
+    "parabank-transfer": {
+      "runs": 2,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 51297,
+      "median_decisions": 11,
+      "median_jev_ms": 3452,
+      "median_text_ms": 2107,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 39365,
+          "steps": 9,
+          "decisions": 9,
+          "jev_ms": 2914,
+          "text_ms": 2085,
+          "final_url": "https://parabank.parasoft.com/parabank/transfer.htm",
+          "ops": [
+            "TYPE_TEXT:textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Log In",
+            "CLICK:Transfer Funds",
+            "WAIT:Wait for the page to update",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:Transfer Funds",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "TYPE_TEXT:textbox@2012",
+            "TYPE_TEXT:textbox@3347",
+            "CLICK:Log In@3736",
+            "CLICK:Transfer Funds@4898",
+            "BLOCKED:Wait for the page to update@15909",
+            "GO_BACK:Go back to the previous page@16635",
+            "CLICK:Transfer Funds@17198",
+            "BLOCKED:Wait for the page to update@28172",
+            "BLOCKED:Wait for the page to update@39365"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 51297,
+          "steps": 11,
+          "decisions": 11,
+          "jev_ms": 3452,
+          "text_ms": 2107,
+          "final_url": "https://parabank.parasoft.com/parabank/transfer.htm",
+          "ops": [
+            "TYPE_TEXT:textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Log In",
+            "CLICK:Transfer Funds",
+            "WAIT:Wait for the page to update",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:Transfer Funds",
+            "WAIT:Wait for the page to update",
+            "CLICK:Transfer Funds",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "TYPE_TEXT:textbox@2149",
+            "TYPE_TEXT:textbox@3349",
+            "CLICK:Log In@3695",
+            "CLICK:Transfer Funds@4885",
+            "BLOCKED:Wait for the page to update@15944",
+            "GO_BACK:Go back to the previous page@16638",
+            "CLICK:Transfer Funds@17159",
+            "BLOCKED:Wait for the page to update@28124",
+            "CLICK:Transfer Funds@29035",
+            "BLOCKED:Wait for the page to update@40019",
+            "BLOCKED:Wait for the page to update@51297"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 57149
+}
