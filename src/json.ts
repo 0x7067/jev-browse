@@ -29,7 +29,9 @@ export function fingerprint(state: PageState): string {
   const content: JsonObject = {
     url: state.url,
     text: state.text,
-    actions: state.actions,
+    // Marker parity: geometry is resolved and hit-tested at input time, so
+    // layout jitter between observations must not move the fingerprint.
+    actions: state.actions.map(({ rect: _rect, ...action }) => action),
     scroll: state.scroll,
   };
 

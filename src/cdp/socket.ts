@@ -9,11 +9,19 @@ import type { JsonObject } from "../types.ts";
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** A command with no response after this long means the target is wedged. */
+const CALL_TIMEOUT_MS = 30_000;
+
 export class CdpSocket {
   private ws: WebSocket;
   private nextId = 1;
-  private pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void }>();
+  private pending = new Map<
+    number,
+    { sessionId?: string; resolve: (v: any) => void; reject: (e: Error) => void }
+  >();
   private listeners = new Map<string, Set<(params: any, sessionId?: string) => void>>();
+  /** Sessions whose renderer died; calls against them reject, the socket lives. */
+  private crashed = new Set<string>();
   private closed = false;
 
   private constructor(ws: WebSocket) {
@@ -25,7 +33,23 @@ export class CdpSocket {
         msg.method === "Inspector.targetCrashed" ||
         msg.method === "Target.targetCrashed"
       ) {
-        // A dead renderer never answers again — refuse new calls too.
+        const sessionId: string | undefined = msg.sessionId;
+
+        if (sessionId) {
+          // One dead renderer must not kill calls on sibling sessions.
+          this.crashed.add(sessionId);
+
+          for (const [id, p] of this.pending) {
+            if (p.sessionId === sessionId) {
+              this.pending.delete(id);
+              p.reject(new Error("Renderer crashed"));
+            }
+          }
+
+          return;
+        }
+
+        // A browser-level crash never answers again — refuse new calls too.
         this.closed = true;
 
         for (const p of this.pending.values()) p.reject(new Error("Renderer crashed"));
@@ -79,10 +103,29 @@ export class CdpSocket {
 
   call<T>(method: string, params: JsonObject = {}, sessionId?: string): Promise<T> {
     if (this.closed) return Promise.reject(new Error("CDP connection closed"));
+
+    if (sessionId && this.crashed.has(sessionId)) {
+      return Promise.reject(new Error("Renderer crashed"));
+    }
+
     const id = this.nextId++;
 
     return new Promise<T>((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
+      const timer = setTimeout(() => {
+        if (this.pending.delete(id)) reject(new Error("CDP call timed out"));
+      }, CALL_TIMEOUT_MS);
+
+      this.pending.set(id, {
+        sessionId,
+        resolve: (v) => {
+          clearTimeout(timer);
+          resolve(v);
+        },
+        reject: (e) => {
+          clearTimeout(timer);
+          reject(e);
+        },
+      });
       this.ws.send(JSON.stringify({ id, method, params, sessionId }));
     });
   }
@@ -145,6 +188,8 @@ export async function browserWsUrl(port: number, timeoutMs = 15000): Promise<str
 export interface TargetInfo {
   targetId: string;
   type: string;
+  /** Set when another target opened this one (window.open, target=_blank). */
+  openerId?: string;
 }
 
 export interface TargetList {

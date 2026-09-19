@@ -224,9 +224,20 @@ async function chooseOnce(
 
   const started = performance.now();
 
+  // A PRESS_* that changed nothing may have gone to the wrong focus target,
+  // and an auto-accepted dialog explains a vanished page — offer both when
+  // the observation carried them.
+  const page = {
+    url: state.url,
+    title: state.title,
+    text: state.text,
+    ...(state.focused !== undefined && { focused: state.focused }),
+    ...(state.dialog !== undefined && { dialog: state.dialog }),
+  };
+
   const result = await client.systemOne({
     state: {
-      page: { url: state.url, title: state.title, text: state.text },
+      page,
       elements,
       recent_actions: history
         .slice(-10)

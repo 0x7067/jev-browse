@@ -27,6 +27,19 @@ import { MAX_STEPS } from "./questions.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** True when `needle` occurs in `haystack` starting at a word boundary —
+ *  "pari" matches "Paris, France" but "art" does not match "Start". */
+function atWordBoundary(haystack: string, needle: string): boolean {
+  let i = haystack.indexOf(needle);
+
+  while (i !== -1) {
+    if (i === 0 || !/[\p{L}\p{N}]/u.test(haystack[i - 1])) return true;
+    i = haystack.indexOf(needle, i + 1);
+  }
+
+  return false;
+}
+
 import { choose, type Decision } from "./model/decide.ts";
 import { warmModelEndpoints } from "./model/endpoints.ts";
 import { actionSpace } from "./model/space.ts";
@@ -91,7 +104,8 @@ export class Agent {
   private earlyWaits = 0;
   private fingerprints: string[] = [];
   private domRetried = new Set<number>();
-  private followUp: { type: string; text: string | null; prevIds: Set<string> } | null = null;
+  private domDoc: string | undefined;
+  private followUp: { type: string; text: string | null; prevNodes: Set<number> } | null = null;
   private textCalls: any[] = [];
   private pendingText: [unknown, string, { model: string; latency_ms: number }] | null = null;
   private settleContext: {
@@ -101,7 +115,10 @@ export class Agent {
     decision: Decision;
   } | null = null;
   private settleEntry: HistoryEntry | null = null;
-  private stuckRetried = false;
+  private probeConsulted = false;
+  private fuseConsulted = false;
+  private repairHint = false;
+  private staleStreak = 0;
   private lastOperation: string | null = null;
   private phase: Phase = "observe";
   private startedAt = 0;
@@ -162,17 +179,36 @@ export class Agent {
   private async decideStep(): Promise<void> {
     if (!this.startedAt) this.startedAt = performance.now();
 
+    if (this.decisions.length >= this.maxSteps * 2) {
+      this.phase = "blocked";
+
+      return;
+    }
+
     if (!(await this.browser.fresh(this.page))) {
+      // A stale-redo loop records nothing and spends no budget, so the
+      // decisions cap never reaches it — count consecutive cycles and stop
+      // the storm: one hinted consult, then blocked.
+      this.staleStreak++;
+
+      if (this.staleStreak >= 8) {
+        if (this.fuseConsulted) {
+          this.phase = "blocked";
+        } else {
+          this.fuseConsulted = true;
+          this.repairHint = true;
+          this.phase = "observe";
+        }
+
+        return;
+      }
+
       this.phase = "observe";
 
       return;
     }
 
     this.decision = null;
-
-    if (this.decisions.length >= this.maxSteps * 2) {
-      throw new Error("Reached the model-call budget");
-    }
 
     // A confident speculation skips the decision call entirely: resolve the
     // follow-up against the post-action state into a synthetic decision, and
@@ -182,43 +218,44 @@ export class Agent {
       this.followUp = null;
 
       if (fu.type === "DONE") {
-        await sleep(400);
+        await this.confirmDone(this.page);
+        this.phase = "done";
 
-        if (await this.browser.fresh(this.page)) {
-          this.phase = "done";
+        return;
+      }
 
-          return;
-        }
-      } else {
-        const resolved = this.resolveFollowUp(fu);
+      const resolved = this.resolveFollowUp(fu);
 
-        if (resolved) {
-          this.lastOperation = "FOLLOW_UP";
-          this.decision = {
-            choice: resolved,
-            operation: "FOLLOW_UP",
-            target: null,
-            confidence: 1,
-            probabilities: { [resolved]: 1 },
-            operation_probabilities: {},
-            target_probabilities: {},
-            target_confidence: null,
-            raw_answers: null,
-            model: "follow-up",
-            usage: null,
-            latency_ms: 0,
-          };
-          this.phase = "act";
+      if (resolved) {
+        this.lastOperation = "FOLLOW_UP";
+        this.decision = {
+          choice: resolved,
+          operation: "FOLLOW_UP",
+          target: null,
+          confidence: 1,
+          probabilities: { [resolved]: 1 },
+          operation_probabilities: {},
+          target_probabilities: {},
+          target_confidence: null,
+          raw_answers: null,
+          model: "follow-up",
+          usage: null,
+          latency_ms: 0,
+        };
+        this.phase = "act";
 
-          return;
-        }
+        return;
       }
     }
 
-    // A fuse asked for one repair consult: say it plainly. The history
-    // already shows the failed pattern; the model needs the nudge to try a
-    // different approach instead of repeating it once more.
-    const goal = this.stuckRetried
+    // A probe, fuse, or stale storm asked for one repair consult: say it
+    // plainly, then consume it — the hint applies to exactly this decide.
+    // The history already shows the failed pattern; the model needs the
+    // nudge to try a different approach instead of repeating it once more.
+    const repair = this.repairHint;
+    this.repairHint = false;
+
+    const goal = repair
       ? `${this.goal}\n\nYour recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.`
       : this.goal;
 
@@ -232,7 +269,7 @@ export class Agent {
   private resolveFollowUp(fu: {
     type: string;
     text: string | null;
-    prevIds: Set<string>;
+    prevNodes: Set<number>;
   }): string | null {
     if (fu.type === "PRESS_ENTER") {
       return this.page.actions.find((a) => a.id === "press_enter")?.id ?? null;
@@ -240,31 +277,25 @@ export class Agent {
 
     if (fu.type === "CLICK_MATCH_TYPED") {
       // Autocomplete suggestions are the elements that appeared in response
-      // to typing — ids absent from the pre-typed set. Prefer a suggestion
-      // whose label matches the typed text; without text, resolve only an
+      // to typing — ids are positional and recycle between observations, so
+      // diff by node identity. Without a label match, resolve only an
       // unambiguous single newcomer — page chrome appearing mid-typing is
       // not the suggestion.
       const appeared = this.page.actions.filter(
-        (a) => a.kind === "click" && a.node !== undefined && !fu.prevIds.has(a.id),
+        (a) => a.kind === "click" && a.node !== undefined && !fu.prevNodes.has(a.node),
       );
 
-      if (fu.text) {
+      if (fu.text && fu.text.length >= 3) {
         const tokens = fu.text
           .toLowerCase()
           .split(/[^\p{L}\p{N}]+/u)
           .filter((t) => t.length >= 3);
 
         const matched = appeared.find((a) =>
-          tokens.some((t) => a.label.toLowerCase().includes(t)),
+          tokens.some((t) => atWordBoundary(a.label.toLowerCase(), t)),
         );
 
         if (matched) return matched.id;
-
-        const labeled = this.page.actions.find(
-          (a) => a.kind === "click" && a.label.toLowerCase().includes(fu.text!.toLowerCase()),
-        );
-
-        if (labeled) return labeled.id;
       }
 
       if (appeared.length === 1) return appeared[0].id;
@@ -274,6 +305,51 @@ export class Agent {
   }
 
   // --- act -----------------------------------------------------------------
+
+  /**
+   * Confirm a DONE claim. While navigation or requests are still in flight
+   * the claim verifies the page the action just left: poll freshness through
+   * a commit window — a committed navigation or Turbo-style DOM swap fails
+   * fresh() and sends the machine back to decide on the new page, and signals
+   * still pending at the deadline mean the claim came mid-flight. Once
+   * nothing is in flight, require the page to stay put across a short
+   * stability window, not just one freshness check.
+   */
+  private async confirmDone(page: PageState): Promise<void> {
+    if (page.pending_nav || this.browser.pendingNav?.() || (page.pending_requests ?? 0) > 0) {
+      const deadline = Date.now() + 2500;
+
+      for (;;) {
+        if (!(await this.browser.fresh(page))) {
+          throw new StalePage("Navigation committed while confirming DONE. Choose again.");
+        }
+
+        if (!this.browser.pendingNav?.()) {
+          // pending_requests lives on the snapshot — a same-fingerprint
+          // re-read refreshes it; a changed one is the swap it predicted.
+          const current = await this.browser.observe();
+
+          if (current.fingerprint !== page.fingerprint) {
+            throw new StalePage("Page changed while confirming DONE. Choose again.");
+          }
+
+          if ((current.pending_requests ?? 0) === 0) break;
+        }
+
+        if (Date.now() >= deadline) {
+          throw new StalePage("Page still settling when the DONE window expired. Choose again.");
+        }
+
+        await sleep(120);
+      }
+    }
+
+    await sleep(400);
+
+    if (!(await this.browser.fresh(page))) {
+      throw new StalePage("Page changed while confirming DONE. Choose again.");
+    }
+  }
 
   private async actStep(): Promise<void> {
     const decision = this.decision;
@@ -289,51 +365,43 @@ export class Agent {
         throw new StalePage("Page changed since the decision. Choose again.");
       }
 
-      // Any BLOCKED claim is a give-up worth second-guessing: wait, re-observe,
-      // ask again. A premature blocked ends the task; a probe costs ~1s.
-      // Bounded by earlyWaits; mutating retries stay forbidden.
+      // Any BLOCKED claim is a give-up worth second-guessing: poll until the
+      // page moves (recovery — re-decide) or the patience a WAIT-loop would
+      // buy expires (accept the claim). Bounded by earlyWaits; mutating
+      // retries stay forbidden.
       if (selected === "BLOCKED" && this.earlyWaits < 3) {
         this.earlyWaits++;
-        // A give-up claim is a stuck signal too — the re-decide carries the
-        // repair hint so it tries a different approach instead of repeating
-        // the same claim.
-        this.stuckRetried = true;
-        const entry = this.waitEntry("Wait for the page to update", page);
-        await sleep(700);
-        this.page = await this.browser.observe();
-        entry.page_changed = this.page.fingerprint !== page.fingerprint;
-        entry.url = this.page.url;
-        entry.elapsed_ms = this.elapsed();
-        this.phase = "decide";
 
-        return;
+        // A give-up claim is a stuck signal too — the first probe arms the
+        // repair hint so the re-decide tries a different approach instead of
+        // repeating the same claim.
+        if (!this.probeConsulted) {
+          this.probeConsulted = true;
+          this.repairHint = true;
+        }
+
+        const entry = this.waitEntry("Wait for the page to update", page);
+        const deadline = Date.now() + 10_000;
+
+        for (;;) {
+          await sleep(800);
+          this.page = await this.browser.observe();
+
+          const changed = this.page.fingerprint !== page.fingerprint;
+
+          if (changed || Date.now() >= deadline) {
+            entry.page_changed = changed;
+            entry.url = this.page.url;
+            entry.elapsed_ms = this.elapsed();
+            this.phase = changed ? "decide" : "blocked";
+
+            return;
+          }
+        }
       }
 
       if (selected === "DONE") {
-        // A DONE claim while a click-triggered navigation is still in flight
-        // verifies the page the click just left. Give the commit a short
-        // window to land — once it does, fresh() fails and the machine
-        // re-decides on the navigated page.
-        if (page.pending_nav || this.browser.pendingNav?.()) {
-          const navDeadline = Date.now() + 2500;
-
-          while (Date.now() < navDeadline) {
-            if (!(await this.browser.fresh(page))) {
-              throw new StalePage("Navigation committed while confirming DONE. Choose again.");
-            }
-
-            await sleep(120);
-          }
-        }
-
-        // A DONE claim on a just-clicked link can land before the navigation
-        // it triggered starts. Require the page to stay put across a short
-        // window, not just one freshness check.
-        await sleep(400);
-
-        if (!(await this.browser.fresh(page))) {
-          throw new StalePage("Page changed while confirming DONE. Choose again.");
-        }
+        await this.confirmDone(page);
       }
 
       this.phase = selected === "DONE" ? "done" : "blocked";
@@ -362,7 +430,8 @@ export class Agent {
 
     if (this.history.length >= this.maxSteps) {
       this.phase = "blocked";
-      throw new Error(`Stopped at the ${this.maxSteps}-action budget`);
+
+      return;
     }
 
     let text: string | null = null;
@@ -390,12 +459,6 @@ export class Agent {
           }
         }
 
-        // Fail fast: an empty helper answer means nothing was typed; looping
-        // on TYPE_TEXT just burns the action budget.
-        if (!generated.text) {
-          throw new Error("Text helper returned no valid field value; nothing typed.");
-        }
-
         text = generated.text;
         helper = generated.helper;
         this.pendingText = [context, text, helper];
@@ -407,6 +470,7 @@ export class Agent {
     await this.browser.act(action, page, text);
     this.pendingText = null;
     this.earlyWaits = 0;
+    this.probeConsulted = false;
 
     // Record execution before observing; a stale post-action observation must
     // not erase the action.
@@ -432,6 +496,7 @@ export class Agent {
     };
 
     this.history.push(entry);
+    this.staleStreak = 0;
     this.phase = "settle";
     this.settleContext = { action, page, text, decision };
     this.settleEntry = entry;
@@ -450,6 +515,15 @@ export class Agent {
 
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
+
+    // Node ids restart at 1 in every document — a retry budget keyed by
+    // node must reset when the document does.
+    const doc = String(Array.isArray(page.page_key) ? page.page_key[0] : page.page_key);
+
+    if (this.domDoc !== doc) {
+      this.domDoc = doc;
+      this.domRetried.clear();
+    }
 
     // Trusted input can silently deliver nothing — seen after a canceled
     // provisional navigation leaves the renderer's input pipeline dead.
@@ -484,7 +558,9 @@ export class Agent {
       this.followUp = {
         type: decision.follow_up === "DONE_AFTER" ? "DONE" : decision.follow_up,
         text,
-        prevIds: new Set(page.actions.map((a) => a.id)),
+        prevNodes: new Set(
+          page.actions.flatMap((a) => (a.node === undefined ? [] : [a.node])),
+        ),
       };
     }
 
@@ -528,11 +604,12 @@ export class Agent {
       this.cycling();
 
     if (!fused) {
-      this.stuckRetried = false;
+      this.fuseConsulted = false;
       this.phase = "decide";
-    } else if (!this.stuckRetried) {
+    } else if (!this.fuseConsulted) {
       // Repair before verdict: one consult with the stuck signal spelled out.
-      this.stuckRetried = true;
+      this.fuseConsulted = true;
+      this.repairHint = true;
       this.phase = "decide";
     } else {
       this.phase = "blocked";
@@ -575,6 +652,7 @@ export class Agent {
     };
 
     this.history.push(entry);
+    this.staleStreak = 0;
 
     return entry;
   }
@@ -647,6 +725,7 @@ export class Agent {
       decisions: this.decisions.length,
       elapsed_ms: this.elapsed(),
       history: this.history,
+      final_text: this.page.text.slice(0, 2000),
     };
   }
 

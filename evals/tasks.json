@@ -33,7 +33,7 @@
     "id": "tin-login",
     "url": "https://the-internet.herokuapp.com/login",
     "goal": "Log in with username \"tomsmith\" and password \"SuperSecretPassword!\" and stop when the secure area is visible.",
-    "expect": { "url_match": "/secure" }
+    "expect": { "url_match": "/secure", "text_match": "You logged into a secure area" }
   },
   {
     "id": "tin-dropdown",
@@ -45,13 +45,13 @@
     "id": "tin-dynamic-loading",
     "url": "https://the-internet.herokuapp.com/dynamic_loading/2",
     "goal": "Click Start, wait for \"Hello World!\" to appear, and stop when it is visible.",
-    "expect": {}
+    "expect": { "text_match": "Hello World!" }
   },
   {
     "id": "tin-dynamic-controls",
     "url": "https://the-internet.herokuapp.com/dynamic_controls",
     "goal": "Click the Enable button, wait for the text input to become enabled, type \"hello\" into it, and stop.",
-    "expect": {}
+    "expect": { "text_match": "It's enabled" }
   },
   {
     "id": "tin-iframe",
@@ -64,70 +64,70 @@
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Scroll to the shadow DOM section, click the \"Shadow action\" button inside the shadow root, and stop when DONE is visible.",
-    "expect": {}
+    "expect": { "text_match": "DONE\\(shadow\\)" }
   },
   {
     "id": "fx-hover-menu",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Open the Destinations menu and pick \"Alpine stays\". Stop when DONE is shown.",
-    "expect": {}
+    "expect": { "text_match": "DONE: alpine picked" }
   },
   {
     "id": "fx-iframe",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Scroll to the iframe section, click the button inside the frame, and stop when DONE is visible.",
-    "expect": {}
+    "expect": { "text_match": "DONE\\(frame\\)" }
   },
   {
     "id": "fx-modal",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Open the modal dialog and confirm deleting the draft. Stop when DONE is shown.",
-    "expect": {}
+    "expect": { "text_match": "DONE: draft deleted" }
   },
   {
     "id": "fx-new-tab",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Open the help page in a new tab and stop when the help page is visible.",
-    "expect": {}
+    "expect": { "text_match": "DONE: help visible" }
   },
   {
     "id": "fx-disabled-redeem",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Enter a code in the code field, click Redeem, and stop when DONE is shown.",
-    "expect": {}
+    "expect": { "text_match": "DONE: code redeemed" }
   },
   {
     "id": "fx-composer",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Write a note in the Message composer and send it. Stop when DONE is shown.",
-    "expect": {}
+    "expect": { "text_match": "DONE:" }
   },
   {
     "id": "fx-drag",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Drag the Postcard onto the Drop zone and stop when DONE is shown.",
-    "expect": {}
+    "expect": { "text_match": "DONE: postcard dropped" }
   },
   {
     "id": "fx-context",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Right-click the tile that says 'Right-click this tile' and stop when DONE is shown.",
-    "expect": {}
+    "expect": { "text_match": "DONE: context menu opened" }
   },
   {
     "id": "fx-range",
     "url": "fixture-interactions.html",
     "file_url": true,
     "goal": "Move the Guests slider to 6 or more and stop when DONE is shown.",
-    "expect": {}
+    "expect": { "text_match": "DONE: guests=" }
   },
   {
     "id": "tin-checkboxes",
@@ -139,31 +139,31 @@
     "id": "tin-hovers",
     "url": "https://the-internet.herokuapp.com/hovers",
     "goal": "Hover over the first user avatar, click its \"View profile\" link, and stop once the user1 profile page is visible.",
-    "expect": {}
+    "expect": { "url_match": "users/1" }
   },
   {
     "id": "tin-file-upload",
     "url": "https://the-internet.herokuapp.com/upload",
     "goal": "Upload the file /etc/hosts using the file chooser and submit the form.",
-    "expect": {}
+    "expect": { "text_match": "File Uploaded" }
   },
   {
     "id": "tin-key-press",
     "url": "https://the-internet.herokuapp.com/key_presses",
     "goal": "Click into the target field and press the Tab key, then stop.",
-    "expect": {}
+    "expect": { "text_match": "You entered: TAB" }
   },
   {
     "id": "sauce-checkout",
     "url": "https://www.saucedemo.com/",
     "goal": "Log in with username \"standard_user\" and password \"secret_sauce\", add the Sauce Labs Backpack to the cart, and complete checkout with first name \"Ada\", last name \"Lovelace\", postal code \"12345\". Stop when the order confirmation is visible.",
-    "expect": { "url_match": "checkout-complete" }
+    "expect": { "url_match": "checkout-complete", "text_match": "Thank you for your order" }
   },
   {
     "id": "todomvc-add",
     "url": "https://todomvc.com/examples/react/dist/",
     "goal": "Add two todos: \"buy milk\" and \"walk dog\", then mark \"buy milk\" as completed.",
-    "expect": {}
+    "expect": { "text_match": "buy milk[\\s\\S]*walk dog" }
   },
   {
     "id": "tin-infinite-scroll",
@@ -187,7 +187,7 @@
     "id": "tin-jquery-menu",
     "url": "https://the-internet.herokuapp.com/jqueryui/menu",
     "goal": "Hover through the menu and click any file-format option under Downloads.",
-    "expect": { "url_match": "menu" }
+    "expect": { "action_match": "PDF|CSV|Excel" }
   },
   {
     "id": "tin-horizontal-slider",
@@ -205,7 +205,7 @@
     "id": "tin-windows",
     "url": "https://the-internet.herokuapp.com/windows",
     "goal": "Open the new window via the link and stop when the new page is visible.",
-    "expect": { "url_match": "windows/new" }
+    "expect": { "url_match": "windows/new", "text_match": "New Window" }
   },
   {
     "id": "demoqa-autocomplete",
@@ -241,7 +241,7 @@
     "id": "tin-notification",
     "url": "https://the-internet.herokuapp.com/notification_message_rendered",
     "goal": "Click the link to load a notification message and stop.",
-    "expect": {}
+    "expect": { "text_match": "Action" }
   },
   {
     "id": "tin-dynamic-content",
@@ -307,7 +307,7 @@
     "id": "tin-js-alerts",
     "url": "https://the-internet.herokuapp.com/javascript_alerts",
     "goal": "Click the JS Alert button and stop.",
-    "expect": {}
+    "expect": { "text_match": "clicked an alert" }
   },
   {
     "id": "tin-drag-drop",
@@ -319,13 +319,13 @@
     "id": "parabank-login",
     "url": "https://parabank.parasoft.com/parabank/index.htm",
     "goal": "Log in with username \"john\" and password \"demo\" and stop when the accounts page shows.",
-    "expect": { "url_match": "overview" }
+    "expect": { "url_match": "overview", "text_match": "Accounts Overview" }
   },
   {
     "id": "parabank-transfer",
     "url": "https://parabank.parasoft.com/parabank/index.htm",
     "goal": "Log in with username \"john\" and password \"demo\", open Transfer Funds, transfer 50 dollars between the first two accounts, and stop when the transfer confirmation shows.",
-    "expect": { "url_match": "transfer" }
+    "expect": { "url_match": "transfer", "text_match": "Transfer Complete" }
   },
   {
     "id": "github-issues",

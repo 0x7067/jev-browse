@@ -33,26 +33,32 @@
 return s?[s]:[]}).join(' ') ||
       (['button','submit','reset'].includes(e.type) ? e.value : '') || e.getAttribute('alt') ||
       (e.tagName==='INPUT' ? '' : [...e.childNodes].map(n=>n.nodeType===3 ? n.textContent :
-        n.nodeType===1 && !SKIP_NAME.has(n.tagName) && n.getAttribute('aria-hidden')!=='true' ? name(n,seen) : '').join(' ').trim()) ||
+        n.nodeType===1 && !(e.tagName==='SELECT' && (n.tagName==='OPTION'||n.tagName==='OPTGROUP')) &&
+          !SKIP_NAME.has(n.tagName) && n.getAttribute('aria-hidden')!=='true' ? name(n,seen) : '').join(' ').trim()) ||
       // Sibling labels name unlabelled inputs — the input+label pattern is
       // how most checkboxes and toggles get their text.
-      (e.tagName==='INPUT' && e.nextElementSibling?.matches?.('label,span')
+      (e.tagName==='INPUT' && e.nextElementSibling?.matches?.('label')
         ? name(e.nextElementSibling,seen) : '') ||
       e.getAttribute('title') || e.getAttribute('placeholder') || '';
   };
 
   const roles=['button','link','checkbox','radio','switch','tab','menuitem','menuitemradio',
-    'option','gridcell','combobox','textbox','searchbox','spinbutton'];
+    'menuitemcheckbox','option','listbox','treeitem','gridcell','cell','columnheader',
+    'rowheader','combobox','textbox','searchbox','spinbutton','slider','scrollbar'];
 
-  // Hover candidates are indexed too: menus and popups often live on elements
-  // with no interactive role until hovered.
-  const hoverSel='[aria-haspopup],[onmouseover],[class*="menu"],[class*="dropdown"],'+
-    '[class*="tooltip"],[class*="hover"]';
+  // Popup/hover handlers mark elements that reveal content — indexed so they
+  // can be offered as hover actions even without an interactive role. Class
+  // substrings (menu/dropdown/tooltip) are NOT candidates: Tailwind-style
+  // utilities make them match arbitrary elements.
+  const hoverSel='[aria-haspopup],[onmouseover],[oncontextmenu]';
 
-  // [oncontextmenu] and [tabindex] mark interactivity with no role or link
-  // semantics — context-menu tiles and custom widgets live on plain divs.
+  // [onclick], [draggable] and handler attributes mark interactivity with no
+  // role or link semantics — custom widgets live on plain divs. tabindex is
+  // gathered separately (tabindexSel): focus order alone isn't clickability.
   const selector='a[href],button,input,textarea,select,summary,[contenteditable="true"],'+
-    '[draggable="true"],[oncontextmenu],[tabindex]:not([tabindex^="-"]),'+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
+    '[draggable="true"],[onclick],'+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
+
+  const tabindexSel='[tabindex]:not([tabindex^="-"])';
 
   const role = e => {
     const explicit=e.getAttribute('role');
@@ -82,12 +88,10 @@ return s?[s]:[]}).join(' ') ||
            'month','week','file'].includes(e.type)) return 'textbox';
     }
 
-    if (e.matches(hoverSel)) return 'button';
-
-    // No-role interactivity: context-menu tiles, custom focusable widgets,
-    // drag sources. They matched the selector for a reason — call them
-    // buttons so they reach the action table.
-    if (e.matches('[oncontextmenu],[tabindex]:not([tabindex^="-"]),[draggable="true"]')) return 'button';
+    // No-role interactivity: click/hover handlers, focusable widgets, drag
+    // sources. They matched the selector for a reason — call them buttons
+    // so they reach the action table.
+    if (e.matches(hoverSel+',[onclick],[draggable="true"],'+tabindexSel)) return 'button';
 
     return null;
   };
@@ -102,7 +106,8 @@ return s?[s]:[]}).join(' ') ||
     return [identity(e),role(e),name(e),e.value??null,e.checked??null,e.selectedIndex??null,
       e.readOnly??null,e.matches(':disabled'),e.getAttribute('aria-disabled'),
       e.getAttribute('aria-expanded'),e.getAttribute('aria-checked'),e.getAttribute('aria-selected'),
-      e.getAttribute('href'),scope?.innerText?.slice(0,6000)||''];
+      e.getAttribute('aria-pressed'),e.getAttribute('aria-valuenow'),e.getAttribute('aria-valuemin'),
+      e.getAttribute('aria-valuemax'),e.getAttribute('href'),scope?.innerText?.slice(0,6000)||''];
   };
 
   const actions=[];
@@ -113,10 +118,11 @@ return s?[s]:[]}).join(' ') ||
   const hoverZones=new Map();
 
   const INTERACTIVE='a[href],button,select,input,textarea,summary,'+
-    '[role="link"],[role="button"],[role="menuitem"],[role="option"],[role="tab"]';
+    roles.map(role=>'[role="'+role+'"]').join(',');
 
-  const hoverable=e=>e.matches('[aria-haspopup],[onmouseover],[title]') ||
-    !!e.closest('nav,header,[role="navigation"],[role="menu"],[role="menubar"],[class*="menu"],[class*="dropdown"]');
+  // Only real hover-reveal signals qualify. Ancestors of hidden interactive
+  // descendants are offered separately via hoverZones.
+  const hoverable=e=>e.matches(hoverSel);
 
   // Piercing gather: same-origin iframes recurse with accumulated viewport
   // offsets; open shadow roots recurse in the same coordinate space. `frame`
@@ -124,29 +130,45 @@ return s?[s]:[]}).join(' ') ||
   const gather=(root,fx,fy,depth)=>{
     if (depth>4) return;
 
-    for (const e of root.querySelectorAll(selector)) {
+    for (const e of root.querySelectorAll(selector+','+tabindexSel)) {
+      // tabindex>=0 alone is routine focus management, not clickability —
+      // require a second signal: handler/jsaction attribute, pointer
+      // cursor, or an interactive descendant.
+      if (!e.matches(selector) &&
+          !e.matches('[onclick],[onkeydown],[onkeypress],[onmousedown],[jsaction]') &&
+          (e.ownerDocument.defaultView||window).getComputedStyle(e).cursor!=='pointer' &&
+          !e.querySelector(INTERACTIVE)) continue;
+
       // Opacity:0 custom controls (iOS toggles, styled checkboxes, material
       // switches) fail checkVisibility yet remain the real click target —
       // the hit test, not the visibility check, is the arbiter of
-      // clickability. Rescue them when they win their own center point.
+      // clickability. Rescue them when they win a point inside their
+      // on-viewport area; a <label> covering its control counts too.
       let vis = visible(e);
 
       if (!vis && e.matches(INTERACTIVE)) {
         const r = e.getBoundingClientRect();
         const d = e.ownerDocument, w = d.defaultView;
-        const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+        const vw = w ? w.innerWidth : innerWidth, vh = w ? w.innerHeight : innerHeight;
 
-        if (r.width > 0 && r.height > 0 && cx >= 0 && cy >= 0 &&
-            cx < (w ? w.innerWidth : innerWidth) && cy < (w ? w.innerHeight : innerHeight)) {
-          const hit = d.elementFromPoint(cx, cy);
-          vis = hit === e || e.contains(hit);
+        const ix0 = Math.max(r.x,0), iy0 = Math.max(r.y,0),
+              ix1 = Math.min(r.x+r.width,vw), iy1 = Math.min(r.y+r.height,vh);
+
+        if (r.width > 0 && r.height > 0 && ix1 > ix0 && iy1 > iy0) {
+          const hit = d.elementFromPoint((ix0+ix1)/2, (iy0+iy1)/2);
+          vis = hit === e || e.contains(hit) || hit?.closest?.('label')?.control === e;
         }
       }
 
       if (!safe(e) || !vis || e.matches(':disabled') || e.closest('[aria-disabled="true"]')) {
-        if (e.matches(INTERACTIVE) && hoverZones.size < 24) {
-          // Walk up to the nearest visible ancestor sized like a hover zone —
-          // skipping body-sized wrappers where hovering means nothing.
+        // An interactive element hidden only by CSS (menus revealed on
+        // :hover) can be exposed by hovering a visible ancestor — record
+        // that zone. Hidden inputs and disabled controls are not
+        // hover-revealable and don't feed it.
+        if (!vis && safe(e) && !e.matches(':disabled') && !e.closest('[aria-disabled="true"]') &&
+            e.matches(INTERACTIVE) && hoverZones.size < 24) {
+          // Walk up to a visible ancestor sized like a hover zone — keep
+          // climbing past oversized wrappers where hovering means nothing.
           let a=e.parentElement, hops=0;
 
           while (a && hops++<6 && !hoverZones.has(a)) {
@@ -155,9 +177,10 @@ return s?[s]:[]}).join(' ') ||
               const ax=fx+ar.x+ar.width/2, ay=fy+ar.y+ar.height/2;
 
               if (ar.width>0 && ar.height>0 && ar.width<=800 && ar.height<=400 &&
-                  ax>=0 && ay>=0 && ax<innerWidth && ay<innerHeight) hoverZones.set(a,{fx,fy});
-
-              break;
+                  ax>=0 && ay>=0 && ax<innerWidth && ay<innerHeight) {
+                hoverZones.set(a,{fx,fy});
+                break;
+              }
             }
 
             a=a.parentElement;
@@ -167,9 +190,11 @@ return s?[s]:[]}).join(' ') ||
         continue;
       }
 
-      const r=e.getBoundingClientRect(), x=fx+r.x+r.width/2, y=fy+r.y+r.height/2, rname=role(e);
+      const r=e.getBoundingClientRect(), rname=role(e);
 
-      if (!rname || r.width<=0 || r.height<=0 || x<0 || y<0 || x>=innerWidth || y>=innerHeight) continue;
+      if (!rname || r.width<=0 || r.height<=0 ||
+          fx+r.x>=innerWidth || fy+r.y>=innerHeight ||
+          fx+r.x+r.width<=0 || fy+r.y+r.height<=0) continue;
 
       if (rname==='gridcell' && e.querySelector('button,[role="button"]')) continue;
       const frame=(fx||fy)?{x:fx,y:fy}:undefined;
@@ -179,6 +204,10 @@ return s?[s]:[]}).join(' ') ||
       // contains pathological pages (giant labels once blew the model request).
       const base={node:identity(e),role:rname,label:(name(e)||rname).slice(0,240),
         rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height}};
+
+      if (e.getAttribute('draggable')==='true') base.draggable=true;
+
+      if (e.hasAttribute('oncontextmenu')) base.contextMenu=true;
 
       // Classes often carry the only semantic signal a control has
       // (button.success is the green one). Truncate aggressively.
@@ -190,7 +219,7 @@ return s?[s]:[]}).join(' ') ||
 
       if (shadow) base.shadow=true;
 
-      for (const key of ['checked','selected','expanded']) {
+      for (const key of ['checked','selected','expanded','pressed','valuenow','valuemin','valuemax']) {
         const value=e.getAttribute('aria-'+key);
 
         if (value!==null) base[key]=value;
@@ -283,10 +312,11 @@ return s?[s]:[]}).join(' ') ||
     }
   }
 
-  const words=[], range=document.createRange(); let node,length=0;
+  const words=[]; let node,length=0;
 
   const walkText=(doc)=>{
-    const body=doc.body||doc.documentElement;
+    const w=doc.defaultView, vw=w?w.innerWidth:innerWidth, vh=w?w.innerHeight:innerHeight;
+    const body=doc.body||doc.documentElement, range=doc.createRange();
     const walker=doc.createTreeWalker(body,NodeFilter.SHOW_TEXT);
 
     while ((node=walker.nextNode()) && length<6000) {
@@ -295,13 +325,17 @@ return s?[s]:[]}).join(' ') ||
       if (!value || !parent || parent.closest('script,style,noscript,template') || !visible(parent)) continue;
       range.selectNodeContents(node); const r=range.getBoundingClientRect();
 
-      if (r.width>0 && r.height>0 && r.bottom>0 && r.top<innerHeight && r.right>0 && r.left<innerWidth) {
+      if (r.width>0 && r.height>0 && r.bottom>0 && r.top<vh && r.right>0 && r.left<vw) {
         words.push(value); length+=value.length;
       }
     }
 
     for (const f of doc.querySelectorAll('iframe,frame')) {
-      try { if (f.contentDocument) walkText(f.contentDocument); } catch { /* cross-origin */ }
+      try {
+        const fr=f.getBoundingClientRect();
+
+        if (f.contentDocument && fr.width>0 && fr.height>0 && visible(f)) walkText(f.contentDocument);
+      } catch { /* cross-origin */ }
 
       if (length>=6000) break;
     }
@@ -309,10 +343,8 @@ return s?[s]:[]}).join(' ') ||
 
   walkText(document);
 
-  const text=words.join('\n').slice(0,6000), height=document.documentElement.scrollHeight;
-  const page_key=cache.pageKey(), guards={};
-
-  for (const a of actions) if (!(a.node in guards)) guards[a.node]=cache.guard(cache.nodes.get(a.node));
+  let text=words.join('\n').slice(0,6000);
+  const height=document.documentElement.scrollHeight, page_key=cache.pageKey();
   // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
   const semantics=actions.map(({rect: _rect,...action})=>action);
 
@@ -321,7 +353,25 @@ return s?[s]:[]}).join(' ') ||
 
   const omitted_actions=Math.max(0,actions.length-250);
   actions.splice(250);
+
+  if (omitted_actions>0)
+    text+='\n['+omitted_actions+' more interactive elements not shown — scroll or narrow the page]';
+
   actions.forEach((a,i)=>a.id='e'+(i+1));
+
+  // Guards pay a synchronous-layout innerText cost — compute them only for
+  // elements that survived the cap.
+  const guards={};
+
+  for (const a of actions) if (!(a.node in guards)) guards[a.node]=cache.guard(cache.nodes.get(a.node));
+
+  let focused;
+  const ae=document.activeElement;
+
+  if (ae && ae!==document.body && ae!==document.documentElement) {
+    const offered=actions.find(a=>a.node && cache.nodes.get(a.node)===ae);
+    focused=offered?.id || name(ae).replace(/\s+/g,' ').trim().slice(0,80) || undefined;
+  }
 
   if (scrollY+innerHeight<height-2) actions.push({id:'scroll_down',kind:'scroll',label:'Scroll down',delta:560});
 
@@ -335,5 +385,5 @@ return s?[s]:[]}).join(' ') ||
     actions.push({id:'press_'+k,kind:'press',key:k,label:'Press '+k});
 
   return {url:location.href,title:document.title,w:innerWidth,h:innerHeight,text,
-    scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions};
+    scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused};
 })()

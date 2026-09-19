@@ -62,7 +62,13 @@ function parseArgs(argv) {
   return args;
 }
 
-function verify(task, result) {
+const VERIFIABLE_KEYS = ["status", "url_match", "url_not_match", "text_match", "action_match"];
+
+// A task with no runnable expectation can't be verified — reported
+// "unverifiable", not silently counted as a pass.
+const isVerifiable = (task) => VERIFIABLE_KEYS.some((k) => task.expect?.[k] !== undefined);
+
+function verify(task, result, opsText) {
   const url = result.final_url ?? "";
   const exp = task.expect ?? {};
 
@@ -78,6 +84,10 @@ function verify(task, result) {
 
   if (exp.url_not_match && new RegExp(exp.url_not_match).test(url)) return false;
 
+  if (exp.text_match && !new RegExp(exp.text_match).test(result.final_text ?? "")) return false;
+
+  if (exp.action_match && !new RegExp(exp.action_match).test(opsText)) return false;
+
   return true;
 }
 
@@ -88,7 +98,9 @@ function runOnce(task, env, engine) {
     // profile, which makes anonymous-state tasks non-deterministic (a logged-in
     // ParaBank page has no login form to fill).
     const profile = mkdtempSync(join(tmpdir(), "jev-eval-"));
-    const childEnv = { ...env, JEV_PROFILE: profile };
+    // Both driver env vars point at the same fresh dir; each engine reads its
+    // own (JEV_PROFILE for cdp, JEV_AB_PROFILE for agent-browser).
+    const childEnv = { ...env, JEV_PROFILE: profile, JEV_AB_PROFILE: profile };
 
     if (task.file_url) childEnv.JEV_ALLOW_FILE_URLS = "1";
 
@@ -122,6 +134,7 @@ function runOnce(task, env, engine) {
         return;
       }
 
+      const ops = (result.history ?? []).map((h) => `${h.operation}:${(h.action ?? "").slice(0, 30)}`);
       const jev_ms = (result.history ?? []).reduce((s, h) => s + (h.latency_ms || 0), 0);
       const text_ms = (result.history ?? []).reduce((s, h) => s + (h.text_latency_ms || 0), 0);
 
@@ -140,7 +153,7 @@ function runOnce(task, env, engine) {
 
       resolvePromise({
         status: result.status,
-        verified: verify(task, result),
+        verified: isVerifiable(task) ? verify(task, result, ops.join(" ")) : "unverifiable",
         elapsed_ms: result.elapsed_ms,
         steps: result.steps,
         decisions: result.decisions,
@@ -148,7 +161,7 @@ function runOnce(task, env, engine) {
         text_ms,
         final_url: result.final_url,
         error: result.error,
-        ops: (result.history ?? []).map((h) => `${h.operation}:${(h.action ?? "").slice(0, 30)}`),
+        ops,
         events,
       });
     });
@@ -173,9 +186,8 @@ async function main() {
       const ra = a.tasks[id], rb = b.tasks[id];
 
       if (!rb) continue;
-      console.log(
-        `${id.padEnd(24)} ${`${ra.median_ms}ms ok:${ra.verified}/${ra.runs}`.padEnd(22)} ${rb.median_ms}ms ok:${rb.verified}/${rb.runs}`,
-      );
+      const cell = (r) => `${r.median_ms}ms ok:${r.verified}/${r.runs - (r.unverifiable ?? 0)}`;
+      console.log(`${id.padEnd(24)} ${cell(ra).padEnd(22)} ${cell(rb)}`);
     }
 
     console.log(
@@ -202,15 +214,17 @@ async function main() {
     for (let i = 0; i < args.repeat; i++) {
       const r = await runOnce(task, env, args.engine);
       runs.push(r);
+      const verdict = r.verified === "unverifiable" ? "unverifiable" : r.verified ? "yes" : "NO";
       console.log(
-        `${task.id.padEnd(24)} run ${i + 1}/${args.repeat}  ${String(r.status).padEnd(8)} verified:${r.verified ? "yes" : "NO "} ${String(r.elapsed_ms).padStart(6)}ms  steps:${r.steps} decisions:${r.decisions} jev:${r.jev_ms}ms txt:${r.text_ms}ms${r.error ? `  err:${r.error.slice(0, 80)}` : ""}`,
+        `${task.id.padEnd(24)} run ${i + 1}/${args.repeat}  ${String(r.status).padEnd(8)} verified:${verdict.padEnd(12)} ${String(r.elapsed_ms).padStart(6)}ms  steps:${r.steps} decisions:${r.decisions} jev:${r.jev_ms}ms txt:${r.text_ms}ms${r.error ? `  err:${r.error.slice(0, 80)}` : ""}`,
       );
       await sleep(500);
     }
 
     report.tasks[task.id] = {
       runs: runs.length,
-      verified: runs.filter((r) => r.verified).length,
+      verified: runs.filter((r) => r.verified === true).length,
+      unverifiable: runs.filter((r) => r.verified === "unverifiable").length,
       median_ms: median(runs.map((r) => r.elapsed_ms)),
       median_decisions: median(runs.map((r) => r.decisions)),
       median_jev_ms: median(runs.map((r) => r.jev_ms)),
@@ -221,9 +235,20 @@ async function main() {
 
   report.median_total_ms = Object.values(report.tasks).reduce((s, t) => s + t.median_ms, 0);
 
+  const totals = Object.values(report.tasks).reduce(
+    (s, t) => ({
+      verified: s.verified + t.verified,
+      unverifiable: s.unverifiable + t.unverifiable,
+      failed: s.failed + t.runs - t.verified - t.unverifiable,
+    }),
+    { verified: 0, unverifiable: 0, failed: 0 },
+  );
+
   const name = `${args.label ?? "run"}-${Date.now()}.json`;
   writeFileSync(join(RESULTS_DIR, name), JSON.stringify(report, null, 2));
-  console.log(`\nwrote evals/results/${name}  median total: ${report.median_total_ms}ms`);
+  console.log(
+    `\nwrote evals/results/${name}  median total: ${report.median_total_ms}ms  verified:${totals.verified} unverifiable:${totals.unverifiable} failed:${totals.failed}`,
+  );
 }
 
 main().catch((e) => {

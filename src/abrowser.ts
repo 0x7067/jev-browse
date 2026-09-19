@@ -31,6 +31,34 @@ const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null
 
 const TAG_ATTR = "data-jev-node";
 
+/** agent-browser press takes DOM key names; the action table uses lowercase ids. */
+const PRESS_KEYS: ReadonlyMap<string, string> = new Map(
+  Object.entries({
+    enter: "Enter",
+    tab: "Tab",
+    escape: "Escape",
+    backspace: "Backspace",
+    delete: "Delete",
+    arrowup: "ArrowUp",
+    arrowdown: "ArrowDown",
+    arrowleft: "ArrowLeft",
+    arrowright: "ArrowRight",
+    home: "Home",
+    end: "End",
+    pageup: "PageUp",
+    pagedown: "PageDown",
+    space: "Space",
+  }),
+);
+
+/** stderr/envelope wording that means the page left — bare words like
+ *  "closed" or "stale" also match ordinary messages ("reading 'closed'"). */
+const STALE_ERROR =
+  /context.{0,20}destroy|execution context|navigat|detach|target.{0,20}(closed|crash)|page.{0,20}(closed|crash)|tab_gone/i;
+
+/** Fallback wheel amount when the observed action carried no delta. */
+const SCROLL_DELTA = 560;
+
 export interface AgentBrowserOptions {
   /** agent-browser binary; default "agent-browser" on PATH. */
   bin?: string;
@@ -112,7 +140,7 @@ export class AgentBrowser implements BrowserDriver {
     } catch (error: any) {
       const detail = (error?.stderr || error?.stdout || error?.message || "").toString().trim();
 
-      if (/context|destroy|navigat|detach|closed|crashed|stale|tab_gone/i.test(detail)) {
+      if (STALE_ERROR.test(detail)) {
         // A mutation that triggers navigation must look stale, not fatal: the
         // agent loop re-observes and decides again on the new page.
         throw new StalePage(`agent-browser ${args[0]} hit a changed page`);
@@ -121,7 +149,16 @@ export class AgentBrowser implements BrowserDriver {
       throw new Error(`agent-browser ${args[0]} failed: ${detail.slice(-500)}`);
     }
 
-    return parseOutput(stdout);
+    // A success:false envelope whose error describes a dead page is stale too.
+    try {
+      return parseOutput(stdout);
+    } catch (error) {
+      if (error instanceof Error && STALE_ERROR.test(error.message)) {
+        throw new StalePage(`agent-browser ${args[0]} hit a changed page`);
+      }
+
+      throw error;
+    }
   }
 
   private async evaluate<T>(expression: string): Promise<T | undefined> {
@@ -148,7 +185,7 @@ export class AgentBrowser implements BrowserDriver {
     } catch (error: any) {
       const detail = (error?.stderr || error?.stdout || "").toString();
 
-      if (/context|destroy|navigat|detach|closed/i.test(detail)) {
+      if (STALE_ERROR.test(detail)) {
         throw new StalePage("Document changed during evaluation");
       }
 
@@ -161,7 +198,7 @@ export class AgentBrowser implements BrowserDriver {
       parsed = parseOutput(stdout);
     } catch (error: any) {
       // A page that navigates mid-eval reports success:false with context errors.
-      if (/context|destroy|navigat|detach|closed|crashed/i.test(String(error?.message))) {
+      if (STALE_ERROR.test(String(error?.message))) {
         throw new StalePage("Document changed during evaluation");
       }
 
@@ -210,7 +247,9 @@ export class AgentBrowser implements BrowserDriver {
       }
     }
 
-    for (let attempt = 0; attempt < 10; attempt++) {
+    // Brief navigations (redirect chains, post-load location changes)
+    // outlast a few hundred ms; the retry budget must cover real ones.
+    for (let attempt = 0; attempt < 100; attempt++) {
       try {
         const info = await this.evaluate<PageState | null>(READ_STATE);
 
@@ -222,15 +261,19 @@ export class AgentBrowser implements BrowserDriver {
 
         return info;
       } catch (error) {
-        if (!(error instanceof StalePage) || attempt === 9) throw error;
-        await sleep(20);
+        if (!(error instanceof StalePage) || attempt === 99) throw error;
+        await sleep(40);
       }
     }
 
     throw new StalePage("Page did not settle");
   }
 
-  async fresh(page: PageState, action?: ObservedAction): Promise<boolean> {
+  async fresh(
+    page: PageState,
+    action?: ObservedAction,
+    level: "full" | "page" = "full",
+  ): Promise<boolean> {
     if (action && (action.kind === "click" || action.kind === "select")) {
       const node = action.node;
 
@@ -243,11 +286,21 @@ export class AgentBrowser implements BrowserDriver {
       return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
     }
 
+    // 'page' level: same document and field state, ignoring text churn.
+    if (level === "page") {
+      const current = await this.evaluate(
+        `(() => { const c=window.__jevFast; return c ? c.pageKey() : null; })()`,
+      );
+
+      return JSON.stringify(current) === JSON.stringify(page.page_key);
+    }
+
     return JSON.stringify(await this.evaluate(MARKER)) === JSON.stringify(page.marker);
   }
 
   async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {
-    if (!(await this.fresh(page, action))) {
+    // Guard compare for click/select; document key for everything else.
+    if (!(await this.fresh(page, action, "page"))) {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
 
@@ -260,7 +313,8 @@ export class AgentBrowser implements BrowserDriver {
     }
 
     if (kind === "scroll") {
-      await this.run(["scroll", (action.delta ?? 560) > 0 ? "down" : "up", String(Math.abs(action.delta ?? 560))]);
+      const delta = action.delta ?? SCROLL_DELTA;
+      await this.run(["scroll", delta > 0 ? "down" : "up", String(Math.abs(delta))]);
       this.afterInput = action;
 
       return { executed: action.id };
@@ -273,9 +327,9 @@ export class AgentBrowser implements BrowserDriver {
     }
 
     if (kind === "press") {
-      const key =
-        String(action.key).charAt(0).toUpperCase() + String(action.key).slice(1);
+      const key = PRESS_KEYS.get(String(action.key));
 
+      if (!key) throw new Error(`Unknown key ${action.key}`);
       await this.run(["press", key]);
       this.afterInput = action;
 
@@ -325,12 +379,23 @@ export class AgentBrowser implements BrowserDriver {
           return "ok";
         })()`);
       } else if (kind === "context") {
+        // A lone contextmenu event misses hover/down handlers — send the
+        // full right-button sequence a real mouse produces.
         await this.evaluate(`(() => {
           const e=document.querySelector(${JSON.stringify(selector)});
           if (!e) return "stale";
           const r=e.getBoundingClientRect();
-          e.dispatchEvent(new MouseEvent("contextmenu",{bubbles:true,cancelable:true,
-            clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:2}));
+          const base={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2};
+          const seq=[
+            ["pointerover",PointerEvent,{}],
+            ["mouseover",MouseEvent,{}],
+            ["pointerdown",PointerEvent,{button:2,buttons:2}],
+            ["mousedown",MouseEvent,{button:2,buttons:2}],
+            ["pointerup",PointerEvent,{button:2,buttons:0}],
+            ["mouseup",MouseEvent,{button:2,buttons:0}],
+            ["contextmenu",MouseEvent,{button:2}],
+          ];
+          for (const [t,Ev,extra] of seq) e.dispatchEvent(new Ev(t,{...base,...extra}));
           return "ok";
         })()`);
       } else if (kind === "click") {

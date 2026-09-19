@@ -5,7 +5,7 @@
  */
 
 import { execSync, spawn, type ChildProcess } from "node:child_process";
-import { homedir, platform } from "node:os";
+import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { fingerprint } from "../json.ts";
@@ -15,7 +15,6 @@ import {
   type ActResult,
   type BrowserDriver,
   type JsonObject,
-  type JsonValue,
   type ObservedAction,
   type PageState,
 } from "../types.ts";
@@ -63,10 +62,36 @@ const KEYS: ReadonlyMap<string, KeyEventParams> = new Map(
 /** Input types typed via real key events — insertText cannot drive them. */
 const KEY_TYPED_INPUTS = new Set(["date", "time", "datetime-local", "month", "week"]);
 
+/** CDP resource types that stay open by design — counting them pins pending forever. */
+const LONG_LIVED_REQUESTS = new Set([
+  "WebSocket",
+  "EventSource",
+  "Media",
+  "Ping",
+  "CSPViolationReport",
+  "Other",
+]);
+
+/** Forced page viewport. The launch window is 120px taller: headed Chrome
+ *  spends the difference on browser chrome, leaving ~780px for content. */
+const VIEWPORT_W = 1120;
+
+const VIEWPORT_H = 780;
+
+/** Fallback wheel delta: roughly a pane's worth of the forced viewport. */
+const SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
+
+/** Interpolated mouseMoved events between drag press and release. */
+const DRAG_STEPS = 8;
+
 /** Kill Chrome instances still bound to our profile dir. True when any were reaped. */
 function reapProfileChrome(profileDir: string): boolean {
   try {
-    const out = execSync(`pgrep -f "user-data-dir=${profileDir}"`, {
+    // pgrep -f is a regex: an unescaped profile path matches profile-backup,
+    // profile2, and treats '.' as any-char. Escape and anchor the arg end.
+    const escaped = profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const out = execSync(`pgrep -f "user-data-dir=${escaped}([[:space:]]|$)"`, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
     });
@@ -109,6 +134,12 @@ export class CdpBrowser implements BrowserDriver {
   private pending = new Map<string, Set<string>>();
   /** Uncommitted main-frame navigations per session — click → commit is a gap. */
   private navPending = new Map<string, number>();
+  /** Each session's main frame id — iframe nav events must not count as pending. */
+  private mainFrame = new Map<string, string>();
+  /** The last auto-accepted JS dialog, surfaced on the next observation. */
+  private lastDialog: { type: string; message: string } | null = null;
+  /** CDP key modifier for select-all — Meta (4) on a macOS browser, Control (2) else. */
+  private selectAllModifier = 2;
 
   private constructor() {}
 
@@ -132,7 +163,8 @@ export class CdpBrowser implements BrowserDriver {
       ];
 
       if (!opts.headed) args.push("--headless=new");
-      else args.push("--window-size=1120,900", "--window-position=40,40");
+      else
+        args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
       browser.proc.on("error", () => {});
       browser.launchProfileDir = profileDir;
@@ -181,16 +213,23 @@ export class CdpBrowser implements BrowserDriver {
 
       browser.socket = await CdpSocket.connect(wsUrl);
       // A JS dialog (alert/confirm/prompt) blocks the whole page until
-      // answered — accept and keep the run moving.
-      browser.socket.onEvent("Page.javascriptDialogOpening", (_p, sessionId) => {
-        if (sessionId) {
-          browser.socket
-            .call("Page.handleJavaScriptDialog", { accept: true }, sessionId)
-            .catch(() => {});
-        }
+      // answered — accept and keep the run moving. The message is kept so the
+      // next observation reports what was auto-accepted.
+      browser.socket.onEvent("Page.javascriptDialogOpening", (p, sessionId) => {
+        if (!sessionId) return;
+
+        browser.lastDialog = {
+          type: String(p.type ?? "dialog"),
+          message: String(p.message ?? ""),
+        };
+        browser.socket
+          .call("Page.handleJavaScriptDialog", { accept: true }, sessionId)
+          .catch(() => {});
       });
       browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
-        if (sessionId) (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, new Set()).get(sessionId)!).add(p.requestId);
+        if (sessionId && !LONG_LIVED_REQUESTS.has(String(p.type))) {
+          (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, new Set()).get(sessionId)!).add(p.requestId);
+        }
       });
       browser.socket.onEvent("Network.loadingFinished", (p, sessionId) => {
         if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
@@ -200,17 +239,22 @@ export class CdpBrowser implements BrowserDriver {
       });
       // Document navigations: a click-triggered commit isn't visible in the
       // old document's state, so DONE needs socket-level nav tracking to
-      // avoid declaring success mid-flight.
+      // avoid declaring success mid-flight. Only the session's main frame
+      // counts — iframe starts/stops would fake and cancel real pending navs.
       browser.socket.onEvent("Page.frameStartedNavigating", (p, sessionId) => {
-        if (sessionId) browser.navPending.set(sessionId, (browser.navPending.get(sessionId) ?? 0) + 1);
+        if (sessionId && p.frameId === browser.mainFrame.get(sessionId)) {
+          browser.navPending.set(sessionId, (browser.navPending.get(sessionId) ?? 0) + 1);
+        }
       });
       browser.socket.onEvent("Page.frameNavigated", (p, sessionId) => {
-        if (sessionId && p.frame?.parentId === undefined) {
+        if (sessionId && p.frame?.id === browser.mainFrame.get(sessionId)) {
           browser.navPending.set(sessionId, Math.max(0, (browser.navPending.get(sessionId) ?? 0) - 1));
         }
       });
       browser.socket.onEvent("Page.frameStoppedLoading", (p, sessionId) => {
-        if (sessionId) browser.navPending.set(sessionId, 0);
+        if (sessionId && p.frameId === browser.mainFrame.get(sessionId)) {
+          browser.navPending.set(sessionId, 0);
+        }
       });
       browser.target = (
         await browser.socket.call<{ targetId: string }>("Target.createTarget", {
@@ -227,6 +271,14 @@ export class CdpBrowser implements BrowserDriver {
       browser.seen.add(browser.target);
       await browser.call("Page.enable").catch(() => {});
       await browser.call("Network.enable").catch(() => {});
+      await browser.learnMainFrame();
+
+      // The select-all shortcut must match the browser's OS, not the agent's.
+      const version = await browser.socket
+        .call<{ userAgent?: string }>("Browser.getVersion")
+        .catch(() => null);
+
+      browser.selectAllModifier = /mac os x|macintosh/i.test(version?.userAgent ?? "") ? 4 : 2;
 
       // Tabs that pre-date the run (e.g. the launch tab) are not adoptable.
       const { targetInfos } = await browser.socket
@@ -235,8 +287,8 @@ export class CdpBrowser implements BrowserDriver {
 
       for (const t of targetInfos) browser.seen.add(t.targetId);
       await browser.call("Emulation.setDeviceMetricsOverride", {
-        width: 1120,
-        height: 780,
+        width: VIEWPORT_W,
+        height: VIEWPORT_H,
         deviceScaleFactor: 1,
         mobile: false,
       });
@@ -257,22 +309,55 @@ export class CdpBrowser implements BrowserDriver {
     }
   }
 
-  private call<T>(method: string, params: JsonObject = {}): Promise<T> {
-    return this.socket.call<T>(method, params, this.session);
+  private async call<T>(method: string, params: JsonObject = {}): Promise<T> {
+    try {
+      return await this.socket.call<T>(method, params, this.session);
+    } catch (error) {
+      // An adopted tab that closed or crashed leaves a dead session behind —
+      // the page we decided on is gone, but the browser itself is fine.
+      if (
+        this.adopted.includes(this.target) &&
+        /no session|session.{0,20}(not found|gone)|detach|renderer crashed/i.test(
+          error instanceof Error ? error.message : String(error),
+        )
+      ) {
+        throw new StalePage("Adopted tab is gone. Observe again.");
+      }
+
+      throw error;
+    }
+  }
+
+  /** Record the session's main frame so iframe nav events don't fake a pending nav. */
+  private async learnMainFrame(): Promise<void> {
+    const tree = await this.call<{ frameTree?: { frame?: { id?: string } } }>(
+      "Page.getFrameTree",
+    ).catch(() => null);
+
+    if (tree?.frameTree?.frame?.id) this.mainFrame.set(this.session, tree.frameTree.frame.id);
   }
 
   private async evaluate<T>(expression: string, awaitPromise = false): Promise<T | undefined> {
-    const response = await this.call<{ exceptionDetails?: JsonValue; result?: { value?: T } }>(
-      "Runtime.evaluate",
-      {
-        expression,
-        returnByValue: true,
-        awaitPromise,
-      },
-    );
+    const response = await this.call<{
+      exceptionDetails?: { exception?: { description?: string }; text?: string };
+      result?: { value?: T };
+    }>("Runtime.evaluate", {
+      expression,
+      returnByValue: true,
+      awaitPromise,
+    });
 
     if (response.exceptionDetails) {
-      throw new StalePage("Document changed during evaluation");
+      const description =
+        response.exceptionDetails.exception?.description ?? response.exceptionDetails.text ?? "";
+
+      // Only navigation/context-destruction means a stale page; an ordinary
+      // page exception is a real error worth surfacing verbatim.
+      if (/context.{0,20}destroy|execution context|navigat|detach/i.test(description)) {
+        throw new StalePage("Document changed during evaluation");
+      }
+
+      throw new Error(`Evaluation failed: ${description.slice(0, 300)}`);
     }
 
     return response.result?.value;
@@ -284,7 +369,11 @@ export class CdpBrowser implements BrowserDriver {
       .call<TargetList>("Target.getTargets")
       .catch((): TargetList => ({ targetInfos: [] }));
 
-    const fresh = targetInfos.filter((t) => t.type === "page" && !this.seen.has(t.targetId));
+    // Only pages our current tab opened are candidates — anything else that
+    // appears (another tab's popup, external windows) must not hijack the run.
+    const fresh = targetInfos.filter(
+      (t) => t.type === "page" && !this.seen.has(t.targetId) && t.openerId === this.target,
+    );
 
     for (const t of fresh) {
       this.seen.add(t.targetId);
@@ -303,6 +392,15 @@ export class CdpBrowser implements BrowserDriver {
         this.adopted.push(t.targetId);
         await this.call("Page.enable").catch(() => {});
         await this.call("Network.enable").catch(() => {});
+        // Adopted tabs need the same viewport/focus emulation as the main one.
+        await this.call("Emulation.setDeviceMetricsOverride", {
+          width: VIEWPORT_W,
+          height: VIEWPORT_H,
+          deviceScaleFactor: 1,
+          mobile: false,
+        }).catch(() => {});
+        await this.call("Emulation.setFocusEmulationEnabled", { enabled: true }).catch(() => {});
+        await this.learnMainFrame();
       } catch {
         // tab raced away
       }
@@ -319,8 +417,9 @@ export class CdpBrowser implements BrowserDriver {
       // Read-only settle wait; runs after execution was logged, so an
       // interrupted evaluation cannot erase the action.
       try {
-        await this.call("Runtime.evaluate", {
-          expression: `(action => new Promise(resolve => {
+        // evaluate() checks exceptionDetails — a field disconnecting
+        // mid-wait throws there instead of inside the page script.
+        await this.evaluate(`(action => new Promise(resolve => {
             const field=window.__jevFast?.nodes.get(action.node);
             const autocomplete=action.kind==='fill' && field?.getAttribute('role')==='combobox';
             let frames=0, stopped=false;
@@ -328,7 +427,7 @@ export class CdpBrowser implements BrowserDriver {
             setTimeout(finish,autocomplete ? 200 : 50);
             const ready=()=>{
               if (stopped) return;
-              const ids=(field?.getAttribute('aria-controls')||field.getAttribute('aria-owns')||'')
+              const ids=(field?.getAttribute('aria-controls')||field?.getAttribute('aria-owns')||'')
                 .split(/\\s+/).filter(Boolean);
               const roots=ids.length ? ids.map(id=>document.getElementById(id)).filter(Boolean) : [document];
               const options=roots.flatMap(root=>[...root.querySelectorAll('[role="option"]')]);
@@ -340,10 +439,7 @@ export class CdpBrowser implements BrowserDriver {
               else requestAnimationFrame(ready);
             };
             requestAnimationFrame(ready);
-          }))(${JSON.stringify(action)})`,
-          awaitPromise: true,
-          returnByValue: true,
-        });
+          }))(${JSON.stringify(action)})`, true);
       } catch {
         // settle wait is best-effort; the snapshot below is the real read
       }
@@ -357,6 +453,12 @@ export class CdpBrowser implements BrowserDriver {
         info.fingerprint = fingerprint(info);
         info.pending_requests = this.pending.get(this.session)?.size ?? 0;
         info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
+
+        // Report the dialog we auto-accepted since the last observation, once.
+        if (this.lastDialog) {
+          info.dialog = `${this.lastDialog.type}: ${this.lastDialog.message}`.slice(0, 240);
+          this.lastDialog = null;
+        }
 
         return info;
       } catch (error) {
@@ -374,7 +476,11 @@ export class CdpBrowser implements BrowserDriver {
     return (this.navPending.get(this.session) ?? 0) > 0;
   }
 
-  async fresh(page: PageState, action?: ObservedAction): Promise<boolean> {
+  async fresh(
+    page: PageState,
+    action?: ObservedAction,
+    level: "full" | "page" = "full",
+  ): Promise<boolean> {
     if (action && (action.kind === "click" || action.kind === "select")) {
       const node = action.node;
 
@@ -389,11 +495,22 @@ export class CdpBrowser implements BrowserDriver {
       );
     }
 
+    // 'page' level: same document and field state, ignoring text churn.
+    if (level === "page") {
+      const current = await this.evaluate(
+        `(() => { const c=window.__jevFast; return c ? c.pageKey() : null; })()`,
+      );
+
+      return JSON.stringify(current) === JSON.stringify(page.page_key);
+    }
+
     return JSON.stringify(await this.evaluate(MARKER)) === JSON.stringify(page.marker);
   }
 
   async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {
-    if (!(await this.fresh(page, action))) {
+    // Guard compare for click/select; document key for everything else —
+    // press/scroll/fill must not fail on unrelated text churn.
+    if (!(await this.fresh(page, action, "page"))) {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
 
@@ -406,12 +523,40 @@ export class CdpBrowser implements BrowserDriver {
     }
 
     if (kind === "scroll") {
+      // A fixed/sticky pane (cookie bar, nav drawer) at the wheel point
+      // swallows the scroll. Probe a few columns for a hit in the document
+      // flow, and send ~80% of the live viewport height.
+      const point = await this.evaluate<{ x: number; y: number; delta: number } | null>(
+        `(delta => {
+          const sign=Math.sign(delta)||1;
+          const fixed=e=>{
+            for (let n=e;n && n!==document.documentElement;n=n.parentElement) {
+              const p=getComputedStyle(n).position;
+              if (p==='fixed'||p==='sticky') return true;
+            }
+            return false;
+          };
+          for (const fx of [0.5,0.3,0.7,0.15,0.85]) {
+            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.8);
+            const hit=document.elementFromPoint(x,y);
+            if (hit && !fixed(hit)) return {x,y,delta:Math.round(sign*innerHeight*0.8)};
+          }
+          return null;
+        })(${JSON.stringify(action.delta ?? SCROLL_DELTA)})`,
+      ).catch(() => null);
+
+      const wheel = point ?? {
+        x: Math.round(VIEWPORT_W / 2),
+        y: Math.round(VIEWPORT_H * 0.8),
+        delta: action.delta ?? SCROLL_DELTA,
+      };
+
       await this.call("Input.dispatchMouseEvent", {
         type: "mouseWheel",
-        x: 550,
-        y: 650,
+        x: wheel.x,
+        y: wheel.y,
         deltaX: 0,
-        deltaY: action.delta ?? 560,
+        deltaY: wheel.delta,
       });
       this.afterInput = action;
 
@@ -460,9 +605,13 @@ export class CdpBrowser implements BrowserDriver {
         }
         if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return null;
         const hit=d.elementFromPoint(lx,ly), root=e.getRootNode();
-        const covered = root instanceof ShadowRoot
-          ? !(e.contains(hit) || hit===root.host || hit?.getRootNode()===root)
-          : !e.contains(hit);
+        // Composed containment: not covered when the hit is the target, is
+        // inside it across shadow boundaries (walk hit's host chain up to e),
+        // or is e's own shadow host. An unrelated overlay in the same shadow
+        // root still counts as covered.
+        const inside=h=>{for(let n=h;n;){if(n===e)return true;const r=n.getRootNode();n=r instanceof ShadowRoot?r.host:n.parentElement;}return false;};
+        const covered = !(hit===e || e.contains(hit) || inside(hit) ||
+          (root instanceof ShadowRoot && hit===root.host));
         if (covered) return null;
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
@@ -533,11 +682,13 @@ export class CdpBrowser implements BrowserDriver {
         clickCount: 1,
       });
 
-      for (let i = 1; i <= 8; i++) {
+      for (let i = 1; i <= DRAG_STEPS; i++) {
         await this.call("Input.dispatchMouseEvent", {
           type: "mouseMoved",
-          x: target.x + ((dest.x - target.x) * i) / 8,
-          y: target.y + ((dest.y - target.y) * i) / 8,
+          x: target.x + ((dest.x - target.x) * i) / DRAG_STEPS,
+          y: target.y + ((dest.y - target.y) * i) / DRAG_STEPS,
+          button: "left",
+          buttons: 1,
         });
       }
 
@@ -571,7 +722,7 @@ export class CdpBrowser implements BrowserDriver {
             await this.call("Input.dispatchKeyEvent", { type: "char", text: ch });
           }
         } else {
-          const modifiers = platform() === "darwin" ? 4 : 2;
+          const modifiers = this.selectAllModifier;
           await this.call("Input.dispatchKeyEvent", {
             type: "keyDown",
             key: "a",

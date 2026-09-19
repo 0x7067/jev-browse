@@ -2,8 +2,17 @@
 
 Real-world task suite for jev-browse. `node scripts/eval.mjs` runs each task
 in `tasks.json` through `src/cli.ts`, parses the `RunResult`, and verifies the
-outcome — `DONE` is a claim, not proof, so tasks carry URL expectations where
-the destination is checkable (`expect.url_match` / `url_not_match`).
+outcome — `DONE` is a claim, not proof, so tasks carry expectations where the
+outcome is checkable:
+
+- `expect.url_match` / `expect.url_not_match` — regexes on the final URL
+- `expect.text_match` — regex on `RunResult.final_text` (terminal page text)
+- `expect.action_match` — regex on the run's executed ops, joined with spaces
+- `expect.status` — an expected non-done outcome (e.g. `"blocked"`)
+
+A task with no runnable expectation reports `unverifiable` — distinct from
+`verified: yes/NO` — and is excluded from the verified count; the summary
+line prints verified / unverifiable / failed separately.
 
 ```bash
 node scripts/eval.mjs                       # all tasks, one run each
@@ -59,6 +68,7 @@ runs through `file_url` tasks for deterministic coverage.
 | invisible elements were uniformly dropped | `checkVisibility` misses opacity:0 custom controls (iOS toggles, styled checkboxes, material switches) | hit-test rescue in `gather()` — element wins its own center point → indexed |
 | conduit (realworld) unreachable | demo backends are dead — shell renders, no forms | environmental; dropped |
 | opencart blocked post-nav | Cloudflare interstitial | environmental; dropped |
+| tin-shifting-content unverifiable | its Gallery link is a designed 404 — blocked, done, and retreat are all defensible; it verifies nothing | dropped in 3dc4750 |
 
 ## Known limits (not bugs)
 

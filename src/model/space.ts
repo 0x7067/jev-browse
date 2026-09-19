@@ -83,12 +83,30 @@ export function actionSpace(actions: ObservedAction[]) {
     group[target] = action;
   }
 
-  // Right-click shares the click candidate set — any clickable element can
-  // host a context menu or a right-click handler. Drag sources and targets
-  // come from the same pool.
-  if (targets.CLICK) {
-    targets.CONTEXT_CLICK = targets.CLICK;
-    targets.DRAG = targets.CLICK;
+  // DRAG sources and CONTEXT_CLICK targets come only from flagged elements:
+  // draggable===true marks a real drag source, contextMenu===true a real
+  // right-click handler. With no flags neither operation is offered — the
+  // model picks CLICK instead of aiming at an element that can't respond.
+  for (const action of actions) {
+    if (action.node === undefined) continue;
+
+    const index = indices.get(action.node);
+
+    if (index === undefined) continue;
+
+    const element = elements[Number(index) - 1];
+
+    if (action.draggable === true) {
+      (targets.DRAG ??= {})[index] = action;
+
+      if (!element.operations.includes("DRAG")) element.operations.push("DRAG");
+    }
+
+    if (action.contextMenu === true) {
+      (targets.CONTEXT_CLICK ??= {})[index] = action;
+
+      if (!element.operations.includes("CONTEXT_CLICK")) element.operations.push("CONTEXT_CLICK");
+    }
   }
 
   return { elements, targets, controls };
