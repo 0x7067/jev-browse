@@ -65,6 +65,7 @@ export class Agent {
   private decisions: Decision[] = [];
   private earlyWaits = 0;
   private fingerprints: string[] = [];
+  private domRetried = new Set<number>();
   private textCalls: any[] = [];
   private pendingText: [unknown, string, { model: string; latency_ms: number }] | null = null;
   private status: "ready" | "done" | "blocked" = "ready";
@@ -265,6 +266,33 @@ export class Agent {
 
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
+
+    // Trusted input can silently deliver nothing — seen after a canceled
+    // provisional navigation leaves the renderer's input pipeline dead.
+    // Before counting a no-change strike, retry once via in-page event
+    // synthesis; an element that does nothing on click is unaffected.
+    if (
+      entry.page_changed === false &&
+      (action.kind === "click" || action.kind === "hover") &&
+      action.node !== undefined &&
+      !this.domRetried.has(action.node)
+    ) {
+      this.domRetried.add(action.node);
+
+      try {
+        await this.browser.domClick(action, page);
+        const retried = await this.browser.observe();
+
+        if (retried.fingerprint !== page.fingerprint) {
+          this.page = retried;
+          entry.page_changed = true;
+          entry.action = `${action.label} (dom)`;
+        }
+      } catch {
+        // StalePage or a dead element — the no-change path below stands.
+      }
+    }
+
     entry.pending_requests = this.page.pending_requests ?? 0;
     entry.url = this.page.url;
     entry.elapsed_ms = this.elapsed();
@@ -287,10 +315,21 @@ export class Agent {
       idleMs = (last?.elapsed_ms ?? 0) - h.elapsed_ms;
     }
 
+    // Revisit fuse: wandering loops need not be periodic — a page seen 4+
+    // times in the last 14 distinct observations means the agent isn't
+    // converging. Consecutive identical fingerprints collapse to one, so
+    // waits during a legit client-side timer don't count as revisits.
+    const trail = this.fingerprints
+      .slice(-14)
+      .filter((f, i, a) => i === 0 || f !== a[i - 1]);
+
+    const seen = trail.filter((f) => f === this.page.fingerprint).length;
+
     this.status =
       (repeated.length === 3 &&
         repeated.every((h) => h.page_changed === false && h.kind !== "wait")) ||
       idleMs >= 10_000 ||
+      seen >= 4 ||
       this.cycling()
         ? "blocked"
         : "ready";

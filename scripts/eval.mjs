@@ -64,7 +64,13 @@ function verify(task, result) {
   const url = result.final_url ?? "";
   const exp = task.expect ?? {};
 
-  if (result.status !== "done") return false;
+  if (exp.status) {
+    // Expected non-done outcome — e.g. "blocked" is the honest answer when a
+    // page binds interactivity with no DOM signal to offer.
+    if (result.status !== exp.status) return false;
+  } else if (result.status !== "done") {
+    return false;
+  }
 
   if (exp.url_match && !new RegExp(exp.url_match).test(url)) return false;
 

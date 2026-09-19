@@ -41,6 +41,11 @@ runs through `file_url` tasks for deterministic coverage.
 | `fx-range` blocked | `PRESS_*` goes to the focused element; model pressed arrows into nothing | `NEXT_ACTION` teaches focus: CLICK the slider first, then arrows |
 | DDG search blocked | `50x-tq.html` bot-detection interstitial — environmental | task class moved to `hn.algolia.com` |
 | example-link / github wandering | unbounded goals invite link-following | goals name an explicit end state |
+| clicks land but nothing happens (saucedemo) | canceled provisional navigation leaves the renderer input pipeline dead — all `Input.dispatch*` no-op in the same document | `domClick` fallback: one in-page event-synthesis retry when an executed click/hover produces zero change |
+| six identical "Add to cart" buttons (saucedemo) | list controls share labels | duplicates are disambiguated with item-scope headings: `Add to cart — Sauce Labs Backpack` |
+| nested-frames invisible | `<frame>` elements aren't `iframe`s; frameset docs have no `<body>` text | `iframe,frame` recursion for actions AND visible text |
+| detail↔list wandering (saucedemo) | alternation isn't always period-2 — polluted SPA history breaks fingerprint cycles | revisit fuse: same fingerprint seen 4× in 14 distinct observations → blocked |
+| model clicks "Focus X" instead of Enter (todomvc) | editable companion click labeled "Open X" read like an item to open | renamed to "Focus {label}" |
 
 ## Known limits (not bugs)
 
@@ -51,3 +56,9 @@ runs through `file_url` tasks for deterministic coverage.
   observation; the 10s idle fuse is the compromise.
 - Helper-model flakiness: an empty `fieldText` answer retries once; a
   double-empty still fails the run (seen once on algolia-search).
+- sauce-checkout and todomvc-add remain unverified: the model wanders
+  (detail↔list alternation on polluted SPA history; Focus instead of Enter
+  after typing). The extraction and execution machinery is sound — these
+  are decision-quality limits of the current decision model.
+- JS-bound interactivity with no DOM or CSS signal (tablesorter headers)
+  is fundamentally invisible; `blocked` is the honest answer.

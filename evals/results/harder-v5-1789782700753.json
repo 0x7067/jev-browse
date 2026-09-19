@@ -1,0 +1,191 @@
+{
+  "label": "harder-v5",
+  "started": "2026-09-19T01:51:01.986Z",
+  "tasks": {
+    "tin-dynamic-loading": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6904,
+      "median_decisions": 13,
+      "median_jev_ms": 3965,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6904,
+          "steps": 12,
+          "decisions": 13,
+          "jev_ms": 3965,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@834",
+            "WAIT:Wait for the page to update@1321",
+            "WAIT:Wait for the page to update@1721",
+            "WAIT:Wait for the page to update@2101",
+            "WAIT:Wait for the page to update@2512",
+            "WAIT:Wait for the page to update@2952",
+            "WAIT:Wait for the page to update@3384",
+            "WAIT:Wait for the page to update@3800",
+            "WAIT:Wait for the page to update@4271",
+            "WAIT:Wait for the page to update@4699",
+            "WAIT:Wait for the page to update@5123",
+            "BLOCKED:Wait for the page to update@6171",
+            "DONE:Wait for the page to update@6904"
+          ]
+        }
+      ]
+    },
+    "sauce-checkout": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 13550,
+      "median_decisions": 22,
+      "median_jev_ms": 7770,
+      "median_text_ms": 4403,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 13550,
+          "steps": 22,
+          "decisions": 22,
+          "jev_ms": 7770,
+          "text_ms": 4403,
+          "final_url": "https://www.saucedemo.com/",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "GO_BACK:Go back to the previous page",
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login (dom)",
+            "CLICK:Login",
+            "CLICK:Login",
+            "CLICK:Login"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@2295",
+            "TYPE_TEXT:Password@3832",
+            "CLICK:Login@4244",
+            "CLICK:View details for Sauce Labs Ba@4662",
+            "GO_BACK:Go back to the previous page@5043",
+            "CLICK:View details for Sauce Labs Ba@5468",
+            "GO_BACK:Go back to the previous page@6023",
+            "CLICK:View details for Sauce Labs Ba@6397",
+            "GO_BACK:Go back to the previous page@6818",
+            "CLICK:View details for Sauce Labs Ba@7182",
+            "GO_BACK:Go back to the previous page@7524",
+            "CLICK:View details for Sauce Labs Ba@7966",
+            "GO_BACK:Go back to the previous page@8305",
+            "CLICK:View details for Sauce Labs Ba@8695",
+            "GO_BACK:Go back to the previous page@9091",
+            "GO_BACK:Go back to the previous page@9544",
+            "TYPE_TEXT:Username@10859",
+            "TYPE_TEXT:Password@12227",
+            "CLICK:Login (dom)@12593",
+            "CLICK:Login@12916",
+            "CLICK:Login@13243",
+            "CLICK:Login@13550"
+          ]
+        }
+      ]
+    },
+    "todomvc-add": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 5393,
+      "median_decisions": 6,
+      "median_jev_ms": 2653,
+      "median_text_ms": 2361,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 5393,
+          "steps": 6,
+          "decisions": 6,
+          "jev_ms": 2653,
+          "text_ms": 2361,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "PRESS_ENTER:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "CLICK:Open New Todo Input",
+            "CLICK:Open New Todo Input",
+            "CLICK:Open New Todo Input"
+          ],
+          "events": [
+            "TYPE_TEXT:New Todo Input@2244",
+            "PRESS_ENTER:Press enter@2804",
+            "TYPE_TEXT:New Todo Input@4194",
+            "CLICK:Open New Todo Input@4678",
+            "CLICK:Open New Todo Input@5041",
+            "CLICK:Open New Todo Input@5392"
+          ]
+        }
+      ]
+    },
+    "tin-nested-frames": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 3894,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 3894,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/nested_frames",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1514",
+            "BLOCKED:Wait for the page to update@2524",
+            "BLOCKED:Wait for the page to update@3542",
+            "BLOCKED:Wait for the page to update@3893"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 29741
+}

@@ -1,0 +1,179 @@
+{
+  "label": "harder-v3",
+  "started": "2026-09-18T23:39:36.519Z",
+  "tasks": {
+    "sauce-checkout": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 6978,
+      "median_decisions": 8,
+      "median_jev_ms": 3330,
+      "median_text_ms": 3332,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 6978,
+          "steps": 8,
+          "decisions": 8,
+          "jev_ms": 3330,
+          "text_ms": 3332,
+          "final_url": "https://www.saucedemo.com/cart.html",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login",
+            "CLICK:Add to cart",
+            "CLICK:Cart, 1 items",
+            "CLICK:Checkout",
+            "CLICK:Checkout",
+            "CLICK:Checkout"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@2995",
+            "TYPE_TEXT:Password@4845",
+            "CLICK:Login@5281",
+            "CLICK:Add to cart@5647",
+            "CLICK:Cart, 1 items@5978",
+            "CLICK:Checkout@6312",
+            "CLICK:Checkout@6612",
+            "CLICK:Checkout@6978"
+          ]
+        }
+      ]
+    },
+    "todomvc-add": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 5441,
+      "median_decisions": 7,
+      "median_jev_ms": 1848,
+      "median_text_ms": 2558,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 5441,
+          "steps": 6,
+          "decisions": 7,
+          "jev_ms": 1848,
+          "text_ms": 2558,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "PRESS_ENTER:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "CLICK:Open New Todo Input",
+            "CLICK:Open New Todo Input",
+            "CLICK:Open New Todo Input"
+          ],
+          "events": [
+            "TYPE_TEXT:@749",
+            "TYPE_TEXT:New Todo Input@2509",
+            "PRESS_ENTER:Press enter@3023",
+            "TYPE_TEXT:New Todo Input@4542",
+            "CLICK:Open New Todo Input@4858",
+            "CLICK:Open New Todo Input@5158",
+            "CLICK:Open New Todo Input@5441"
+          ]
+        }
+      ]
+    },
+    "tin-infinite-scroll": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2710,
+      "median_decisions": 6,
+      "median_jev_ms": 567,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2710,
+          "steps": 2,
+          "decisions": 6,
+          "jev_ms": 567,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/infinite_scroll",
+          "ops": [
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down"
+          ],
+          "events": [
+            "PRESS_PAGEDOWN:@728",
+            "SCROLL_DOWN:Scroll down@1089",
+            "SCROLL_DOWN:Scroll down@1400",
+            "SCROLL_DOWN:Scroll down@1727",
+            "DONE:Scroll down@1995",
+            "DONE:Scroll down@2710"
+          ]
+        }
+      ]
+    },
+    "tin-sortable": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 2125,
+      "median_decisions": 4,
+      "median_jev_ms": 1859,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 2125,
+          "steps": 4,
+          "decisions": 4,
+          "jev_ms": 1859,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/tables#edit",
+          "ops": [
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit"
+          ],
+          "events": [
+            "CLICK:edit@856",
+            "CLICK:edit@1209",
+            "CLICK:edit@1732",
+            "CLICK:edit@2125"
+          ]
+        }
+      ]
+    },
+    "tin-nested-frames": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 3658,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 3658,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/nested_frames",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1420",
+            "BLOCKED:Wait for the page to update@2410",
+            "BLOCKED:Wait for the page to update@3389",
+            "BLOCKED:Wait for the page to update@3658"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 20912
+}

@@ -133,6 +133,36 @@
     "expect": {}
   },
   {
+    "id": "sauce-checkout",
+    "url": "https://www.saucedemo.com/",
+    "goal": "Log in with username \"standard_user\" and password \"secret_sauce\", add the Sauce Labs Backpack to the cart, and complete checkout with first name \"Ada\", last name \"Lovelace\", postal code \"12345\". Stop when the order confirmation is visible.",
+    "expect": { "url_match": "checkout-complete" }
+  },
+  {
+    "id": "todomvc-add",
+    "url": "https://todomvc.com/examples/react/dist/",
+    "goal": "Add two todos: \"buy milk\" and \"walk dog\", then mark \"buy milk\" as completed.",
+    "expect": {}
+  },
+  {
+    "id": "tin-infinite-scroll",
+    "url": "https://the-internet.herokuapp.com/infinite_scroll",
+    "goal": "Scroll down twice to load more content and stop.",
+    "expect": {}
+  },
+  {
+    "id": "tin-sortable",
+    "url": "https://the-internet.herokuapp.com/tables",
+    "goal": "Sort the first table by the \"Last Name\" column header.",
+    "expect": { "status": "blocked" }
+  },
+  {
+    "id": "tin-nested-frames",
+    "url": "https://the-internet.herokuapp.com/nested_frames",
+    "goal": "Click any button or link inside the nested frames and stop.",
+    "expect": { "status": "blocked" }
+  },
+  {
     "id": "github-issues",
     "url": "https://github.com/nodejs/node",
     "goal": "Open the Issues tab of this repository.",

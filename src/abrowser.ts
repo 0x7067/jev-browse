@@ -342,6 +342,32 @@ export class AgentBrowser implements BrowserDriver {
     return { executed: action.id };
   }
 
+  async domClick(action: ObservedAction, page: PageState): Promise<ActResult> {
+    if (!(await this.fresh(page, action)) || action.node === undefined) {
+      throw new StalePage("Page changed since this decision. Observe again.");
+    }
+
+    const types =
+      action.kind === "hover"
+        ? ["mouseover", "mousemove"]
+        : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
+
+    await this.evaluate(`(() => {
+      const e=window.__jevFast?.nodes.get(${action.node});
+      if (!e) return "stale";
+      const r=e.getBoundingClientRect();
+      const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};
+      for (const t of ${JSON.stringify(types)}) {
+        const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
+        e.dispatchEvent(new Ev(t,opts));
+      }
+      return "ok";
+    })()`);
+    this.afterInput = action;
+
+    return { executed: action.id };
+  }
+
   async close(): Promise<void> {
     if (!this.opened) return;
 

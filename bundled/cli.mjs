@@ -1002,6 +1002,7 @@ var Agent = class _Agent {
   decisions = [];
   earlyWaits = 0;
   fingerprints = [];
+  domRetried = /* @__PURE__ */ new Set();
   textCalls = [];
   pendingText = null;
   status = "ready";
@@ -1150,6 +1151,19 @@ var Agent = class _Agent {
     this.history.push(entry);
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
+    if (entry.page_changed === false && (action.kind === "click" || action.kind === "hover") && action.node !== void 0 && !this.domRetried.has(action.node)) {
+      this.domRetried.add(action.node);
+      try {
+        await this.browser.domClick(action, page);
+        const retried = await this.browser.observe();
+        if (retried.fingerprint !== page.fingerprint) {
+          this.page = retried;
+          entry.page_changed = true;
+          entry.action = `${action.label} (dom)`;
+        }
+      } catch {
+      }
+    }
     entry.pending_requests = this.page.pending_requests ?? 0;
     entry.url = this.page.url;
     entry.elapsed_ms = this.elapsed();
@@ -1162,7 +1176,9 @@ var Agent = class _Agent {
       if (h.page_changed !== false || (h.pending_requests ?? 0) > 0) break;
       idleMs = (last?.elapsed_ms ?? 0) - h.elapsed_ms;
     }
-    this.status = repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || this.cycling() ? "blocked" : "ready";
+    const trail = this.fingerprints.slice(-14).filter((f, i, a) => i === 0 || f !== a[i - 1]);
+    const seen = trail.filter((f) => f === this.page.fingerprint).length;
+    this.status = repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || seen >= 4 || this.cycling() ? "blocked" : "ready";
   }
   /** True when the recent fingerprint trail is a short cycle repeated whole. */
   cycling() {
@@ -1735,6 +1751,36 @@ var CdpBrowser = class _CdpBrowser {
     this.afterInput = action;
     return { executed: action.id };
   }
+  /**
+   * Fallback when trusted input silently delivers nothing — seen on pages
+   * where a canceled provisional navigation leaves the input pipeline dead
+   * (same document, all dispatch* calls no-op). Dispatches the pointer/mouse
+   * sequence in-page; untrusted events still run ordinary handlers.
+   */
+  async domClick(action, page) {
+    if (!await this.fresh(page, action)) {
+      throw new StalePage("Page changed since this decision. Observe again.");
+    }
+    if (!action.node) {
+      return { executed: action.id };
+    }
+    const types = action.kind === "hover" ? ["mouseover", "mousemove"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
+    await this.evaluate(
+      `(() => {
+        const e=window.__jevFast?.nodes.get(${action.node});
+        if (!e) return "stale";
+        const r=e.getBoundingClientRect();
+        const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};
+        for (const t of ${JSON.stringify(types)}) {
+          const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
+          e.dispatchEvent(new Ev(t,opts));
+        }
+        return "ok";
+      })()`
+    );
+    this.afterInput = action;
+    return { executed: action.id };
+  }
   async close() {
     try {
       for (const t of this.adopted) {
@@ -1982,6 +2028,25 @@ var AgentBrowser = class _AgentBrowser {
       ).catch(() => {
       });
     }
+    this.afterInput = action;
+    return { executed: action.id };
+  }
+  async domClick(action, page) {
+    if (!await this.fresh(page, action) || action.node === void 0) {
+      throw new StalePage("Page changed since this decision. Observe again.");
+    }
+    const types = action.kind === "hover" ? ["mouseover", "mousemove"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
+    await this.evaluate(`(() => {
+      const e=window.__jevFast?.nodes.get(${action.node});
+      if (!e) return "stale";
+      const r=e.getBoundingClientRect();
+      const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};
+      for (const t of ${JSON.stringify(types)}) {
+        const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
+        e.dispatchEvent(new Ev(t,opts));
+      }
+      return "ok";
+    })()`);
     this.afterInput = action;
     return { executed: action.id };
   }

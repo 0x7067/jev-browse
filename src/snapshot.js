@@ -179,7 +179,7 @@ return s?[s]:[]}).join(' ') ||
 
         actions.push({...base,kind:editable?'fill':'click',value});
 
-        if (editable) actions.push({...base,kind:'click',value,label:'Open '+base.label});
+        if (editable) actions.push({...base,kind:'click',value,label:'Focus '+base.label});
       }
 
       if (hoverable(e)) actions.push({...base,kind:'hover',value:undefined,label:'Hover '+base.label});
@@ -189,7 +189,7 @@ return s?[s]:[]}).join(' ') ||
       if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
     }
 
-    for (const f of root.querySelectorAll('iframe')) {
+    for (const f of root.querySelectorAll('iframe,frame')) {
       try {
         const d=f.contentDocument;
 
@@ -216,19 +216,59 @@ return s?[s]:[]}).join(' ') ||
     actions.push({...base,kind:'hover'});
   }
 
-  const words=[], walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-  const range=document.createRange(); let node,length=0;
+  // Lists repeat control labels: six "Add to cart" buttons can't be told
+  // apart. Enrich duplicates with the item scope's heading or named text.
+  const byLabel=new Map();
 
-  while ((node=walker.nextNode()) && length<6000) {
-    const value=node.textContent.trim(), parent=node.parentElement;
+  for (const a of actions) {
+    if (!a.node) continue;
+    const key=a.kind+'|'+a.label;
+    byLabel.set(key,[...(byLabel.get(key)??[]),a]);
+  }
 
-    if (!value || !parent || parent.closest('script,style,noscript,template') || !visible(parent)) continue;
-    range.selectNodeContents(node); const r=range.getBoundingClientRect();
+  for (const group of byLabel.values()) {
+    if (group.length<2) continue;
 
-    if (r.width>0 && r.height>0 && r.bottom>0 && r.top<innerHeight && r.right>0 && r.left<innerWidth) {
-      words.push(value); length+=value.length;
+    for (const a of group) {
+      const e=cache.nodes.get(a.node);
+
+      if (!e) continue;
+      const scope=e.closest('li,article,tr,dd,[role="listitem"],[role="row"],[class*="card"],[class*="item"],[class*="product"]');
+
+      if (!scope) continue;
+
+      const ctx=scope.querySelector('h1,h2,h3,h4,h5,h6,[class*="name"],[class*="title"],[class*="header"],strong,b')
+        ?.textContent?.trim().replace(/\s+/g,' ');
+
+      if (ctx && ctx.length<=80 && !a.label.includes(ctx)) a.label=a.label+' — '+ctx;
     }
   }
+
+  const words=[], range=document.createRange(); let node,length=0;
+
+  const walkText=(doc)=>{
+    const body=doc.body||doc.documentElement;
+    const walker=doc.createTreeWalker(body,NodeFilter.SHOW_TEXT);
+
+    while ((node=walker.nextNode()) && length<6000) {
+      const value=node.textContent.trim(), parent=node.parentElement;
+
+      if (!value || !parent || parent.closest('script,style,noscript,template') || !visible(parent)) continue;
+      range.selectNodeContents(node); const r=range.getBoundingClientRect();
+
+      if (r.width>0 && r.height>0 && r.bottom>0 && r.top<innerHeight && r.right>0 && r.left<innerWidth) {
+        words.push(value); length+=value.length;
+      }
+    }
+
+    for (const f of doc.querySelectorAll('iframe,frame')) {
+      try { if (f.contentDocument) walkText(f.contentDocument); } catch { /* cross-origin */ }
+
+      if (length>=6000) break;
+    }
+  };
+
+  walkText(document);
 
   const text=words.join('\n').slice(0,6000), height=document.documentElement.scrollHeight;
   const page_key=cache.pageKey(), guards={};

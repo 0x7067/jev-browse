@@ -475,6 +475,44 @@ export class CdpBrowser implements BrowserDriver {
     return { executed: action.id };
   }
 
+  /**
+   * Fallback when trusted input silently delivers nothing — seen on pages
+   * where a canceled provisional navigation leaves the input pipeline dead
+   * (same document, all dispatch* calls no-op). Dispatches the pointer/mouse
+   * sequence in-page; untrusted events still run ordinary handlers.
+   */
+  async domClick(action: ObservedAction, page: PageState): Promise<ActResult> {
+    if (!(await this.fresh(page, action))) {
+      throw new StalePage("Page changed since this decision. Observe again.");
+    }
+
+    if (!action.node) {
+      return { executed: action.id };
+    }
+
+    const types =
+      action.kind === "hover"
+        ? ["mouseover", "mousemove"]
+        : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
+
+    await this.evaluate(
+      `(() => {
+        const e=window.__jevFast?.nodes.get(${action.node});
+        if (!e) return "stale";
+        const r=e.getBoundingClientRect();
+        const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};
+        for (const t of ${JSON.stringify(types)}) {
+          const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
+          e.dispatchEvent(new Ev(t,opts));
+        }
+        return "ok";
+      })()`,
+    );
+    this.afterInput = action;
+
+    return { executed: action.id };
+  }
+
   async close(): Promise<void> {
     try {
       for (const t of this.adopted) {
