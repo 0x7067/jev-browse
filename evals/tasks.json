@@ -217,6 +217,30 @@
     "expect": { "url_match": "p=2" }
   },
   {
+    "id": "tin-redirector",
+    "url": "https://the-internet.herokuapp.com/redirector",
+    "goal": "Follow the redirect link and stop when the status codes page loads.",
+    "expect": { "url_match": "status_codes" }
+  },
+  {
+    "id": "tin-notification",
+    "url": "https://the-internet.herokuapp.com/notification_message_rendered",
+    "goal": "Click the link to load a notification message and stop.",
+    "expect": {}
+  },
+  {
+    "id": "tin-dynamic-content",
+    "url": "https://the-internet.herokuapp.com/dynamic_content",
+    "goal": "Click the link to refresh the dynamic content and stop.",
+    "expect": {}
+  },
+  {
+    "id": "tin-slow",
+    "url": "https://the-internet.herokuapp.com/slow",
+    "goal": "Wait for the page to finish loading its external resources and stop.",
+    "expect": {}
+  },
+  {
     "id": "github-issues",
     "url": "https://github.com/nodejs/node",
     "goal": "Open the Issues tab of this repository.",

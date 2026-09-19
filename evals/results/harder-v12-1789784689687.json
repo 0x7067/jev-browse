@@ -1,0 +1,115 @@
+{
+  "label": "harder-v12",
+  "started": "2026-09-19T02:24:35.581Z",
+  "tasks": {
+    "tin-redirector": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1554,
+      "median_decisions": 1,
+      "median_jev_ms": 749,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1554,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 749,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/status_codes",
+          "ops": [
+            "CLICK:here"
+          ],
+          "events": [
+            "CLICK:here@1143",
+            "CLICK:here@1554"
+          ]
+        }
+      ]
+    },
+    "tin-notification": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1475,
+      "median_decisions": 1,
+      "median_jev_ms": 696,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1475,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 696,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/notification_message_rendered",
+          "ops": [
+            "CLICK:Click here"
+          ],
+          "events": [
+            "CLICK:Click here@1070",
+            "CLICK:Click here@1475"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-content": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1347,
+      "median_decisions": 1,
+      "median_jev_ms": 720,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1347,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 720,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_content?with_content=static",
+          "ops": [
+            "CLICK:click here"
+          ],
+          "events": [
+            "CLICK:click here@942",
+            "CLICK:click here@1347"
+          ]
+        }
+      ]
+    },
+    "tin-slow": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1282,
+      "median_decisions": 1,
+      "median_jev_ms": 717,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1282,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 717,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/slow",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "WAIT:Wait for the page to update@876",
+            "WAIT:Wait for the page to update@1282"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 5658
+}

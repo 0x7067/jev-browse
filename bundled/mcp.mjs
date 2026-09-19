@@ -1030,7 +1030,9 @@ var Agent = class _Agent {
   followUp = null;
   textCalls = [];
   pendingText = null;
-  status = "ready";
+  settleContext = null;
+  settleEntry = null;
+  phase = "observe";
   startedAt = 0;
   maxSteps;
   client = makeClient();
@@ -1054,33 +1056,32 @@ var Agent = class _Agent {
       await agent.browser.close();
       throw error;
     }
+    agent.phase = "decide";
     return agent;
   }
   elapsed() {
     return Math.round(performance.now() - this.startedAt);
   }
-  /** One predict+act cycle. Equivalent to the reference `tick`. */
-  async tick() {
-    try {
-      await this.predict();
-      if (this.status === "ready") await this.act();
-    } catch (error) {
-      if (error instanceof StalePage) {
-        this.decision = null;
-        this.status = "ready";
-        this.page = await this.browser.observe();
-        return;
-      }
-      throw error;
+  /** Terminal status for results and adapters. */
+  get status() {
+    if (this.phase === "done" || this.phase === "blocked" || this.phase === "error") {
+      return this.phase;
     }
+    return "ready";
   }
-  async predict() {
+  // --- observe -------------------------------------------------------------
+  async observeStep() {
+    this.page = await this.browser.observe();
+    this.phase = "decide";
+  }
+  // --- decide --------------------------------------------------------------
+  async decideStep() {
     if (!this.startedAt) this.startedAt = performance.now();
     if (!await this.browser.fresh(this.page)) {
-      this.page = await this.browser.observe();
+      this.phase = "observe";
+      return;
     }
     this.decision = null;
-    if (this.status !== "ready") return;
     if (this.decisions.length >= this.maxSteps * 2) {
       throw new Error("Reached the model-call budget");
     }
@@ -1090,7 +1091,7 @@ var Agent = class _Agent {
       if (fu.type === "DONE") {
         await sleep3(400);
         if (await this.browser.fresh(this.page)) {
-          this.status = "done";
+          this.phase = "done";
           return;
         }
       } else {
@@ -1110,12 +1111,14 @@ var Agent = class _Agent {
             usage: null,
             latency_ms: 0
           };
+          this.phase = "act";
           return;
         }
       }
     }
     this.decision = await choose(this.client, this.page, this.goal, this.history);
     this.decisions.push(this.decision);
+    this.phase = "act";
   }
   /** Map a speculative follow-up to an action id on the current page. */
   resolveFollowUp(fu) {
@@ -1141,7 +1144,8 @@ var Agent = class _Agent {
     }
     return null;
   }
-  async act() {
+  // --- act -----------------------------------------------------------------
+  async actStep() {
     const decision = this.decision;
     const page = this.page;
     if (!decision) throw new Error("Choose before acting");
@@ -1149,7 +1153,6 @@ var Agent = class _Agent {
     const selected = decision.choice;
     if (selected === "DONE" || selected === "BLOCKED") {
       if (!await this.browser.fresh(page)) {
-        this.status = "ready";
         throw new StalePage("Page changed since the decision. Choose again.");
       }
       if (selected === "BLOCKED" && this.earlyWaits < 3) {
@@ -1160,23 +1163,22 @@ var Agent = class _Agent {
         entry2.page_changed = this.page.fingerprint !== page.fingerprint;
         entry2.url = this.page.url;
         entry2.elapsed_ms = this.elapsed();
-        this.status = "ready";
+        this.phase = "decide";
         return;
       }
       if (selected === "DONE") {
         await sleep3(400);
         if (!await this.browser.fresh(page)) {
-          this.status = "ready";
           throw new StalePage("Page changed while confirming DONE. Choose again.");
         }
       }
-      this.status = selected === "DONE" ? "done" : "blocked";
+      this.phase = selected === "DONE" ? "done" : "blocked";
       return;
     }
     const action = page.actions.find((a) => a.id === selected);
     if (!action) throw new Error(`Decision selected unknown action ${selected}`);
     if (this.history.length >= this.maxSteps) {
-      this.status = "blocked";
+      this.phase = "blocked";
       throw new Error(`Stopped at the ${this.maxSteps}-action budget`);
     }
     let text = null;
@@ -1190,11 +1192,13 @@ var Agent = class _Agent {
         [, text, helper] = this.pendingText;
       } else {
         let generated;
-        try {
-          generated = await fieldText(context);
-        } catch (error) {
-          if (!String(error).includes("no valid field value")) throw error;
-          generated = await fieldText(context);
+        for (let attempt = 0; ; attempt++) {
+          try {
+            generated = await fieldText(context);
+            break;
+          } catch (error) {
+            if (!String(error).includes("no valid field value") || attempt >= 2) throw error;
+          }
         }
         if (!generated.text) {
           throw new Error("Text helper returned no valid field value; nothing typed.");
@@ -1229,6 +1233,18 @@ var Agent = class _Agent {
       elapsed_ms: this.elapsed()
     };
     this.history.push(entry);
+    this.phase = "settle";
+    this.settleContext = { action, page, text, decision };
+    this.settleEntry = entry;
+  }
+  // --- settle --------------------------------------------------------------
+  async settleStep() {
+    const ctx = this.settleContext;
+    const entry = this.settleEntry;
+    if (!ctx || !entry) throw new Error("Settle without an executed action");
+    const { action, page, text, decision } = ctx;
+    this.settleContext = null;
+    this.settleEntry = null;
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
     if (entry.page_changed === false && (action.kind === "click" || action.kind === "hover") && action.node !== void 0 && !this.domRetried.has(action.node)) {
@@ -1265,7 +1281,7 @@ var Agent = class _Agent {
     }
     const trail = this.fingerprints.slice(-14).filter((f, i, a) => i === 0 || f !== a[i - 1]);
     const seen = trail.filter((f) => f === this.page.fingerprint).length;
-    this.status = repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || seen >= 4 || this.cycling() ? "blocked" : "ready";
+    this.phase = repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || seen >= 4 || this.cycling() ? "blocked" : "decide";
   }
   /** True when the recent fingerprint trail is a short cycle repeated whole. */
   cycling() {
@@ -1297,12 +1313,35 @@ var Agent = class _Agent {
     return entry;
   }
   async run(onEvent) {
-    while (this.status === "ready") {
-      await this.tick();
+    while (this.phase !== "done" && this.phase !== "blocked" && this.phase !== "error") {
+      try {
+        switch (this.phase) {
+          case "observe":
+            await this.observeStep();
+            break;
+          case "decide":
+            await this.decideStep();
+            break;
+          case "act":
+            await this.actStep();
+            break;
+          case "settle":
+            await this.settleStep();
+            break;
+        }
+      } catch (error) {
+        if (error instanceof StalePage) {
+          this.decision = null;
+          this.phase = "observe";
+        } else {
+          throw error;
+        }
+      }
       const last = this.history[this.history.length - 1];
       onEvent?.({
         type: "step",
         status: this.status,
+        phase: this.phase,
         elapsed_ms: this.elapsed(),
         action: last?.action,
         kind: last?.kind,
@@ -1311,7 +1350,7 @@ var Agent = class _Agent {
       });
     }
     return {
-      status: this.status,
+      status: this.status === "ready" ? "blocked" : this.status,
       goal: this.goal,
       url: this.startUrl,
       final_url: this.page.url,
@@ -1328,6 +1367,7 @@ var Agent = class _Agent {
   snapshot() {
     return {
       status: this.status,
+      phase: this.phase,
       goal: this.goal,
       page: this.page,
       history: this.history,

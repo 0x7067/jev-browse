@@ -2,6 +2,25 @@
  * The complete agent loop. Typed choices, observable state, bounded execution.
  * Driver-agnostic port of jev-ultrafast's agent.py: predict (one systemOne
  * call) -> act (guarded mutation) -> observe, until DONE/BLOCKED or budget.
+ *
+ * The loop is an explicit phase machine. States:
+ *
+ *   observe  → refresh the page snapshot after staleness or a give-up probe
+ *   decide   → produce a decision: model call or resolved follow-up
+ *   act      → execute the decision (guarded mutation, DONE/BLOCKED claims)
+ *   settle   → post-action observation, dom fallback, stalemate fuses
+ *   done | blocked | error → terminal
+ *
+ * Transitions:
+ *   observe → decide          (fresh snapshot in hand)
+ *   decide  → act             (decision made — model or synthetic follow-up)
+ *   decide  → done            (DONE_AFTER follow-up survived its stability check)
+ *   act     → settle          (action executed)
+ *   act     → observe         (BLOCKED claim probed; StalePage anywhere)
+ *   act     → done | blocked  (claim confirmed after probes/stability)
+ *   settle  → decide          (page still converging)
+ *   settle  → blocked         (a stalemate fuse fired)
+ *   any     → error           (fatal: budgets, dead helper, unknown action)
  */
 
 import { MAX_STEPS } from "./questions.ts";
@@ -57,6 +76,9 @@ export interface RunResult {
   error?: string;
 }
 
+/** Non-terminal phases; terminal status is reported as done/blocked/error. */
+type Phase = "observe" | "decide" | "act" | "settle" | "done" | "blocked" | "error";
+
 export class Agent {
   readonly goal: string;
   private browser!: BrowserDriver;
@@ -70,7 +92,14 @@ export class Agent {
   private followUp: { type: string; text: string | null; prevIds: Set<string> } | null = null;
   private textCalls: any[] = [];
   private pendingText: [unknown, string, { model: string; latency_ms: number }] | null = null;
-  private status: "ready" | "done" | "blocked" = "ready";
+  private settleContext: {
+    action: PageState["actions"][number];
+    page: PageState;
+    text: string | null;
+    decision: Decision;
+  } | null = null;
+  private settleEntry: HistoryEntry | null = null;
+  private phase: Phase = "observe";
   private startedAt = 0;
   private maxSteps: number;
   private client = makeClient();
@@ -99,6 +128,8 @@ export class Agent {
       throw error;
     }
 
+    agent.phase = "decide";
+
     return agent;
   }
 
@@ -106,38 +137,34 @@ export class Agent {
     return Math.round(performance.now() - this.startedAt);
   }
 
-  /** One predict+act cycle. Equivalent to the reference `tick`. */
-  private async tick(): Promise<void> {
-    try {
-      await this.predict();
-
-      // predict() can settle the run itself — a resolved DONE follow-up or a
-      // fuse leaves status non-ready and no decision to act on.
-      if (this.status === "ready") await this.act();
-    } catch (error) {
-      if (error instanceof StalePage) {
-        // Re-observe and let the loop choose again on the fresh page.
-        this.decision = null;
-        this.status = "ready";
-        this.page = await this.browser.observe();
-
-        return;
-      }
-
-      throw error;
+  /** Terminal status for results and adapters. */
+  private get status(): "ready" | "done" | "blocked" | "error" {
+    if (this.phase === "done" || this.phase === "blocked" || this.phase === "error") {
+      return this.phase;
     }
+
+    return "ready";
   }
 
-  private async predict(): Promise<void> {
+  // --- observe -------------------------------------------------------------
+
+  private async observeStep(): Promise<void> {
+    this.page = await this.browser.observe();
+    this.phase = "decide";
+  }
+
+  // --- decide --------------------------------------------------------------
+
+  private async decideStep(): Promise<void> {
     if (!this.startedAt) this.startedAt = performance.now();
 
     if (!(await this.browser.fresh(this.page))) {
-      this.page = await this.browser.observe();
+      this.phase = "observe";
+
+      return;
     }
 
     this.decision = null;
-
-    if (this.status !== "ready") return;
 
     if (this.decisions.length >= this.maxSteps * 2) {
       throw new Error("Reached the model-call budget");
@@ -154,7 +181,7 @@ export class Agent {
         await sleep(400);
 
         if (await this.browser.fresh(this.page)) {
-          this.status = "done";
+          this.phase = "done";
 
           return;
         }
@@ -176,6 +203,7 @@ export class Agent {
             usage: null,
             latency_ms: 0,
           };
+          this.phase = "act";
 
           return;
         }
@@ -184,6 +212,7 @@ export class Agent {
 
     this.decision = await choose(this.client, this.page, this.goal, this.history);
     this.decisions.push(this.decision);
+    this.phase = "act";
   }
 
   /** Map a speculative follow-up to an action id on the current page. */
@@ -231,7 +260,9 @@ export class Agent {
     return null;
   }
 
-  private async act(): Promise<void> {
+  // --- act -----------------------------------------------------------------
+
+  private async actStep(): Promise<void> {
     const decision = this.decision;
     const page = this.page;
 
@@ -242,7 +273,6 @@ export class Agent {
 
     if (selected === "DONE" || selected === "BLOCKED") {
       if (!(await this.browser.fresh(page))) {
-        this.status = "ready";
         throw new StalePage("Page changed since the decision. Choose again.");
       }
 
@@ -257,7 +287,7 @@ export class Agent {
         entry.page_changed = this.page.fingerprint !== page.fingerprint;
         entry.url = this.page.url;
         entry.elapsed_ms = this.elapsed();
-        this.status = "ready";
+        this.phase = "decide";
 
         return;
       }
@@ -269,12 +299,11 @@ export class Agent {
         await sleep(400);
 
         if (!(await this.browser.fresh(page))) {
-          this.status = "ready";
           throw new StalePage("Page changed while confirming DONE. Choose again.");
         }
       }
 
-      this.status = selected === "DONE" ? "done" : "blocked";
+      this.phase = selected === "DONE" ? "done" : "blocked";
 
       return;
     }
@@ -284,7 +313,7 @@ export class Agent {
     if (!action) throw new Error(`Decision selected unknown action ${selected}`);
 
     if (this.history.length >= this.maxSteps) {
-      this.status = "blocked";
+      this.phase = "blocked";
       throw new Error(`Stopped at the ${this.maxSteps}-action budget`);
     }
 
@@ -303,12 +332,14 @@ export class Agent {
       } else {
         let generated;
 
-        try {
-          generated = await fieldText(context);
-        } catch (error) {
-          // An empty helper answer hasn't typed anything — one fresh ask is safe.
-          if (!String(error).includes("no valid field value")) throw error;
-          generated = await fieldText(context);
+        // An empty helper answer hasn't typed anything — fresh asks are safe.
+        for (let attempt = 0; ; attempt++) {
+          try {
+            generated = await fieldText(context);
+            break;
+          } catch (error) {
+            if (!String(error).includes("no valid field value") || attempt >= 2) throw error;
+          }
         }
 
         // Fail fast: an empty helper answer means nothing was typed; looping
@@ -353,6 +384,21 @@ export class Agent {
     };
 
     this.history.push(entry);
+    this.phase = "settle";
+    this.settleContext = { action, page, text, decision };
+    this.settleEntry = entry;
+  }
+
+  // --- settle --------------------------------------------------------------
+
+  private async settleStep(): Promise<void> {
+    const ctx = this.settleContext;
+    const entry = this.settleEntry;
+
+    if (!ctx || !entry) throw new Error("Settle without an executed action");
+    const { action, page, text, decision } = ctx;
+    this.settleContext = null;
+    this.settleEntry = null;
 
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
@@ -423,14 +469,14 @@ export class Agent {
 
     const seen = trail.filter((f) => f === this.page.fingerprint).length;
 
-    this.status =
+    this.phase =
       (repeated.length === 3 &&
         repeated.every((h) => h.page_changed === false && h.kind !== "wait")) ||
       idleMs >= 10_000 ||
       seen >= 4 ||
       this.cycling()
         ? "blocked"
-        : "ready";
+        : "decide";
   }
 
   /** True when the recent fingerprint trail is a short cycle repeated whole. */
@@ -474,12 +520,41 @@ export class Agent {
   }
 
   async run(onEvent?: (event: { type: string; [k: string]: JsonValue }) => void): Promise<RunResult> {
-    while (this.status === "ready") {
-      await this.tick();
+    while (
+      this.phase !== "done" &&
+      this.phase !== "blocked" &&
+      this.phase !== "error"
+    ) {
+      try {
+        switch (this.phase) {
+          case "observe":
+            await this.observeStep();
+            break;
+          case "decide":
+            await this.decideStep();
+            break;
+          case "act":
+            await this.actStep();
+            break;
+          case "settle":
+            await this.settleStep();
+            break;
+        }
+      } catch (error) {
+        if (error instanceof StalePage) {
+          // Re-observe and let the machine choose again on the fresh page.
+          this.decision = null;
+          this.phase = "observe";
+        } else {
+          throw error;
+        }
+      }
+
       const last = this.history[this.history.length - 1];
       onEvent?.({
         type: "step",
         status: this.status,
+        phase: this.phase,
         elapsed_ms: this.elapsed(),
         action: last?.action,
         kind: last?.kind,
@@ -489,7 +564,7 @@ export class Agent {
     }
 
     return {
-      status: this.status,
+      status: this.status === "ready" ? "blocked" : this.status,
       goal: this.goal,
       url: this.startUrl,
       final_url: this.page.url,
@@ -508,6 +583,7 @@ export class Agent {
   snapshot() {
     return {
       status: this.status,
+      phase: this.phase,
       goal: this.goal,
       page: this.page,
       history: this.history,
