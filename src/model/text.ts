@@ -4,8 +4,8 @@
  */
 
 import { isString } from "../json.ts";
-import { TEXT_VALUE } from "../questions.ts";
-import type { JsonValue, ObservedAction, PageState } from "../types.ts";
+import { ANSWER_VALUE, TEXT_VALUE } from "../questions.ts";
+import type { JsonObject, JsonValue, ObservedAction, PageState } from "../types.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -51,15 +51,21 @@ export function fieldContext(goal: string, action: ObservedAction, page: PageSta
   };
 }
 
-export async function fieldText(
+async function helperJson(
+  systemPrompt: string,
   context: JsonValue,
-): Promise<{ text: string; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
+  requireKey: boolean,
+): Promise<{ output: JsonObject; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
   const key = process.env.TEXT_MODEL_API_KEY;
 
   if (!key) {
-    throw new Error(
-      "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
-    );
+    if (requireKey) {
+      throw new Error(
+        "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor.",
+      );
+    }
+
+    throw new Error("Text helper is not configured.");
   }
 
   const base = (process.env.TEXT_MODEL_BASE_URL ?? "https://api.deepseek.com/v1").replace(/\/+$/, "");
@@ -79,37 +85,69 @@ export async function fieldText(
     response_format: { type: "json_object" },
     ...reasoningFinal,
     messages: [
-      { role: "system", content: TEXT_VALUE },
+      { role: "system", content: systemPrompt },
       { role: "user", content: JSON.stringify(context) },
     ],
   });
 
-  let text: string;
-
-  try {
-    const output = JSON.parse(result.choices[0].message.content);
-    const value: JsonValue = output.text;
-
-    if (
-      Object.keys(output).join() !== "text" ||
-      !isString(value) ||
-      !value.trim() ||
-      value.length > 2000
-    ) {
-      throw new Error();
-    }
-
-    text = value;
-  } catch {
-    throw new Error("Text helper returned no valid field value; nothing typed.");
-  }
-
   return {
-    text,
+    output: JSON.parse(result.choices[0].message.content),
     helper: {
       model,
       latency_ms: Math.round(performance.now() - started),
       usage: result.usage ?? {},
     },
   };
+}
+
+export async function fieldText(
+  context: JsonValue,
+): Promise<{ text: string; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
+  let output: JsonObject;
+  let helper: { model: string; latency_ms: number; usage: JsonValue };
+
+  try {
+    ({ output, helper } = await helperJson(TEXT_VALUE, context, true));
+  } catch (error) {
+    const msg = String(error);
+
+    if (msg.includes("TEXT_MODEL_API_KEY") || msg.includes("not configured")) throw error;
+    throw new Error("Text helper returned no valid field value; nothing typed.");
+  }
+
+  const value: JsonValue = output.text;
+
+  if (
+    Object.keys(output).join() !== "text" ||
+    !isString(value) ||
+    !value.trim() ||
+    value.length > 2000
+  ) {
+    throw new Error("Text helper returned no valid field value; nothing typed.");
+  }
+
+  return { text: value, helper };
+}
+
+/**
+ * Direct answer for an interrogative goal, read off the terminal page.
+ * Best-effort by contract: a helper or parse failure means no answer, never
+ * a failed run.
+ */
+export async function extractAnswer(
+  goal: string,
+  page: { title: string; url: string; text: string },
+): Promise<{ answer: string | null; helper: { model: string; latency_ms: number } }> {
+  const { output, helper } = await helperJson(
+    ANSWER_VALUE,
+    {
+      goal,
+      page: { title: page.title, url: page.url, text: page.text.slice(0, 6000) },
+    },
+    false,
+  );
+
+  const value: JsonValue = output.answer;
+
+  return { answer: isString(value) && value.trim() ? value.trim().slice(0, 2000) : null, helper };
 }

@@ -5,7 +5,8 @@
  */
 
 import { execSync, spawn, type ChildProcess } from "node:child_process";
-import { homedir } from "node:os";
+import { mkdtempSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { fingerprint } from "../json.ts";
@@ -134,6 +135,8 @@ export class CdpBrowser implements BrowserDriver {
   private afterInput: ObservedAction | null = null;
   private seen = new Set<string>();
   private adopted: string[] = [];
+  /** targetId → sessionId for every tab we own (initial + adopted). */
+  private sessions = new Map<string, string>();
   /** In-flight request ids per session — the "is the page actually working" signal. */
   /** In-flight requests per session: requestId → start time for age pruning. */
   private pending = new Map<string, Map<string, number>>();
@@ -145,6 +148,10 @@ export class CdpBrowser implements BrowserDriver {
   private lastDialog: { type: string; message: string } | null = null;
   /** CDP key modifier for select-all — Meta (4) on a macOS browser, Control (2) else. */
   private selectAllModifier = 2;
+  /** guid → suggested filename while a download is in flight. */
+  private downloadGuids = new Map<string, string>();
+  /** Filenames of completed downloads, in finish order. */
+  private downloads: string[] = [];
 
   private constructor() {}
 
@@ -217,6 +224,19 @@ export class CdpBrowser implements BrowserDriver {
       }
 
       browser.socket = await CdpSocket.connect(wsUrl);
+
+      // Route downloads into a scratch dir so goals can ask for files. Only on
+      // launches we own — an attached browser keeps the user's behavior.
+      if (browser.proc) {
+        await browser.socket
+          .call("Browser.setDownloadBehavior", {
+            behavior: "allow",
+            downloadPath: mkdtempSync(join(tmpdir(), "jev-downloads-")),
+            eventsEnabled: true,
+          })
+          .catch(() => {});
+      }
+
       // A JS dialog (alert/confirm/prompt) blocks the whole page until
       // answered — accept and keep the run moving. The message is kept so the
       // next observation reports what was auto-accepted.
@@ -264,6 +284,19 @@ export class CdpBrowser implements BrowserDriver {
           browser.navPending.set(sessionId, 0);
         }
       });
+      // Download bookkeeping: willBegin names the file by guid, progress
+      // 'completed' makes it observable on the next page state.
+      browser.socket.onEvent("Browser.downloadWillBegin", (p) => {
+        browser.downloadGuids.set(String(p.guid), String(p.suggestedFilename ?? p.url ?? "download"));
+      });
+      browser.socket.onEvent("Browser.downloadProgress", (p) => {
+        const name = browser.downloadGuids.get(String(p.guid));
+
+        if (name && p.state === "completed") browser.downloads.push(name);
+
+        if (name && p.state !== "inProgress") browser.downloadGuids.delete(String(p.guid));
+      });
+
       browser.target = (
         await browser.socket.call<{ targetId: string }>("Target.createTarget", {
           url: "about:blank",
@@ -277,8 +310,37 @@ export class CdpBrowser implements BrowserDriver {
         })
       ).sessionId;
       browser.seen.add(browser.target);
+      browser.sessions.set(browser.target, browser.session);
       await browser.call("Page.enable").catch(() => {});
       await browser.call("Network.enable").catch(() => {});
+
+      // Record addEventListener bindings before page scripts run — elements
+      // wired via JS listeners (no attribute, no on* prop, no cursor style)
+      // are invisible to selectors; the snapshot reads this per-realm map.
+      await browser
+        .call("Page.addScriptToEvaluateOnNewDocument", {
+          source: `(() => {
+            const map = new WeakMap();
+            const orig = EventTarget.prototype.addEventListener;
+
+            EventTarget.prototype.addEventListener = function (type, listener, options) {
+              if (typeof type === "string" && this !== null && this !== undefined &&
+                  (this instanceof Node || this === window)) {
+                let s = map.get(this);
+
+                if (!s) map.set(this, (s = new Set()));
+
+                s.add(type);
+              }
+
+              return orig.call(this, type, listener, options);
+            };
+
+            Object.defineProperty(window, "__jevListeners", { value: map, configurable: true });
+          })()`,
+        })
+        .catch(() => {});
+
       await browser.learnMainFrame();
 
       // The select-all shortcut must match the browser's OS, not the agent's.
@@ -397,6 +459,7 @@ export class CdpBrowser implements BrowserDriver {
 
         this.target = t.targetId;
         this.session = sessionId;
+        this.sessions.set(t.targetId, sessionId);
         this.adopted.push(t.targetId);
         await this.call("Page.enable").catch(() => {});
         await this.call("Network.enable").catch(() => {});
@@ -413,6 +476,18 @@ export class CdpBrowser implements BrowserDriver {
         // tab raced away
       }
     }
+  }
+
+  /** Owned page targets (initial tab + adopted ones) with their titles —
+   *  powers the tabs field and FOCUS_TAB_* controls. */
+  private async listTabs(): Promise<{ targetId: string; title: string; url: string }[]> {
+    const { targetInfos } = await this.socket
+      .call<TargetList>("Target.getTargets")
+      .catch((): TargetList => ({ targetInfos: [] }));
+
+    return targetInfos
+      .filter((t) => t.type === "page" && this.sessions.has(t.targetId))
+      .map((t) => ({ targetId: t.targetId, title: t.title ?? "", url: t.url ?? "" }));
   }
 
   async observe(): Promise<PageState> {
@@ -461,6 +536,30 @@ export class CdpBrowser implements BrowserDriver {
         info.fingerprint = fingerprint(info);
         info.pending_requests = this.pendingCount(this.session);
         info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
+
+        if (this.downloads.length) info.downloads = [...this.downloads];
+
+        // Multi-tab state: surfaces as a page field plus named FOCUS_TAB_*
+        // controls so the model can deliberately switch back to a tab it
+        // came from instead of getting hijacked by whichever adopted last.
+        const tabs = await this.listTabs();
+
+        if (tabs.length > 1) {
+          info.tabs = tabs.map((t) => ({
+            title: (t.title ?? "").slice(0, 80),
+            url: (t.url ?? "").slice(0, 200),
+            ...(t.targetId === this.target && { current: true }),
+          }));
+          tabs.forEach((t, i) => {
+            if (t.targetId !== this.target)
+              info.actions.push({
+                id: `focus_tab_${i}`,
+                kind: "focus_tab",
+                label: `Switch to tab: ${(t.title || t.url).slice(0, 90)}`,
+                value: t.targetId,
+              });
+          });
+        }
 
         // Report the dialog we auto-accepted since the last observation, once.
         if (this.lastDialog) {
@@ -544,7 +643,47 @@ export class CdpBrowser implements BrowserDriver {
     const kind = action.kind;
 
     if (kind === "wait") {
-      await sleep(100);
+      // WAIT asks the page to update, not a fixed nap: hold for the marker
+      // to move (delayed fetches, timed renders) and surface the change as
+      // stale so the run re-observes. The cap bounds a truly static page.
+      const deadline = Date.now() + 1600;
+
+      while (Date.now() < deadline) {
+        await sleep(160);
+
+        if (!(await this.fresh(page))) {
+          throw new StalePage("Page updated during WAIT. Observe again.");
+        }
+      }
+
+      return { executed: action.id };
+    }
+
+    if (kind === "scroll" && action.node !== undefined) {
+      // Region scroll: wheel at the pane's center so its own scroll handler
+      // (lazy lists, feeds) sees real input. Delta scales to the pane, not
+      // the viewport.
+      const point = await this.evaluate<{ x: number; y: number; delta: number } | null>(
+        `(() => {
+          const e=window.__jevFast?.nodes.get(${action.node});
+          if (!e?.isConnected) return null;
+          const r=e.getBoundingClientRect();
+          if (!r.width || !r.height) return null;
+          const sign=Math.sign(${action.delta ?? 0})||1;
+          return {x:r.x+r.width/2,y:r.y+r.height/2,delta:Math.round(sign*e.clientHeight*0.8)};
+        })()`,
+      );
+
+      if (!point) throw new StalePage("Scroll region is gone. Observe again.");
+
+      await this.call("Input.dispatchMouseEvent", {
+        type: "mouseWheel",
+        x: point.x,
+        y: point.y,
+        deltaX: 0,
+        deltaY: point.delta,
+      });
+      this.afterInput = action;
 
       return { executed: action.id };
     }
@@ -592,6 +731,21 @@ export class CdpBrowser implements BrowserDriver {
 
     if (kind === "back" || kind === "forward") {
       await this.evaluate(`history.${kind === "back" ? "back" : "forward"}()`);
+
+      return { executed: action.id };
+    }
+
+    // Tab switching: the action's value carries the targetId; swapping the
+    // routed session is enough — subsequent observes/acts hit that tab.
+    if (kind === "focus_tab") {
+      const targetId = String(action.value ?? "");
+      const sessionId = this.sessions.get(targetId);
+
+      if (!sessionId) throw new StalePage("Tab is gone. Observe again.");
+
+      await this.socket.call("Target.activateTarget", { targetId }).catch(() => {});
+      this.target = targetId;
+      this.session = sessionId;
 
       return { executed: action.id };
     }
@@ -879,6 +1033,8 @@ export class CdpBrowser implements BrowserDriver {
       if (this.target && !this.adopted.includes(this.target)) {
         await this.socket.call("Target.closeTarget", { targetId: this.target });
       }
+
+      this.sessions.clear();
     } catch {
       // target already gone
     }

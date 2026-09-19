@@ -23,7 +23,8 @@ export type ActionKind =
   | "hover"
   | "press"
   | "back"
-  | "forward";
+  | "forward"
+  | "focus_tab";
 
 export type ObservedAction = {
   id: string; // "e1".."e250", "scroll_down", "scroll_up", "wait"
@@ -71,6 +72,14 @@ export interface PageState {
   dialog?: string;
   /** Offered-id or short label of the element holding focus, when identifiable. */
   focused?: string;
+  /** Filenames that finished downloading during the run (CDP engine). */
+  downloads?: string[];
+  /** Page looks like a CAPTCHA/bot challenge. */
+  challenge?: boolean;
+  /** A root-level contextmenu listener exists — right-clicks delegate. */
+  delegatedContextmenu?: boolean;
+  /** Other open page targets, when more than one tab exists. */
+  tabs?: { title: string; url: string; current?: boolean }[];
 }
 
 /** Result of executing one observed action. */

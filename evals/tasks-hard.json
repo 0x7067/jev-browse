@@ -1,0 +1,164 @@
+[
+  {
+    "id": "sts-hockey-form",
+    "url": "https://www.scrapethissite.com/pages/forms/",
+    "goal": "Search for \"Boston\" using the team search form and stop when the results list shows Boston teams.",
+    "expect": {
+      "text_match": "Bruins"
+    }
+  },
+  {
+    "id": "sts-ajax-films",
+    "url": "https://www.scrapethissite.com/pages/ajax-javascript/",
+    "goal": "Click the 2010 year link, wait for the film list to load, and stop when it is visible.",
+    "expect": {
+      "text_match": "King's Speech"
+    }
+  },
+  {
+    "id": "tin-status-codes",
+    "url": "https://the-internet.herokuapp.com/status_codes",
+    "goal": "Click the \"200\" link and stop when the status page shows.",
+    "expect": {
+      "text_match": "200 status code"
+    }
+  },
+  {
+    "id": "tin-js-prompt",
+    "url": "https://the-internet.herokuapp.com/javascript_alerts",
+    "goal": "Click the JS Prompt button and stop when the result line appears.",
+    "expect": {
+      "text_match": "You entered"
+    }
+  },
+  {
+    "id": "wikipedia-lang-switch",
+    "url": "https://en.wikipedia.org/wiki/Turing_machine",
+    "goal": "Open the German-language version of this article and stop.",
+    "expect": {
+      "url_match": "de\\.wikipedia\\.org"
+    }
+  },
+  {
+    "id": "pypi-search",
+    "url": "https://pypi.org",
+    "goal": "Search PyPI for \"requests\" and stop on the results page.",
+    "expect": {
+      "url_match": "search",
+      "status": "blocked"
+    }
+  },
+  {
+    "id": "quotes-js-next",
+    "url": "https://quotes.toscrape.com/js/",
+    "goal": "Go to page 2 of the quotes using the Next link and stop.",
+    "expect": {
+      "url_match": "page/2"
+    }
+  },
+  {
+    "id": "tin-disappearing",
+    "url": "https://the-internet.herokuapp.com/disappearing_elements",
+    "goal": "Click the About link in the navigation and stop when the about page loads.",
+    "expect": {
+      "url_match": "about"
+    }
+  },
+  {
+    "id": "ddg-lite-search",
+    "url": "https://lite.duckduckgo.com/lite/",
+    "goal": "Search for \"devin ai cognition\" and stop on the results page.",
+    "expect": {
+      "status": "blocked"
+    }
+  },
+  {
+    "id": "sauce-sort",
+    "url": "https://www.saucedemo.com/",
+    "goal": "Log in with username \"standard_user\" and password \"secret_sauce\", then sort products by \"Price (low to high)\" and stop when the sorted inventory shows.",
+    "expect": {
+      "url_match": "inventory",
+      "action_match": "SELECT"
+    }
+  },
+  {
+    "id": "todomvc-complete",
+    "url": "https://demo.playwright.dev/todomvc/",
+    "goal": "Add the todo \"buy oat milk\", mark it complete, and stop.",
+    "expect": {
+      "text_match": "items? left"
+    }
+  },
+  {
+    "id": "jqueryui-sortable-drag",
+    "url": "https://jqueryui.com/sortable/",
+    "goal": "In the sortable demo, drag \"Item 7\" to the top of the list and stop.",
+    "expect": {
+      "action_match": "DRAG"
+    }
+  },
+  {
+    "id": "demoqa-upload",
+    "url": "https://demoqa.com/upload-download",
+    "goal": "Upload the file /etc/hostname using the Choose File input and stop when the uploaded path shows.",
+    "expect": {
+      "text_match": "hostname"
+    }
+  },
+  {
+    "id": "react-select-single",
+    "url": "https://react-select.com/home",
+    "goal": "In the first dropdown on the page, select the option \"Ocean\" and stop.",
+    "expect": {
+      "action_match": "Ocean"
+    }
+  },
+  {
+    "id": "apg-tabs",
+    "url": "https://www.w3.org/WAI/ARIA/apg/patterns/tabs/examples/tabs-automatic/",
+    "goal": "Activate the \"Maria Ahlefeldt\" tab and stop when its panel shows.",
+    "expect": {
+      "action_match": "Ahlefeldt"
+    }
+  },
+  {
+    "id": "practice-shop-search",
+    "url": "https://practicesoftwaretesting.com/",
+    "goal": "Search for \"pliers\" and open the first product in the results.",
+    "expect": {
+      "url_match": "product"
+    }
+  },
+  {
+    "id": "github-repo-search",
+    "url": "https://github.com",
+    "goal": "Search GitHub for \"jev-browse\" and open the 0x7067/jev-browse repository page.",
+    "expect": {
+      "url_match": "0x7067/jev-browse"
+    }
+  },
+  {
+    "id": "flights-boston-denver",
+    "url": "https://www.google.com/travel/flights?hl=en",
+    "goal": "Find one-way flights from Boston to Denver on October 3, 2026, for one adult in economy. Stop when matching flight options are visible.",
+    "expect": {
+      "url_match": "tfs="
+    }
+  },
+  {
+    "id": "tin-download",
+    "url": "https://the-internet.herokuapp.com/download",
+    "goal": "Download the file \"hello.json\" and stop once it has downloaded.",
+    "expect": {
+      "download_match": "hello\\.json"
+    }
+  },
+  {
+    "id": "books-price-answer",
+    "url": "https://books.toscrape.com/",
+    "goal": "Open the book \"A Light in the Attic\" and report its price.",
+    "expect": {
+      "answer_match": "\u00a351.77"
+    }
+  }
+]

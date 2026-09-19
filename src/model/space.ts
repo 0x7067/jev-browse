@@ -19,7 +19,7 @@ export type ElementChoice = {
   options?: { index: string; label: string; value: JsonValue }[];
 };
 
-export function actionSpace(actions: ObservedAction[]) {
+export function actionSpace(actions: ObservedAction[], delegatedContextmenu = false) {
   const elements: any[] = [];
   const indices = new Map<number, string>();
   const targets: Record<string, Record<string, ObservedAction>> = {};
@@ -109,11 +109,25 @@ export function actionSpace(actions: ObservedAction[]) {
     }
   }
 
+  // Delegated right-click (frameworks bind contextmenu on a root container
+  // or document): any click target can respond, so the CONTEXT_CLICK pool
+  // widens to the whole click space instead of flagged elements only.
+  if (delegatedContextmenu) {
+    for (const [index, action] of Object.entries(targets.CLICK ?? {})) {
+      (targets.CONTEXT_CLICK ??= {})[index] = action;
+
+      const element = elements[Number(index) - 1];
+
+      if (!element.operations.includes("CONTEXT_CLICK")) element.operations.push("CONTEXT_CLICK");
+    }
+  }
+
   // A drag destination is wherever the source lands — drop zones are often
   // plain elements with no interactive signal of their own, so the dest
-  // pool is the whole indexed set, not the flagged sources. dropZone flags
-  // only make otherwise-invisible targets reachable.
-  const dragDestinations = { ...targets.CLICK };
+  // pool is the whole indexed set, not the flagged sources. Fellow drag
+  // sources are destinations too (sortable lists reorder onto siblings).
+  // dropZone flags only make otherwise-invisible targets reachable.
+  const dragDestinations = { ...targets.CLICK, ...targets.DRAG };
 
   return { elements, targets, controls, dragDestinations };
 }
