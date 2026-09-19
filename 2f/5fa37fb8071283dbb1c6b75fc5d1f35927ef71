@@ -1,0 +1,42 @@
+src/agent.ts
+  s_0503a55d84ed51::t_ebdaea620b9151 442-445,452
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_45b5da3adf4307 1303,1306,2029,2036-2054,2358,2362-2378
+bundled/cli.mjs
+  s_0503a55d84ed51::t_45b5da3adf4307 1297,1300,2023,2030-2048,2352,2356-2372
+scripts/eval.mjs
+  s_0503a55d84ed51::t_be54e2957585b6 91-93
+src/types.ts
+  s_0503a55d84ed51::t_bade86421d1949 89
+evals/results/sauce-fill-1789788716344.json
+  s_0503a55d84ed51::t_45b5da3adf4307 1-91
+src/cdp/browser.ts
+  s_0503a55d84ed51::t_125dbf51cf61c9 581-585,594-613
+  s_0503a55d84ed51::t_dab62129185b2a 614-616
+src/abrowser.ts
+  s_0503a55d84ed51::t_3c0ff27f11b27b 389
+  s_0503a55d84ed51::t_e85a9952825dd9 365-369,374-388,390
+  s_0503a55d84ed51::t_ee3186ba6f6078 391-392
+.claude-plugin/marketplace.json
+  s_0503a55d84ed51::t_9b5949075a4c4b 8,15
+package.json
+  s_0503a55d84ed51::t_b4f4c37a0c05af 3
+plugin.json
+  s_0503a55d84ed51::t_8ceab2326350ee 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2f5fa37fb8071283dbb1c6b75fc5d1f35927ef71",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
