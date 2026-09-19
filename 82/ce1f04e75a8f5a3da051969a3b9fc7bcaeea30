@@ -1,0 +1,39 @@
+evals/tasks.json
+  s_0503a55d84ed51::t_1c3f2213c1a3bb 219-242
+evals/results/harder-v12-1789784689687.json
+  s_0503a55d84ed51::t_6d9667378e53e5 1-115
+evals/results/full-v4-1789784934954.json
+  s_0503a55d84ed51::t_cf12e4b555b95f 1-1292
+src/agent.ts
+  s_0503a55d84ed51::t_ce79811c1eb98e 95-101
+  s_0503a55d84ed51::t_a5a16afa055a66 335-342
+  s_0503a55d84ed51::t_520b8216704609 5-23,79-81,102,131-132,140-144,146-147,149,151-153,156-158,162-164,184,206,215,263-265,290,306,316,387-401,472,479,523-552,557,567,586
+evals/results/fsm-check-1789785224601.json
+  s_0503a55d84ed51::t_d192e821c115ec 1-325
+.claude-plugin/marketplace.json
+  s_0503a55d84ed51::t_f5ab1812d96484 8,15
+bundled/cli.mjs
+  s_0503a55d84ed51::t_2c48c1e886f98d 1030-1032,1056,1062-1065,1067-1072,1074-1075,1078-1079,1091,1111,1118,1144-1145,1163,1172,1178,1192-1198,1233-1244,1281,1313-1336,1341,1350,1367
+bundled/mcp.mjs
+  s_0503a55d84ed51::t_3fb65f4b54049b 1033-1035,1059,1065-1068,1070-1075,1077-1078,1081-1082,1094,1114,1121,1147-1148,1166,1175,1181,1195-1201,1236-1247,1284,1316-1339,1344,1353,1370
+package.json
+  s_0503a55d84ed51::t_04ca624c55a54b 3
+plugin.json
+  s_0503a55d84ed51::t_559caa0982db5e 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "82ce1f04e75a8f5a3da051969a3b9fc7bcaeea30",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
