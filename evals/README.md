@@ -53,6 +53,9 @@ runs through `file_url` tasks for deterministic coverage.
 | stale Chrome holds the profile (open fails) | crashed runs leave a live instance; SingletonLock defers new launches to it | `reapProfileChrome` kills profile-bound strays and retries the launch once |
 | model repeats itself until budget (hn-paginate, others) | a fuse ended the run without telling the model it was stuck | repair consult: one extra decide with an explicit "try a different approach" hint; each recovered episode re-arms it |
 | 24–36s stalls observed once (flights) | SDK retry policy (10s × 3 attempts) on a flaky endpoint | bounded by design — no fix needed |
+| parabank-transfer blocked at login; earlier cross-run weirdness | the shared profile persists cookies/SPA sessions — a logged-in page has no login form; carts and todos leak between runs | fresh `mkdtemp` profile per eval run (`JEV_PROFILE`) |
+| conduit (realworld) unreachable | demo backends are dead — shell renders, no forms | environmental; dropped |
+| opencart blocked post-nav | Cloudflare interstitial | environmental; dropped |
 
 ## Known limits (not bugs)
 
@@ -63,10 +66,10 @@ runs through `file_url` tasks for deterministic coverage.
   observation; the 10s idle fuse is the compromise.
 - Helper-model flakiness: an empty `fieldText` answer retries once; a
   double-empty still fails the run (seen once on algolia-search).
-- sauce-checkout and todomvc-add remain unverified: the model wanders
-  (detail↔list alternation on polluted SPA history; Focus instead of Enter
-  after typing). The extraction and execution machinery is sound — these
-  are decision-quality limits of the current decision model.
+- sauce-checkout and todomvc-add remain unverified but nearly complete:
+  sauce reaches checkout-step-two before looping on a validation-error
+  retry; todomvc adds both todos then misses the completion checkbox.
+  Decision-quality limits, not machinery.
 - JS-bound interactivity with no DOM or CSS signal (tablesorter headers)
   is fundamentally invisible; `blocked` is the honest answer.
 - DRAG target selection is model-variable — the mechanism (real mouse drag

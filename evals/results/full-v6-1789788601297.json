@@ -1,0 +1,1666 @@
+{
+  "label": "full-v6",
+  "started": "2026-09-19T03:24:39.535Z",
+  "tasks": {
+    "example-link": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3271,
+      "median_decisions": 3,
+      "median_jev_ms": 752,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3271,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 752,
+          "text_ms": 0,
+          "final_url": "https://www.iana.org/help/example-domains",
+          "ops": [
+            "CLICK:Learn more"
+          ],
+          "events": [
+            "CLICK:Learn more@763",
+            "DONE:Learn more@3271"
+          ]
+        }
+      ]
+    },
+    "hn-comments": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2655,
+      "median_decisions": 1,
+      "median_jev_ms": 1364,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2655,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 1364,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/item?id=49758736",
+          "ops": [
+            "CLICK:287 comments"
+          ],
+          "events": [
+            "CLICK:287 comments@1380",
+            "CLICK:287 comments@2655"
+          ]
+        }
+      ]
+    },
+    "algolia-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5916,
+      "median_decisions": 6,
+      "median_jev_ms": 1048,
+      "median_text_ms": 1098,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5916,
+          "steps": 4,
+          "decisions": 6,
+          "jev_ms": 1048,
+          "text_ms": 1098,
+          "final_url": "https://news.ycombinator.com/item?id=43708025",
+          "ops": [
+            "TYPE_TEXT:Search stories by title, url o",
+            "FOLLOW_UP:Press enter",
+            "CLICK:OpenAI   Codex  CLI: Lightweig",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search stories by title, url o@2743",
+            "FOLLOW_UP:Press enter@2802",
+            "CLICK:OpenAI   Codex  CLI: Lightweig@3745",
+            "FOLLOW_UP:Press enter@4646",
+            "DONE:Press enter@5916"
+          ]
+        }
+      ]
+    },
+    "wikipedia-godel": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5635,
+      "median_decisions": 5,
+      "median_jev_ms": 1724,
+      "median_text_ms": 1254,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5635,
+          "steps": 2,
+          "decisions": 5,
+          "jev_ms": 1724,
+          "text_ms": 1254,
+          "final_url": "https://en.wikipedia.org/wiki/G%C3%B6del%27s_incompleteness_theorems",
+          "ops": [
+            "TYPE_TEXT:Search Wikipedia",
+            "CLICK:Gödel's incompleteness theorem"
+          ],
+          "events": [
+            "TYPE_TEXT:Search Wikipedia@2647",
+            "CLICK:Gödel's incompleteness theorem@3859",
+            "DONE:Gödel's incompleteness theorem@5635"
+          ]
+        }
+      ]
+    },
+    "httpbin-form": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3559,
+      "median_decisions": 3,
+      "median_jev_ms": 1273,
+      "median_text_ms": 1001,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3559,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1273,
+          "text_ms": 1001,
+          "final_url": "https://httpbin.org/post",
+          "ops": [
+            "TYPE_TEXT:Customer name:",
+            "CLICK:Submit order"
+          ],
+          "events": [
+            "TYPE_TEXT:Customer name:@1937",
+            "CLICK:Submit order@2334",
+            "DONE:Submit order@3559"
+          ]
+        }
+      ]
+    },
+    "tin-login": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5009,
+      "median_decisions": 4,
+      "median_jev_ms": 1627,
+      "median_text_ms": 1946,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5009,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1627,
+          "text_ms": 1946,
+          "final_url": "https://the-internet.herokuapp.com/secure",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@1996",
+            "TYPE_TEXT:Password@3316",
+            "CLICK:Login@3682",
+            "DONE:Login@5009"
+          ]
+        }
+      ]
+    },
+    "tin-dropdown": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1335,
+      "median_decisions": 1,
+      "median_jev_ms": 900,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1335,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 900,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dropdown",
+          "ops": [
+            "SELECT:Please select an option \n     "
+          ],
+          "events": [
+            "SELECT:Please select an option \n     @905",
+            "SELECT:Please select an option \n     @1335"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-loading": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2065,
+      "median_decisions": 3,
+      "median_jev_ms": 1393,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2065,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1393,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@794",
+            "WAIT:Wait for the page to update@1250",
+            "WAIT:Wait for the page to update@1651",
+            "WAIT:Wait for the page to update@2065"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-controls": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1380,
+      "median_decisions": 1,
+      "median_jev_ms": 932,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1380,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 932,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_controls",
+          "ops": [
+            "CLICK:Enable"
+          ],
+          "events": [
+            "CLICK:Enable@947",
+            "CLICK:Enable@1380"
+          ]
+        }
+      ]
+    },
+    "tin-iframe": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2388,
+      "median_decisions": 1,
+      "median_jev_ms": 910,
+      "median_text_ms": 1020,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2388,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 910,
+          "text_ms": 1020,
+          "final_url": "https://the-internet.herokuapp.com/iframe",
+          "ops": [
+            "TYPE_TEXT:Rich Text Area. Press ALT-0 fo"
+          ],
+          "events": [
+            "TYPE_TEXT:Rich Text Area. Press ALT-0 fo@1954",
+            "TYPE_TEXT:Rich Text Area. Press ALT-0 fo@2388"
+          ]
+        }
+      ]
+    },
+    "fx-shadow": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2448,
+      "median_decisions": 2,
+      "median_jev_ms": 942,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2448,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 942,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Shadow action"
+          ],
+          "events": [
+            "CLICK:Shadow action@962",
+            "DONE:Shadow action@2448"
+          ]
+        }
+      ]
+    },
+    "fx-hover-menu": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2410,
+      "median_decisions": 2,
+      "median_jev_ms": 1913,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2410,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 1913,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "HOVER:Hover 14. Hover-only menu Dest",
+            "CLICK:Alpine stays"
+          ],
+          "events": [
+            "HOVER:Hover 14. Hover-only menu Dest@969",
+            "CLICK:Alpine stays@1969",
+            "CLICK:Alpine stays@2410"
+          ]
+        }
+      ]
+    },
+    "fx-iframe": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1541,
+      "median_decisions": 1,
+      "median_jev_ms": 1059,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1541,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 1059,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "SCROLL_DOWN:Scroll down"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@1071",
+            "SCROLL_DOWN:Scroll down@1541"
+          ]
+        }
+      ]
+    },
+    "fx-modal": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2534,
+      "median_decisions": 2,
+      "median_jev_ms": 2045,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2534,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 2045,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Delete draft",
+            "CLICK:Confirm delete"
+          ],
+          "events": [
+            "CLICK:Delete draft@955",
+            "CLICK:Confirm delete@2099",
+            "CLICK:Confirm delete@2534"
+          ]
+        }
+      ]
+    },
+    "fx-new-tab": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1949,
+      "median_decisions": 1,
+      "median_jev_ms": 1454,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1949,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 1454,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Open the help page in a new ta"
+          ],
+          "events": [
+            "CLICK:Open the help page in a new ta@1487",
+            "CLICK:Open the help page in a new ta@1949"
+          ]
+        }
+      ]
+    },
+    "fx-disabled-redeem": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6008,
+      "median_decisions": 3,
+      "median_jev_ms": 2339,
+      "median_text_ms": 871,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6008,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 2339,
+          "text_ms": 871,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "TYPE_TEXT:Invite code",
+            "CLICK:Redeem"
+          ],
+          "events": [
+            "TYPE_TEXT:Invite code@4175",
+            "CLICK:Redeem@5219",
+            "DONE:Redeem@6008"
+          ]
+        }
+      ]
+    },
+    "fx-composer": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3660,
+      "median_decisions": 3,
+      "median_jev_ms": 1959,
+      "median_text_ms": 853,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3660,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1959,
+          "text_ms": 853,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "TYPE_TEXT:Message composer",
+            "CLICK:Send note"
+          ],
+          "events": [
+            "TYPE_TEXT:Message composer@1869",
+            "CLICK:Send note@2863",
+            "DONE:Send note@3660"
+          ]
+        }
+      ]
+    },
+    "fx-drag": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2672,
+      "median_decisions": 2,
+      "median_jev_ms": 1903,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2672,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 1903,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "DRAG:Postcard",
+            "DRAG:Postcard"
+          ],
+          "events": [
+            "DRAG:Postcard@1045",
+            "DRAG:Postcard@2237",
+            "DRAG:Postcard@2672"
+          ]
+        }
+      ]
+    },
+    "fx-context": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2372,
+      "median_decisions": 2,
+      "median_jev_ms": 972,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2372,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 972,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CONTEXT_CLICK:Right-click this tile"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Right-click this tile@983",
+            "DONE:Right-click this tile@2372"
+          ]
+        }
+      ]
+    },
+    "fx-range": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2746,
+      "median_decisions": 3,
+      "median_jev_ms": 1915,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2746,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1915,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Guests",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "CLICK:Guests@971",
+            "PRESS_ARROWRIGHT:Press arrowright@1974",
+            "DONE:Press arrowright@2746"
+          ]
+        }
+      ]
+    },
+    "tin-checkboxes": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1240,
+      "median_decisions": 1,
+      "median_jev_ms": 797,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1240,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 797,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/checkboxes",
+          "ops": [
+            "CLICK:checkbox"
+          ],
+          "events": [
+            "CLICK:checkbox@810",
+            "CLICK:checkbox@1240"
+          ]
+        }
+      ]
+    },
+    "tin-hovers": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2137,
+      "median_decisions": 2,
+      "median_jev_ms": 1214,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2137,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 1214,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/users/1",
+          "ops": [
+            "HOVER:Hover User Avatar name: user1 ",
+            "CLICK:View profile"
+          ],
+          "events": [
+            "HOVER:Hover User Avatar name: user1 @933",
+            "CLICK:View profile@1272",
+            "CLICK:View profile@2137"
+          ]
+        }
+      ]
+    },
+    "tin-file-upload": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3911,
+      "median_decisions": 4,
+      "median_jev_ms": 1562,
+      "median_text_ms": 956,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3911,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1562,
+          "text_ms": 956,
+          "final_url": "https://the-internet.herokuapp.com/upload",
+          "ops": [
+            "CLICK:Focus textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Upload"
+          ],
+          "events": [
+            "CLICK:Focus textbox@1006",
+            "TYPE_TEXT:textbox@2326",
+            "CLICK:Upload@2660",
+            "DONE:Upload@3911"
+          ]
+        }
+      ]
+    },
+    "tin-key-press": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1422,
+      "median_decisions": 1,
+      "median_jev_ms": 936,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1422,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 936,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/key_presses",
+          "ops": [
+            "CLICK:Focus textbox"
+          ],
+          "events": [
+            "CLICK:Focus textbox@948",
+            "CLICK:Focus textbox@1422"
+          ]
+        }
+      ]
+    },
+    "sauce-checkout": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 11363,
+      "median_decisions": 15,
+      "median_jev_ms": 6195,
+      "median_text_ms": 4628,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 11363,
+          "steps": 15,
+          "decisions": 15,
+          "jev_ms": 6195,
+          "text_ms": 4628,
+          "final_url": "https://www.saucedemo.com/checkout-step-one.html",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login",
+            "CLICK:Add to cart — Sauce Labs Backp",
+            "CLICK:Cart, 1 items",
+            "CLICK:Checkout (dom)",
+            "TYPE_TEXT:First Name",
+            "TYPE_TEXT:Last Name",
+            "TYPE_TEXT:Zip/Postal Code",
+            "CLICK:Continue (dom)",
+            "CLICK:Dismiss error (dom)",
+            "CLICK:Continue",
+            "CLICK:Continue",
+            "CLICK:Continue",
+            "CLICK:Continue"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@2050",
+            "TYPE_TEXT:Password@3972",
+            "CLICK:Login@4331",
+            "CLICK:Add to cart — Sauce Labs Backp@4719",
+            "CLICK:Cart, 1 items@5055",
+            "CLICK:Checkout@5398",
+            "TYPE_TEXT:First Name@6497",
+            "TYPE_TEXT:Last Name@7736",
+            "TYPE_TEXT:Zip/Postal Code@9096",
+            "CLICK:Continue@9434",
+            "CLICK:Dismiss error@9829",
+            "CLICK:Continue@10227",
+            "CLICK:Continue@10568",
+            "CLICK:Continue@11016",
+            "CLICK:Continue@11343",
+            "CLICK:Continue@11363"
+          ]
+        }
+      ]
+    },
+    "todomvc-add": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 10084,
+      "median_decisions": 14,
+      "median_jev_ms": 5145,
+      "median_text_ms": 4061,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 10084,
+          "steps": 19,
+          "decisions": 14,
+          "jev_ms": 5145,
+          "text_ms": 4061,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:Focus New Todo Input",
+            "CLICK:Focus New Todo Input",
+            "CLICK:Focus New Todo Input",
+            "HOVER:Hover buy milk Delete todo",
+            "CLICK:Delete todo",
+            "CLICK:Focus New Todo Input",
+            "CLICK:Focus New Todo Input",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:Focus New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:Focus New Todo Input",
+            "CLICK:Focus New Todo Input"
+          ],
+          "events": [
+            "TYPE_TEXT:New Todo Input@2491",
+            "FOLLOW_UP:Press enter@2617",
+            "TYPE_TEXT:New Todo Input@3796",
+            "FOLLOW_UP:Press enter@3836",
+            "CLICK:Focus New Todo Input@4245",
+            "CLICK:Focus New Todo Input@4617",
+            "CLICK:Focus New Todo Input@4944",
+            "HOVER:Hover buy milk Delete todo@5353",
+            "CLICK:Delete todo@5679",
+            "CLICK:Focus New Todo Input@6043",
+            "CLICK:Focus New Todo Input@6434",
+            "TYPE_TEXT:New Todo Input@7863",
+            "FOLLOW_UP:Press enter@7901",
+            "TYPE_TEXT:New Todo Input@8941",
+            "FOLLOW_UP:Press enter@8966",
+            "CLICK:Focus New Todo Input@9345",
+            "FOLLOW_UP:Press enter@9367",
+            "CLICK:Focus New Todo Input@9733",
+            "CLICK:Focus New Todo Input@10064",
+            "CLICK:Focus New Todo Input@10084"
+          ]
+        }
+      ]
+    },
+    "tin-infinite-scroll": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3647,
+      "median_decisions": 6,
+      "median_jev_ms": 556,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3647,
+          "steps": 2,
+          "decisions": 6,
+          "jev_ms": 556,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/infinite_scroll",
+          "ops": [
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@1252",
+            "SCROLL_DOWN:Scroll down@2362",
+            "DONE:Scroll down@3647"
+          ]
+        }
+      ]
+    },
+    "tin-sortable": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2448,
+      "median_decisions": 5,
+      "median_jev_ms": 2210,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": true,
+          "elapsed_ms": 2448,
+          "steps": 5,
+          "decisions": 5,
+          "jev_ms": 2210,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/tables#edit",
+          "ops": [
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit"
+          ],
+          "events": [
+            "CLICK:edit@966",
+            "CLICK:edit@1311",
+            "CLICK:edit@1694",
+            "CLICK:edit@2088",
+            "CLICK:edit@2418",
+            "CLICK:edit@2448"
+          ]
+        }
+      ]
+    },
+    "tin-nested-frames": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3710,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": true,
+          "elapsed_ms": 3710,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/nested_frames",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1428",
+            "BLOCKED:Wait for the page to update@2414",
+            "BLOCKED:Wait for the page to update@3411",
+            "BLOCKED:Wait for the page to update@3710"
+          ]
+        }
+      ]
+    },
+    "tin-jquery-menu": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3890,
+      "median_decisions": 7,
+      "median_jev_ms": 1558,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3890,
+          "steps": 3,
+          "decisions": 7,
+          "jev_ms": 1558,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/jqueryui/menu#",
+          "ops": [
+            "HOVER:Hover button",
+            "CLICK:Downloads",
+            "CLICK:PDF"
+          ],
+          "events": [
+            "HOVER:Hover button@981",
+            "CLICK:Downloads@1635",
+            "CLICK:PDF@2279",
+            "DONE:PDF@3890"
+          ]
+        }
+      ]
+    },
+    "tin-horizontal-slider": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1969,
+      "median_decisions": 3,
+      "median_jev_ms": 1385,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1969,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1385,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/horizontal_slider",
+          "ops": [
+            "CLICK:slider",
+            "PRESS_ARROWRIGHT:Press arrowright",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "CLICK:slider@743",
+            "PRESS_ARROWRIGHT:Press arrowright@1177",
+            "PRESS_ARROWRIGHT:Press arrowright@1507",
+            "PRESS_ARROWRIGHT:Press arrowright@1968"
+          ]
+        }
+      ]
+    },
+    "tin-entry-ad": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1511,
+      "median_decisions": 2,
+      "median_jev_ms": 288,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1511,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 288,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/entry_ad",
+          "ops": [
+            "PRESS_ESCAPE:Press escape"
+          ],
+          "events": [
+            "PRESS_ESCAPE:Press escape@1047",
+            "PRESS_ESCAPE:Press escape@1511"
+          ]
+        }
+      ]
+    },
+    "tin-windows": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2176,
+      "median_decisions": 3,
+      "median_jev_ms": 702,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2176,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 702,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/windows/new",
+          "ops": [
+            "CLICK:Click Here"
+          ],
+          "events": [
+            "CLICK:Click Here@726",
+            "DONE:Click Here@2176"
+          ]
+        }
+      ]
+    },
+    "demoqa-autocomplete": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3221,
+      "median_decisions": 3,
+      "median_jev_ms": 311,
+      "median_text_ms": 843,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3221,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 311,
+          "text_ms": 843,
+          "final_url": "https://demoqa.com/auto-complete",
+          "ops": [
+            "TYPE_TEXT:combobox",
+            "FOLLOW_UP:Red Green"
+          ],
+          "events": [
+            "TYPE_TEXT:combobox@2464",
+            "FOLLOW_UP:Red Green@2502",
+            "DONE:Red Green@3221"
+          ]
+        }
+      ]
+    },
+    "jqueryui-datepicker": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3165,
+      "median_decisions": 3,
+      "median_jev_ms": 1572,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3165,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1572,
+          "text_ms": 0,
+          "final_url": "https://jqueryui.com/datepicker/#default",
+          "ops": [
+            "CLICK:Default functionality",
+            "CLICK:Focus textbox"
+          ],
+          "events": [
+            "CLICK:Default functionality@1198",
+            "CLICK:Focus textbox@2719",
+            "CLICK:Focus textbox@3165"
+          ]
+        }
+      ]
+    },
+    "tin-challenging-dom": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1851,
+      "median_decisions": 1,
+      "median_jev_ms": 929,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1851,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 929,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/challenging_dom",
+          "ops": [
+            "CLICK:bar"
+          ],
+          "events": [
+            "CLICK:bar@943",
+            "CLICK:bar@1851"
+          ]
+        }
+      ]
+    },
+    "hn-paginate": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4669,
+      "median_decisions": 3,
+      "median_jev_ms": 1252,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4669,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1252,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/?p=2",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:More"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@2204",
+            "SCROLL_DOWN:Scroll down@2954",
+            "CLICK:More@3560",
+            "CLICK:More@4669"
+          ]
+        }
+      ]
+    },
+    "tin-redirector": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1776,
+      "median_decisions": 1,
+      "median_jev_ms": 739,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1776,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 739,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/status_codes",
+          "ops": [
+            "CLICK:here"
+          ],
+          "events": [
+            "CLICK:here@752",
+            "CLICK:here@1776"
+          ]
+        }
+      ]
+    },
+    "tin-notification": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1762,
+      "median_decisions": 1,
+      "median_jev_ms": 719,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1762,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 719,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/notification_message_rendered",
+          "ops": [
+            "CLICK:Click here"
+          ],
+          "events": [
+            "CLICK:Click here@733",
+            "CLICK:Click here@1762"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-content": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1625,
+      "median_decisions": 1,
+      "median_jev_ms": 698,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1625,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 698,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_content?with_content=static",
+          "ops": [
+            "CLICK:click here"
+          ],
+          "events": [
+            "CLICK:click here@715",
+            "CLICK:click here@1625"
+          ]
+        }
+      ]
+    },
+    "tin-slow": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1225,
+      "median_decisions": 1,
+      "median_jev_ms": 708,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1225,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 708,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/slow",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "WAIT:Wait for the page to update@814",
+            "WAIT:Wait for the page to update@1225"
+          ]
+        }
+      ]
+    },
+    "wikipedia-search-nav": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5789,
+      "median_decisions": 5,
+      "median_jev_ms": 2130,
+      "median_text_ms": 700,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5789,
+          "steps": 2,
+          "decisions": 5,
+          "jev_ms": 2130,
+          "text_ms": 700,
+          "final_url": "https://en.wikipedia.org/wiki/Turing_machine",
+          "ops": [
+            "TYPE_TEXT:Search Wikipedia",
+            "CLICK:Turing machine   Computation m"
+          ],
+          "events": [
+            "TYPE_TEXT:Search Wikipedia@1955",
+            "CLICK:Turing machine   Computation m@3613",
+            "DONE:Turing machine   Computation m@5788"
+          ]
+        }
+      ]
+    },
+    "lobsters-comments": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3185,
+      "median_decisions": 3,
+      "median_jev_ms": 1253,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3185,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 1253,
+          "text_ms": 0,
+          "final_url": "https://lobste.rs/s/lcjf7c/what_is_still_exciting_tech",
+          "ops": [
+            "CLICK:150 comments"
+          ],
+          "events": [
+            "CLICK:150 comments@1267",
+            "DONE:150 comments@3185"
+          ]
+        }
+      ]
+    },
+    "crates-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3933,
+      "median_decisions": 4,
+      "median_jev_ms": 358,
+      "median_text_ms": 990,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3933,
+          "steps": 2,
+          "decisions": 4,
+          "jev_ms": 358,
+          "text_ms": 990,
+          "final_url": "https://crates.io/search?q=serde",
+          "ops": [
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search@2353",
+            "FOLLOW_UP:Press enter@2392",
+            "DONE:Press enter@3933"
+          ]
+        }
+      ]
+    },
+    "europa-consent": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1689,
+      "median_decisions": 2,
+      "median_jev_ms": 298,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1689,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 298,
+          "text_ms": 0,
+          "final_url": "https://european-union.europa.eu/index_en",
+          "ops": [
+            "CLICK:Accept only essential cookies"
+          ],
+          "events": [
+            "CLICK:Accept only essential cookies@1250",
+            "CLICK:Accept only essential cookies@1689"
+          ]
+        }
+      ]
+    },
+    "mdn-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5539,
+      "median_decisions": 6,
+      "median_jev_ms": 2123,
+      "median_text_ms": 1127,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5539,
+          "steps": 3,
+          "decisions": 6,
+          "jev_ms": 2123,
+          "text_ms": 1127,
+          "final_url": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API",
+          "ops": [
+            "CLICK:Search the site",
+            "TYPE_TEXT:Search",
+            "CLICK:Web APIs \n                    "
+          ],
+          "events": [
+            "CLICK:Search the site@1178",
+            "TYPE_TEXT:Search@2947",
+            "CLICK:Web APIs \n                    @3572",
+            "DONE:Web APIs \n                    @5539"
+          ]
+        }
+      ]
+    },
+    "books-toscrape": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1884,
+      "median_decisions": 1,
+      "median_jev_ms": 973,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1884,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 973,
+          "text_ms": 0,
+          "final_url": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html",
+          "ops": [
+            "CLICK:A Light in the Attic"
+          ],
+          "events": [
+            "CLICK:A Light in the Attic@989",
+            "CLICK:A Light in the Attic@1884"
+          ]
+        }
+      ]
+    },
+    "tin-large-dom": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1279,
+      "median_decisions": 1,
+      "median_jev_ms": 710,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1279,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 710,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/large",
+          "ops": [
+            "SCROLL_DOWN:Scroll down"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@756",
+            "SCROLL_DOWN:Scroll down@1279"
+          ]
+        }
+      ]
+    },
+    "tin-context-menu": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1199,
+      "median_decisions": 1,
+      "median_jev_ms": 739,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1199,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 739,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/context_menu",
+          "ops": [
+            "CONTEXT_CLICK:button"
+          ],
+          "events": [
+            "CONTEXT_CLICK:button@769",
+            "CONTEXT_CLICK:button@1199"
+          ]
+        }
+      ]
+    },
+    "tin-js-alerts": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1179,
+      "median_decisions": 1,
+      "median_jev_ms": 726,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1179,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 726,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/javascript_alerts",
+          "ops": [
+            "CLICK:Click for JS Alert"
+          ],
+          "events": [
+            "CLICK:Click for JS Alert@744",
+            "CLICK:Click for JS Alert@1179"
+          ]
+        }
+      ]
+    },
+    "tin-drag-drop": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1338,
+      "median_decisions": 1,
+      "median_jev_ms": 721,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1338,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 721,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/drag_and_drop",
+          "ops": [
+            "DRAG:A (dom)"
+          ],
+          "events": [
+            "DRAG:A@866",
+            "DRAG:A (dom)@1338"
+          ]
+        }
+      ]
+    },
+    "parabank-login": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5803,
+      "median_decisions": 5,
+      "median_jev_ms": 1670,
+      "median_text_ms": 2332,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5803,
+          "steps": 3,
+          "decisions": 5,
+          "jev_ms": 1670,
+          "text_ms": 2332,
+          "final_url": "https://parabank.parasoft.com/parabank/overview.htm",
+          "ops": [
+            "TYPE_TEXT:textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Log In"
+          ],
+          "events": [
+            "TYPE_TEXT:textbox@2312",
+            "TYPE_TEXT:textbox@3679",
+            "CLICK:Log In@4120",
+            "DONE:Log In@5803"
+          ]
+        }
+      ]
+    },
+    "parabank-transfer": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 9380,
+      "median_decisions": 11,
+      "median_jev_ms": 3635,
+      "median_text_ms": 3204,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 9380,
+          "steps": 8,
+          "decisions": 11,
+          "jev_ms": 3635,
+          "text_ms": 3204,
+          "final_url": "https://parabank.parasoft.com/parabank/transfer.htm",
+          "ops": [
+            "TYPE_TEXT:textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Log In",
+            "CLICK:Transfer Funds",
+            "TYPE_TEXT:textbox",
+            "SELECT:12345 12456 12567 12678 12789 ",
+            "SELECT:12345 12456 12567 12678 12789 ",
+            "CLICK:Transfer"
+          ],
+          "events": [
+            "TYPE_TEXT:textbox@2218",
+            "TYPE_TEXT:textbox@3660",
+            "CLICK:Log In@4080",
+            "CLICK:Transfer Funds@4916",
+            "TYPE_TEXT:textbox@6871",
+            "SELECT:12345 12456 12567 12678 12789 @7352",
+            "SELECT:12345 12456 12567 12678 12789 @7777",
+            "CLICK:Transfer@8219",
+            "DONE:Transfer@9380"
+          ]
+        }
+      ]
+    },
+    "github-issues": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 1836,
+      "median_decisions": 1,
+      "median_jev_ms": 1235,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 1836,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 1235,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node",
+          "ops": [
+            "CLICK:Issues \n           624"
+          ],
+          "events": [
+            "CLICK:Issues \n           624@1326",
+            "CLICK:Issues \n           624@1836"
+          ]
+        }
+      ]
+    },
+    "flights-zurich-london": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 12361,
+      "median_decisions": 17,
+      "median_jev_ms": 4057,
+      "median_text_ms": 1753,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 12361,
+          "steps": 10,
+          "decisions": 17,
+          "jev_ms": 4057,
+          "text_ms": 1753,
+          "final_url": "https://www.google.com/travel/flights/search?tfs=CBwQAhojEgoyMDI2LTA5LTIwagcIARIDWlJIcgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg&hl=en",
+          "ops": [
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:One way",
+            "TYPE_TEXT:Where from?",
+            "FOLLOW_UP:Zurich Airport (ZRH)",
+            "TYPE_TEXT:Where to? ",
+            "FOLLOW_UP:London, United Kingdom",
+            "CLICK:Focus Departure",
+            "CLICK:Sunday, September 20, 2026",
+            "CLICK:Done. Search for one-way fligh",
+            "CLICK:Search"
+          ],
+          "events": [
+            "CLICK:Change ticket type. Round trip@1218",
+            "CLICK:One way@1885",
+            "TYPE_TEXT:Where from?@3426",
+            "FOLLOW_UP:Zurich Airport (ZRH)@3672",
+            "TYPE_TEXT:Where to? @5558",
+            "FOLLOW_UP:London, United Kingdom@5737",
+            "CLICK:Focus Departure@6597",
+            "CLICK:Sunday, September 20, 2026@7134",
+            "CLICK:Done. Search for one-way fligh@8565",
+            "CLICK:Search@9987",
+            "DONE:Search@12361"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 186749
+}

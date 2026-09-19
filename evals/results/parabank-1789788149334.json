@@ -1,0 +1,80 @@
+{
+  "label": "parabank",
+  "started": "2026-09-19T03:22:11.891Z",
+  "tasks": {
+    "parabank-transfer": {
+      "runs": 3,
+      "verified": 0,
+      "median_ms": 4276,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4407,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://parabank.parasoft.com/parabank/index.htm",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1674",
+            "BLOCKED:Wait for the page to update@2966",
+            "BLOCKED:Wait for the page to update@4037",
+            "BLOCKED:Wait for the page to update@4407"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4276,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://parabank.parasoft.com/parabank/index.htm",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1773",
+            "BLOCKED:Wait for the page to update@2865",
+            "BLOCKED:Wait for the page to update@3933",
+            "BLOCKED:Wait for the page to update@4276"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 4236,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://parabank.parasoft.com/parabank/index.htm",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1661",
+            "BLOCKED:Wait for the page to update@2717",
+            "BLOCKED:Wait for the page to update@3875",
+            "BLOCKED:Wait for the page to update@4236"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 4276
+}

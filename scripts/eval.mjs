@@ -16,7 +16,8 @@
  */
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -83,7 +84,15 @@ function verify(task, result) {
 function runOnce(task, env, engine) {
   return new Promise((resolvePromise) => {
     const url = task.file_url ? `file://${join(ROOT, task.url)}` : task.url;
-    const childEnv = task.file_url ? { ...env, JEV_ALLOW_FILE_URLS: "1" } : env;
+    // Fresh profile per run: cookies and SPA sessions persist in the shared
+    // profile, which makes anonymous-state tasks non-deterministic (a logged-in
+    // ParaBank page has no login form to fill).
+    const profile = mkdtempSync(join(tmpdir(), "jev-eval-"));
+    const childEnv = {
+      ...env,
+      JEV_PROFILE: profile,
+      ...(task.file_url ? { JEV_ALLOW_FILE_URLS: "1" } : {}),
+    };
 
     const cli = spawn(
       process.execPath,

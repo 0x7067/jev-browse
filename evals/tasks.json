@@ -316,6 +316,18 @@
     "expect": {}
   },
   {
+    "id": "parabank-login",
+    "url": "https://parabank.parasoft.com/parabank/index.htm",
+    "goal": "Log in with username \"john\" and password \"demo\" and stop when the accounts page shows.",
+    "expect": { "url_match": "overview" }
+  },
+  {
+    "id": "parabank-transfer",
+    "url": "https://parabank.parasoft.com/parabank/index.htm",
+    "goal": "Log in with username \"john\" and password \"demo\", open Transfer Funds, transfer 50 dollars between the first two accounts, and stop when the transfer confirmation shows.",
+    "expect": { "url_match": "transfer" }
+  },
+  {
     "id": "github-issues",
     "url": "https://github.com/nodejs/node",
     "goal": "Open the Issues tab of this repository.",
