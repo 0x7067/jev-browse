@@ -86,6 +86,20 @@ dialog::backdrop{background:#0006}
 <input id="palette" placeholder="Type then press Enter">
 <output class="out" id="r-palette"></output></section>
 
+<section><h2>17. Contenteditable composer</h2>
+<div id="composer" contenteditable="true" style="min-height:24px;border:1px solid #999;padding:4px" role="textbox" aria-label="Message composer"></div>
+<button id="send-note">Send note</button>
+<output class="out" id="r-composer"></output></section>
+
+<section><h2>18. Drag and drop</h2>
+<div id="card" draggable="true" style="display:inline-block;border:1px solid #666;padding:6px 10px">Postcard</div>
+<div id="bin" style="display:inline-block;border:2px dashed #999;padding:6px 10px;margin-left:20px">Drop zone</div>
+<output class="out" id="r-drag"></output></section>
+
+<section><h2>19. Context menu</h2>
+<div id="ctx" style="border:1px solid #999;padding:8px" tabindex="0">Right-click this tile</div>
+<output class="out" id="r-ctx"></output></section>
+
 <script>
 const show=(id,msg)=>{const e=document.getElementById(id);e.style.display="block";e.textContent=msg;};
 sel.onchange=e=>show("r-select","DONE: region="+e.target.value);
@@ -114,6 +128,11 @@ sh.getElementById("sb").onclick=()=>{document.getElementById("r-check").style.di
 document.getElementById("hover-pick").onclick=e=>{e.preventDefault();show("r-hover","DONE: alpine picked");};
 guests.oninput=e=>e.target.value>=6&&show("r-range","DONE: guests="+e.target.value);
 palette.onkeydown=e=>{if(e.key==="Enter"&&e.target.value.trim())show("r-palette","DONE: "+e.target.value.trim());};
+document.getElementById("send-note").onclick=()=>composer.innerText.trim()&&show("r-composer","DONE: "+composer.innerText.trim());
+card.ondragstart=e=>e.dataTransfer.setData("text/plain","postcard");
+bin.ondragover=e=>e.preventDefault();
+bin.ondrop=e=>{e.preventDefault();show("r-drag","DONE: postcard dropped");};
+ctx.oncontextmenu=e=>{e.preventDefault();show("r-ctx","DONE: context menu opened");};
 </script>
 </main>
 </body></html>

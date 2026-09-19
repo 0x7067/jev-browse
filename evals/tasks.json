@@ -102,6 +102,27 @@
     "expect": {}
   },
   {
+    "id": "fx-composer",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Write a note in the Message composer and send it. Stop when DONE is shown.",
+    "expect": {}
+  },
+  {
+    "id": "fx-drag",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Drag the Postcard onto the Drop zone and stop when DONE is shown.",
+    "expect": {}
+  },
+  {
+    "id": "fx-context",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Right-click the tile that says 'Right-click this tile' and stop when DONE is shown.",
+    "expect": {}
+  },
+  {
     "id": "fx-range",
     "url": "fixture-interactions.html",
     "file_url": true,

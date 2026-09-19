@@ -1,0 +1,161 @@
+{
+  "label": "fx-new",
+  "started": "2026-09-19T03:13:46.161Z",
+  "tasks": {
+    "fx-composer": {
+      "runs": 2,
+      "verified": 2,
+      "median_ms": 3502,
+      "median_decisions": 3,
+      "median_jev_ms": 1540,
+      "median_text_ms": 1229,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3502,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1410,
+          "text_ms": 1229,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "TYPE_TEXT:Message composer",
+            "CLICK:Send note"
+          ],
+          "events": [
+            "TYPE_TEXT:Message composer@2323",
+            "CLICK:Send note@2743",
+            "DONE:Send note@3502"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3384,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1540,
+          "text_ms": 890,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "TYPE_TEXT:Message composer",
+            "CLICK:Send note"
+          ],
+          "events": [
+            "TYPE_TEXT:Message composer@2157",
+            "CLICK:Send note@2545",
+            "DONE:Send note@3384"
+          ]
+        }
+      ]
+    },
+    "fx-drag": {
+      "runs": 2,
+      "verified": 2,
+      "median_ms": 3300,
+      "median_decisions": 3,
+      "median_jev_ms": 2287,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2170,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 1337,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "DRAG:Focus Message composer",
+            "DRAG:Focus Message composer"
+          ],
+          "events": [
+            "DRAG:Focus Message composer@1185",
+            "DRAG:Focus Message composer@1718",
+            "DRAG:Focus Message composer@2170"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3300,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 2287,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "DRAG:Focus Message composer",
+            "DRAG:Focus Message composer",
+            "DRAG:Focus Message composer"
+          ],
+          "events": [
+            "DRAG:Focus Message composer@1086",
+            "DRAG:Focus Message composer@2286",
+            "DRAG:Focus Message composer@2852",
+            "DRAG:Focus Message composer@3300"
+          ]
+        }
+      ]
+    },
+    "fx-context": {
+      "runs": 2,
+      "verified": 0,
+      "median_ms": 2419,
+      "median_decisions": 4,
+      "median_jev_ms": 2147,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 2351,
+          "steps": 4,
+          "decisions": 4,
+          "jev_ms": 2147,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CONTEXT_CLICK:Inner frame action",
+            "CONTEXT_CLICK:Inner frame action",
+            "CONTEXT_CLICK:Inner frame action",
+            "CONTEXT_CLICK:Inner frame action"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Inner frame action@969",
+            "CONTEXT_CLICK:Inner frame action@1557",
+            "CONTEXT_CLICK:Inner frame action@1967",
+            "CONTEXT_CLICK:Inner frame action@2322",
+            "CONTEXT_CLICK:Inner frame action@2351"
+          ]
+        },
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 2419,
+          "steps": 4,
+          "decisions": 4,
+          "jev_ms": 2114,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CONTEXT_CLICK:Inner frame action",
+            "CONTEXT_CLICK:Inner frame action",
+            "CONTEXT_CLICK:Inner frame action",
+            "CONTEXT_CLICK:Inner frame action"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Inner frame action@1017",
+            "CONTEXT_CLICK:Inner frame action@1415",
+            "CONTEXT_CLICK:Inner frame action@1826",
+            "CONTEXT_CLICK:Inner frame action@2387",
+            "CONTEXT_CLICK:Inner frame action@2419"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 9221
+}

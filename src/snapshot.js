@@ -45,8 +45,10 @@ return s?[s]:[]}).join(' ') ||
   const hoverSel='[aria-haspopup],[onmouseover],[class*="menu"],[class*="dropdown"],'+
     '[class*="tooltip"],[class*="hover"]';
 
+  // [oncontextmenu] and [tabindex] mark interactivity with no role or link
+  // semantics — context-menu tiles and custom widgets live on plain divs.
   const selector='a[href],button,input,textarea,select,summary,[contenteditable="true"],'+
-    '[draggable="true"],'+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
+    '[draggable="true"],[oncontextmenu],[tabindex]:not([tabindex^="-"]),'+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
 
   const role = e => {
     const explicit=e.getAttribute('role');
@@ -77,6 +79,11 @@ return s?[s]:[]}).join(' ') ||
     }
 
     if (e.matches(hoverSel)) return 'button';
+
+    // No-role interactivity: context-menu tiles, custom focusable widgets,
+    // drag sources. They matched the selector for a reason — call them
+    // buttons so they reach the action table.
+    if (e.matches('[oncontextmenu],[tabindex]:not([tabindex^="-"]),[draggable="true"]')) return 'button';
 
     return null;
   };

@@ -1,0 +1,135 @@
+{
+  "label": "noise-check",
+  "started": "2026-09-19T03:17:36.665Z",
+  "tasks": {
+    "hn-comments": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2693,
+      "median_decisions": 1,
+      "median_jev_ms": 1366,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2693,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 1366,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/item?id=49758736",
+          "ops": [
+            "CLICK:282 comments"
+          ],
+          "events": [
+            "CLICK:282 comments@1390",
+            "CLICK:282 comments@2693"
+          ]
+        }
+      ]
+    },
+    "wikipedia-godel": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6098,
+      "median_decisions": 5,
+      "median_jev_ms": 1094,
+      "median_text_ms": 1052,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6098,
+          "steps": 2,
+          "decisions": 5,
+          "jev_ms": 1094,
+          "text_ms": 1052,
+          "final_url": "https://en.wikipedia.org/wiki/G%C3%B6del%27s_incompleteness_theorems",
+          "ops": [
+            "TYPE_TEXT:Search Wikipedia",
+            "CLICK:Gödel's incompleteness theorem"
+          ],
+          "events": [
+            "TYPE_TEXT:Search Wikipedia@3281",
+            "CLICK:Gödel's incompleteness theorem@4053",
+            "DONE:Gödel's incompleteness theorem@6098"
+          ]
+        }
+      ]
+    },
+    "github-issues": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6002,
+      "median_decisions": 5,
+      "median_jev_ms": 903,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6002,
+          "steps": 1,
+          "decisions": 5,
+          "jev_ms": 903,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node/issues",
+          "ops": [
+            "CLICK:Issues \n           624"
+          ],
+          "events": [
+            "CLICK:Issues \n           624@2540",
+            "DONE:Issues \n           624@6002"
+          ]
+        }
+      ]
+    },
+    "flights-zurich-london": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 15559,
+      "median_decisions": 15,
+      "median_jev_ms": 4027,
+      "median_text_ms": 4087,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 15559,
+          "steps": 10,
+          "decisions": 15,
+          "jev_ms": 4027,
+          "text_ms": 4087,
+          "final_url": "https://www.google.com/travel/flights/search?tfs=CBwQAhojEgoyMDI2LTA5LTIwagcIARIDWlJIcgwIAxIIL20vMDRqcGxAAUgBcAGCAQsI____________AZgBAg&hl=en",
+          "ops": [
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:One way",
+            "TYPE_TEXT:Where from?",
+            "FOLLOW_UP:Zurich Airport (ZRH)",
+            "TYPE_TEXT:Where to? ",
+            "FOLLOW_UP:London, United Kingdom",
+            "CLICK:Focus Departure",
+            "CLICK:Sunday, September 20, 2026 , 9",
+            "CLICK:Done. Search for one-way fligh",
+            "CLICK:Search"
+          ],
+          "events": [
+            "CLICK:Change ticket type. Round trip@1050",
+            "CLICK:One way@1698",
+            "TYPE_TEXT:Where from?@3661",
+            "FOLLOW_UP:Zurich Airport (ZRH)@3844",
+            "TYPE_TEXT:Where to? @7818",
+            "FOLLOW_UP:London, United Kingdom@8101",
+            "CLICK:Focus Departure@9156",
+            "CLICK:Sunday, September 20, 2026 , 9@11079",
+            "CLICK:Done. Search for one-way fligh@11598",
+            "CLICK:Search@13130",
+            "DONE:Search@15559"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 30352
+}
