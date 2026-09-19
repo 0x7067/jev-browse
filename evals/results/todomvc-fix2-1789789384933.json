@@ -1,0 +1,96 @@
+{
+  "label": "todomvc-fix2",
+  "started": "2026-09-19T03:42:46.381Z",
+  "tasks": {
+    "todomvc-add": {
+      "runs": 3,
+      "verified": 3,
+      "median_ms": 4732,
+      "median_decisions": 4,
+      "median_jev_ms": 1587,
+      "median_text_ms": 1971,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4767,
+          "steps": 6,
+          "decisions": 4,
+          "jev_ms": 1620,
+          "text_ms": 1942,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:buy milk",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:New Todo Input@2287",
+            "FOLLOW_UP:Press enter@2449",
+            "TYPE_TEXT:New Todo Input@3476",
+            "FOLLOW_UP:Press enter@3515",
+            "CLICK:buy milk@3910",
+            "FOLLOW_UP:Press enter@3960",
+            "DONE:Press enter@4767"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4732,
+          "steps": 5,
+          "decisions": 4,
+          "jev_ms": 1555,
+          "text_ms": 1971,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:buy milk"
+          ],
+          "events": [
+            "TYPE_TEXT:New Todo Input@2011",
+            "FOLLOW_UP:Press enter@2164",
+            "TYPE_TEXT:New Todo Input@3491",
+            "FOLLOW_UP:Press enter@3535",
+            "CLICK:buy milk@3927",
+            "DONE:buy milk@4732"
+          ]
+        },
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4709,
+          "steps": 6,
+          "decisions": 4,
+          "jev_ms": 1587,
+          "text_ms": 2025,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:buy milk",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:New Todo Input@1966",
+            "FOLLOW_UP:Press enter@2054",
+            "TYPE_TEXT:New Todo Input@3440",
+            "FOLLOW_UP:Press enter@3474",
+            "CLICK:buy milk@3911",
+            "FOLLOW_UP:Press enter@3939",
+            "DONE:Press enter@4709"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 4732
+}

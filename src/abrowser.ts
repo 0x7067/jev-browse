@@ -288,8 +288,9 @@ export class AgentBrowser implements BrowserDriver {
     // model never emits selectors; code maps its own node id to an attribute.
     const tagged = await this.evaluate<string | false>(`(() => {
       const e=window.__jevFast?.nodes.get(${action.node});
-      if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]') ||
-          !e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) return false;
+      // Visibility alone doesn't decide clickability — the covered check
+      // below arbitrates; opacity:0 controls win their own hit test.
+      if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return false;
       if (${JSON.stringify(kind)}==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return false;
       const r=e.getBoundingClientRect(), x=r.x+r.width/2, y=r.y+r.height/2;
       if (!r.width || !r.height || x<0 || y<0 || x>=innerWidth || y>=innerHeight) return false;

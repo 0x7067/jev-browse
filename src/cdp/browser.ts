@@ -423,8 +423,10 @@ export class CdpBrowser implements BrowserDriver {
     try {
       target = await this.evaluate(`(action => {
         const e=window.__jevFast?.nodes.get(action.node);
-        if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]') ||
-            !e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) return null;
+        // Visibility alone doesn't decide clickability — opacity:0 custom
+        // controls fail checkVisibility yet win their own hit test. The
+        // covered check below is the real arbiter.
+        if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return null;
         if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return null;
         const d=e.ownerDocument, w=d.defaultView||window;
         let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;

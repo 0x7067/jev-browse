@@ -589,6 +589,14 @@ export class Agent {
           // Re-observe and let the machine choose again on the fresh page.
           this.decision = null;
           this.phase = "observe";
+          onEvent?.({
+            type: "stale",
+            status: this.status,
+            phase: this.phase,
+            elapsed_ms: this.elapsed(),
+            operation: this.lastOperation,
+            url: this.page.url,
+          });
         } else {
           throw error;
         }

@@ -1390,6 +1390,14 @@ Your recent actions made no progress. Try a different approach \u2014 scroll, ho
         if (error instanceof StalePage) {
           this.decision = null;
           this.phase = "observe";
+          onEvent?.({
+            type: "stale",
+            status: this.status,
+            phase: this.phase,
+            elapsed_ms: this.elapsed(),
+            operation: this.lastOperation,
+            url: this.page.url
+          });
         } else {
           throw error;
         }
@@ -1889,8 +1897,10 @@ var CdpBrowser = class _CdpBrowser {
     try {
       target = await this.evaluate(`(action => {
         const e=window.__jevFast?.nodes.get(action.node);
-        if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]') ||
-            !e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) return null;
+        // Visibility alone doesn't decide clickability \u2014 opacity:0 custom
+        // controls fail checkVisibility yet win their own hit test. The
+        // covered check below is the real arbiter.
+        if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return null;
         if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return null;
         const d=e.ownerDocument, w=d.defaultView||window;
         let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
@@ -2282,8 +2292,9 @@ var AgentBrowser = class _AgentBrowser {
     if (action.node === void 0) throw new Error("Invalid observed node");
     const tagged = await this.evaluate(`(() => {
       const e=window.__jevFast?.nodes.get(${action.node});
-      if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]') ||
-          !e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) return false;
+      // Visibility alone doesn't decide clickability \u2014 the covered check
+      // below arbitrates; opacity:0 controls win their own hit test.
+      if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return false;
       if (${JSON.stringify(kind)}==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return false;
       const r=e.getBoundingClientRect(), x=r.x+r.width/2, y=r.y+r.height/2;
       if (!r.width || !r.height || x<0 || y<0 || x>=innerWidth || y>=innerHeight) return false;

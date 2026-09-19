@@ -34,6 +34,10 @@ return s?[s]:[]}).join(' ') ||
       (['button','submit','reset'].includes(e.type) ? e.value : '') || e.getAttribute('alt') ||
       (e.tagName==='INPUT' ? '' : [...e.childNodes].map(n=>n.nodeType===3 ? n.textContent :
         n.nodeType===1 && !SKIP_NAME.has(n.tagName) && n.getAttribute('aria-hidden')!=='true' ? name(n,seen) : '').join(' ').trim()) ||
+      // Sibling labels name unlabelled inputs — the input+label pattern is
+      // how most checkboxes and toggles get their text.
+      (e.tagName==='INPUT' && e.nextElementSibling?.matches?.('label,span')
+        ? name(e.nextElementSibling,seen) : '') ||
       e.getAttribute('title') || e.getAttribute('placeholder') || '';
   };
 
@@ -121,7 +125,25 @@ return s?[s]:[]}).join(' ') ||
     if (depth>4) return;
 
     for (const e of root.querySelectorAll(selector)) {
-      if (!safe(e) || !visible(e) || e.matches(':disabled') || e.closest('[aria-disabled="true"]')) {
+      // Opacity:0 custom controls (iOS toggles, styled checkboxes, material
+      // switches) fail checkVisibility yet remain the real click target —
+      // the hit test, not the visibility check, is the arbiter of
+      // clickability. Rescue them when they win their own center point.
+      let vis = visible(e);
+
+      if (!vis && e.matches(INTERACTIVE)) {
+        const r = e.getBoundingClientRect();
+        const d = e.ownerDocument, w = d.defaultView;
+        const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+
+        if (r.width > 0 && r.height > 0 && cx >= 0 && cy >= 0 &&
+            cx < (w ? w.innerWidth : innerWidth) && cy < (w ? w.innerHeight : innerHeight)) {
+          const hit = d.elementFromPoint(cx, cy);
+          vis = hit === e || e.contains(hit);
+        }
+      }
+
+      if (!safe(e) || !vis || e.matches(':disabled') || e.closest('[aria-disabled="true"]')) {
         if (e.matches(INTERACTIVE) && hoverZones.size < 24) {
           // Walk up to the nearest visible ancestor sized like a hover zone —
           // skipping body-sized wrappers where hovering means nothing.

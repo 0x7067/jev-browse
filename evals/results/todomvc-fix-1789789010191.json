@@ -1,0 +1,71 @@
+{
+  "label": "todomvc-fix",
+  "started": "2026-09-19T03:34:31.674Z",
+  "tasks": {
+    "todomvc-add": {
+      "runs": 3,
+      "verified": 0,
+      "median_ms": 0,
+      "median_decisions": 0,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "Reached the model-call budget",
+          "ops": [],
+          "events": [
+            "TYPE_TEXT:New Todo Input@2076",
+            "FOLLOW_UP:Press enter@2212",
+            "TYPE_TEXT:New Todo Input@3340",
+            "FOLLOW_UP:Press enter@3381"
+          ]
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "Reached the model-call budget",
+          "ops": [],
+          "events": [
+            "TYPE_TEXT:New Todo Input@2236",
+            "FOLLOW_UP:Press enter@3014",
+            "TYPE_TEXT:New Todo Input@4142",
+            "FOLLOW_UP:Press enter@4176"
+          ]
+        },
+        {
+          "status": "error",
+          "verified": false,
+          "elapsed_ms": 0,
+          "steps": 0,
+          "decisions": 0,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "",
+          "error": "Reached the model-call budget",
+          "ops": [],
+          "events": [
+            "TYPE_TEXT:New Todo Input@2109",
+            "FOLLOW_UP:Press enter@2216",
+            "TYPE_TEXT:New Todo Input@4128",
+            "FOLLOW_UP:Press enter@4157"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 0
+}

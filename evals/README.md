@@ -54,6 +54,9 @@ runs through `file_url` tasks for deterministic coverage.
 | model repeats itself until budget (hn-paginate, others) | a fuse ended the run without telling the model it was stuck | repair consult: one extra decide with an explicit "try a different approach" hint; each recovered episode re-arms it |
 | 24–36s stalls observed once (flights) | SDK retry policy (10s × 3 attempts) on a flaky endpoint | bounded by design — no fix needed |
 | parabank-transfer blocked at login; earlier cross-run weirdness | the shared profile persists cookies/SPA sessions — a logged-in page has no login form; carts and todos leak between runs | fresh `mkdtemp` profile per eval run (`JEV_PROFILE`) |
+| saucedemo checkout forms fail on empty fields | `TYPE_TEXT` relies on `Input.insertText` — dead on the same canceled-nav pipeline that kills clicks | dom-fill fallback: prototype-setter value + input/change events |
+| todomvc burns 120 model calls, zero progress | opacity:0 todo checkbox: indexed via hit-test rescue but `act()`'s checkVisibility bail staled every attempt | `act()` drops the visibility gate — the covered check (`elementFromPoint`) is the real arbiter; sibling-label naming gives it a real label |
+| invisible elements were uniformly dropped | `checkVisibility` misses opacity:0 custom controls (iOS toggles, styled checkboxes, material switches) | hit-test rescue in `gather()` — element wins its own center point → indexed |
 | conduit (realworld) unreachable | demo backends are dead — shell renders, no forms | environmental; dropped |
 | opencart blocked post-nav | Cloudflare interstitial | environmental; dropped |
 
