@@ -12,6 +12,7 @@ import { mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "no
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 
 import { Agent, type RunResult } from "./agent.ts";
 import { loadDotEnv } from "./env.ts";
@@ -23,7 +24,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Two runs sharing a profile dir collide on Chrome's SingletonLock — one wins,
 // the other hangs on a debug port that never binds. A pid lock dir fails fast.
-const LOCK_DIR = join(homedir(), ".jev-browse", "run.lock");
+// The lock is keyed by profile: isolated profiles (eval runs, agent-browser)
+// may run in parallel; only same-profile runs serialize.
+const lockDir = (profileDir: string) => {
+  const key = createHash("sha1").update(profileDir).digest("hex").slice(0, 12);
+
+  return join(homedir(), ".jev-browse", `run-${key}.lock`);
+};
 
 function pidAlive(pid: number): boolean {
   try {
@@ -35,20 +42,24 @@ function pidAlive(pid: number): boolean {
   }
 }
 
-async function acquireLock(timeoutMs = 30_000): Promise<void> {
+let heldLock: string | null = null;
+
+async function acquireLock(profileDir: string, timeoutMs = 30_000): Promise<void> {
+  const dir = lockDir(profileDir);
   const deadline = Date.now() + timeoutMs;
 
   for (;;) {
     try {
-      mkdirSync(LOCK_DIR, { recursive: true });
-      writeFileSync(join(LOCK_DIR, "pid"), String(process.pid), { flag: "wx" });
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "pid"), String(process.pid), { flag: "wx" });
+      heldLock = dir;
 
       return;
     } catch {
-      const holder = Number(readFileSync(join(LOCK_DIR, "pid"), "utf8"));
+      const holder = Number(readFileSync(join(dir, "pid"), "utf8"));
 
       if (holder && !pidAlive(holder)) {
-        rmSync(join(LOCK_DIR, "pid"), { force: true });
+        rmSync(join(dir, "pid"), { force: true });
         continue; // stale lock from a dead process
       }
 
@@ -62,13 +73,17 @@ async function acquireLock(timeoutMs = 30_000): Promise<void> {
 }
 
 function releaseLock(): void {
-  try {
-    const holder = Number(readFileSync(join(LOCK_DIR, "pid"), "utf8"));
+  if (!heldLock) return;
 
-    if (holder === process.pid) rmSync(LOCK_DIR, { recursive: true, force: true });
+  try {
+    const holder = Number(readFileSync(join(heldLock, "pid"), "utf8"));
+
+    if (holder === process.pid) rmSync(heldLock, { recursive: true, force: true });
   } catch {
     // never ours
   }
+
+  heldLock = null;
 }
 
 export interface CliArgs {
@@ -160,7 +175,14 @@ export async function runAgent(
     throw new Error(`jev-browse only drives http(s) pages; got ${args.url}`);
   }
 
-  await acquireLock();
+  // Lock keyed by the profile the chosen engine will launch — same-profile
+  // runs serialize, isolated profiles run in parallel.
+  const profileDir =
+    args.engine === "agent-browser"
+      ? (process.env.JEV_AB_PROFILE ?? join(homedir(), ".jev-browse", "agent-browser-profile"))
+      : (process.env.JEV_PROFILE ?? join(homedir(), ".jev-browse", "profile"));
+
+  await acquireLock(profileDir);
   let agent: Agent;
 
   try {

@@ -5,6 +5,7 @@ import { mkdirSync, readFileSync as readFileSync3, realpathSync, rmSync, writeFi
 import { homedir as homedir4 } from "node:os";
 import { join as join5 } from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
+import { createHash as createHash2 } from "node:crypto";
 
 // src/questions.ts
 var NEXT_ACTION = `Advance the user's entire goal from the CURRENT page using one operation.
@@ -2847,7 +2848,10 @@ function parseOutput(stdout) {
 
 // src/cli.ts
 var sleep6 = (ms) => new Promise((r) => setTimeout(r, ms));
-var LOCK_DIR = join5(homedir4(), ".jev-browse", "run.lock");
+var lockDir = (profileDir) => {
+  const key = createHash2("sha1").update(profileDir).digest("hex").slice(0, 12);
+  return join5(homedir4(), ".jev-browse", `run-${key}.lock`);
+};
 function pidAlive(pid) {
   try {
     process.kill(pid, 0);
@@ -2856,17 +2860,20 @@ function pidAlive(pid) {
     return false;
   }
 }
-async function acquireLock(timeoutMs = 3e4) {
+var heldLock = null;
+async function acquireLock(profileDir, timeoutMs = 3e4) {
+  const dir = lockDir(profileDir);
   const deadline = Date.now() + timeoutMs;
   for (; ; ) {
     try {
-      mkdirSync(LOCK_DIR, { recursive: true });
-      writeFileSync(join5(LOCK_DIR, "pid"), String(process.pid), { flag: "wx" });
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join5(dir, "pid"), String(process.pid), { flag: "wx" });
+      heldLock = dir;
       return;
     } catch {
-      const holder = Number(readFileSync3(join5(LOCK_DIR, "pid"), "utf8"));
+      const holder = Number(readFileSync3(join5(dir, "pid"), "utf8"));
       if (holder && !pidAlive(holder)) {
-        rmSync(join5(LOCK_DIR, "pid"), { force: true });
+        rmSync(join5(dir, "pid"), { force: true });
         continue;
       }
       if (Date.now() > deadline) {
@@ -2877,11 +2884,13 @@ async function acquireLock(timeoutMs = 3e4) {
   }
 }
 function releaseLock() {
+  if (!heldLock) return;
   try {
-    const holder = Number(readFileSync3(join5(LOCK_DIR, "pid"), "utf8"));
-    if (holder === process.pid) rmSync(LOCK_DIR, { recursive: true, force: true });
+    const holder = Number(readFileSync3(join5(heldLock, "pid"), "utf8"));
+    if (holder === process.pid) rmSync(heldLock, { recursive: true, force: true });
   } catch {
   }
+  heldLock = null;
 }
 function parseArgs(argv) {
   const args = { goals: [], engine: "cdp", headed: false };
@@ -2933,7 +2942,8 @@ async function runAgent(args, opts = {}) {
   if (protocol !== "http:" && protocol !== "https:" && !(protocol === "file:" && allowFile)) {
     throw new Error(`jev-browse only drives http(s) pages; got ${args.url}`);
   }
-  await acquireLock();
+  const profileDir = args.engine === "agent-browser" ? process.env.JEV_AB_PROFILE ?? join5(homedir4(), ".jev-browse", "agent-browser-profile") : process.env.JEV_PROFILE ?? join5(homedir4(), ".jev-browse", "profile");
+  await acquireLock(profileDir);
   let agent;
   try {
     agent = await Agent.start({

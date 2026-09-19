@@ -547,6 +547,7 @@ export class Agent {
       const navDeadline = Date.now() + 2500;
 
       for (let i = 0; i < 2 && !this.browser.pendingNav?.(); i++) await sleep(80);
+
       while (this.browser.pendingNav?.() && Date.now() < navDeadline) await sleep(120);
     }
 

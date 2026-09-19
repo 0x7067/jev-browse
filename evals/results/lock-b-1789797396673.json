@@ -1,0 +1,35 @@
+{
+  "label": "lock-b",
+  "started": "2026-09-19T05:56:31.100Z",
+  "tasks": {
+    "tin-checkboxes": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 2095,
+      "median_decisions": 2,
+      "median_jev_ms": 751,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "elapsed_ms": 2095,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 751,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/checkboxes",
+          "ops": [
+            "CLICK:checkbox"
+          ],
+          "events": [
+            "CLICK:checkbox@798",
+            "DONE:checkbox@2094"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 2095
+}
