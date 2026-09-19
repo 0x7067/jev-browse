@@ -25,10 +25,10 @@ Every observation produces a new element table:
 ```
 
 The operations are `CLICK`, `TYPE_TEXT`, `SELECT`, `SCROLL_UP`, `SCROLL_DOWN`,
-`WAIT`, `DONE`, and `BLOCKED`, plus `HOVER`, `GO_BACK`, `GO_FORWARD`, and
-`PRESS_*` for Enter, Tab, Escape, Backspace, Delete, the arrows, Home, End,
-PageUp/PageDown, and Space. These are real key events, so command palettes
-and Enter-to-submit forms work.
+`WAIT`, `DONE`, and `BLOCKED`, plus `HOVER`, `CONTEXT_CLICK`, `DRAG`,
+`GO_BACK`, `GO_FORWARD`, and `PRESS_*` for Enter, Tab, Escape, Backspace,
+Delete, the arrows, Home, End, PageUp/PageDown, and Space. These are real
+key events, so command palettes and Enter-to-submit forms work.
 
 ```
                       one Jev request
@@ -193,10 +193,13 @@ one-way Zürich to London on September 20, 2026, with real fares. The video
 plays at 1× from CDP frame timestamps, with a ~0.8 s final hold.
 
 Verified coverage: [`fixture-interactions.html`](fixture-interactions.html)
-plus a [real-world task suite](evals/) — form flows, autocomplete, iframes,
-shadow roots, hover-reveal menus, native selects, date pickers, file upload,
-dynamic loading, modals, and multi-tab flows all pass. Range sliders work
-through the focus-then-arrows idiom.
+plus a [real-world task suite](evals/) — 42 of 43 tasks verified across
+form flows, autocomplete, iframes and framesets, shadow roots, hover-reveal
+menus, native selects, date pickers, file upload, dynamic loading, modals,
+multi-tab flows, infinite scroll, drag-and-drop, context menus, invisible
+(opacity:0) custom controls, and multi-step authenticated flows like
+ParaBank transfers and full saucedemo checkouts. Range sliders work through
+the focus-then-arrows idiom.
 
 A `DONE` choice is a claim, not proof; the model can assert a goal it didn't
 reach (measured on Enter-only palettes). Verify outcomes independently.
