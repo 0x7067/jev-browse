@@ -1029,6 +1029,8 @@ var Agent = class _Agent {
   pendingText = null;
   settleContext = null;
   settleEntry = null;
+  stuckRetried = false;
+  lastOperation = null;
   phase = "observe";
   startedAt = 0;
   maxSteps;
@@ -1094,6 +1096,7 @@ var Agent = class _Agent {
       } else {
         const resolved = this.resolveFollowUp(fu);
         if (resolved) {
+          this.lastOperation = "FOLLOW_UP";
           this.decision = {
             choice: resolved,
             operation: "FOLLOW_UP",
@@ -1113,8 +1116,12 @@ var Agent = class _Agent {
         }
       }
     }
-    this.decision = await choose(this.client, this.page, this.goal, this.history);
+    const goal = this.stuckRetried ? `${this.goal}
+
+Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.` : this.goal;
+    this.decision = await choose(this.client, this.page, goal, this.history);
     this.decisions.push(this.decision);
+    this.lastOperation = this.decision.operation;
     this.phase = "act";
   }
   /** Map a speculative follow-up to an action id on the current page. */
@@ -1154,6 +1161,7 @@ var Agent = class _Agent {
       }
       if (selected === "BLOCKED" && this.earlyWaits < 3) {
         this.earlyWaits++;
+        this.stuckRetried = true;
         const entry2 = this.waitEntry("Wait for the page to update", page);
         await sleep3(700);
         this.page = await this.browser.observe();
@@ -1278,7 +1286,16 @@ var Agent = class _Agent {
     }
     const trail = this.fingerprints.slice(-14).filter((f, i, a) => i === 0 || f !== a[i - 1]);
     const seen = trail.filter((f) => f === this.page.fingerprint).length;
-    this.phase = repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || seen >= 4 || this.cycling() ? "blocked" : "decide";
+    const fused = repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || seen >= 4 || this.cycling();
+    if (!fused) {
+      this.stuckRetried = false;
+      this.phase = "decide";
+    } else if (!this.stuckRetried) {
+      this.stuckRetried = true;
+      this.phase = "decide";
+    } else {
+      this.phase = "blocked";
+    }
   }
   /** True when the recent fingerprint trail is a short cycle repeated whole. */
   cycling() {
@@ -1310,6 +1327,7 @@ var Agent = class _Agent {
     return entry;
   }
   async run(onEvent) {
+    let emitted = 0;
     while (this.phase !== "done" && this.phase !== "blocked" && this.phase !== "error") {
       try {
         switch (this.phase) {
@@ -1334,17 +1352,20 @@ var Agent = class _Agent {
           throw error;
         }
       }
-      const last = this.history[this.history.length - 1];
-      onEvent?.({
-        type: "step",
-        status: this.status,
-        phase: this.phase,
-        elapsed_ms: this.elapsed(),
-        action: last?.action,
-        kind: last?.kind,
-        operation: this.decisions[this.decisions.length - 1]?.operation,
-        url: this.page.url
-      });
+      if (this.history.length !== emitted || this.status !== "ready") {
+        emitted = this.history.length;
+        const last = this.history[this.history.length - 1];
+        onEvent?.({
+          type: "step",
+          status: this.status,
+          phase: this.phase,
+          elapsed_ms: this.elapsed(),
+          action: last?.action,
+          kind: last?.kind,
+          operation: this.lastOperation,
+          url: this.page.url
+        });
+      }
     }
     return {
       status: this.status === "ready" ? "blocked" : this.status,
@@ -1376,7 +1397,7 @@ var Agent = class _Agent {
 };
 
 // src/cdp/browser.ts
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import { homedir, platform as platform2 } from "node:os";
 import { join as join3 } from "node:path";
 
@@ -1560,11 +1581,30 @@ var KEYS = new Map(
   })
 );
 var KEY_TYPED_INPUTS = /* @__PURE__ */ new Set(["date", "time", "datetime-local", "month", "week"]);
+function reapProfileChrome(profileDir) {
+  try {
+    const out = execSync(`pgrep -f "user-data-dir=${profileDir}"`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    });
+    const pids = out.trim().split(/\s+/).filter(Boolean);
+    for (const pid of pids) {
+      try {
+        process.kill(Number(pid), "SIGKILL");
+      } catch {
+      }
+    }
+    return pids.length > 0;
+  } catch {
+    return false;
+  }
+}
 var CdpBrowser = class _CdpBrowser {
   socket;
   session;
   target;
   proc = null;
+  launchProfileDir = null;
   afterInput = null;
   seen = /* @__PURE__ */ new Set();
   adopted = [];
@@ -1591,6 +1631,7 @@ var CdpBrowser = class _CdpBrowser {
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
       browser.proc.on("error", () => {
       });
+      browser.launchProfileDir = profileDir;
     }
     try {
       let wsUrl;
@@ -1602,7 +1643,21 @@ var CdpBrowser = class _CdpBrowser {
         }
         wsUrl = info.webSocketDebuggerUrl;
       } else {
-        wsUrl = await browserWsUrl(port);
+        try {
+          wsUrl = await browserWsUrl(port);
+        } catch (error) {
+          if (!browser.launchProfileDir || !reapProfileChrome(browser.launchProfileDir)) {
+            throw error;
+          }
+          port = await freePort();
+          const args2 = browser.proc.spawnargs.map(
+            (a) => a.startsWith("--remote-debugging-port=") ? `--remote-debugging-port=${port}` : a
+          );
+          browser.proc = spawn(args2[0], args2.slice(1), { stdio: "ignore" });
+          browser.proc.on("error", () => {
+          });
+          wsUrl = await browserWsUrl(port);
+        }
       }
       browser.socket = await CdpSocket.connect(wsUrl);
       browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {

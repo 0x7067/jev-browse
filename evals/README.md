@@ -50,6 +50,9 @@ runs through `file_url` tasks for deterministic coverage.
 | container hovers swallow the target (jquery-menu) | menu root and its items both offered `Hover` | container hover offers dropped when an offered descendant exists |
 | premature BLOCKED on below-fold content (hn-paginate, jquery-menu) | goals name elements not yet visible | `NEXT_ACTION` teaches: hidden content sits behind HOVER/scroll — try revealing before BLOCKED |
 | extra decision per autocomplete pick | type→suggestion chains are predictable | `follow_up` question head: CLICK_MATCH_TYPED / PRESS_ENTER / DONE_AFTER resolved on the post-action state |
+| stale Chrome holds the profile (open fails) | crashed runs leave a live instance; SingletonLock defers new launches to it | `reapProfileChrome` kills profile-bound strays and retries the launch once |
+| model repeats itself until budget (hn-paginate, others) | a fuse ended the run without telling the model it was stuck | repair consult: one extra decide with an explicit "try a different approach" hint; each recovered episode re-arms it |
+| 24–36s stalls observed once (flights) | SDK retry policy (10s × 3 attempts) on a flaky endpoint | bounded by design — no fix needed |
 
 ## Known limits (not bugs)
 

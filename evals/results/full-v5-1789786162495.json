@@ -1,0 +1,1444 @@
+{
+  "label": "full-v5",
+  "started": "2026-09-19T02:45:08.564Z",
+  "tasks": {
+    "example-link": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1614,
+      "median_decisions": 2,
+      "median_jev_ms": 718,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1614,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 718,
+          "text_ms": 0,
+          "final_url": "https://www.iana.org/help/example-domains",
+          "ops": [
+            "CLICK:Learn more"
+          ],
+          "events": [
+            "CLICK:Learn more@733",
+            "DONE:Learn more@1614"
+          ]
+        }
+      ]
+    },
+    "hn-comments": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3299,
+      "median_decisions": 3,
+      "median_jev_ms": 968,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3299,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 968,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/item?id=49758736",
+          "ops": [
+            "CLICK:274 comments"
+          ],
+          "events": [
+            "CLICK:274 comments@997",
+            "DONE:274 comments@3299"
+          ]
+        }
+      ]
+    },
+    "algolia-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 7408,
+      "median_decisions": 7,
+      "median_jev_ms": 952,
+      "median_text_ms": 979,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 7408,
+          "steps": 3,
+          "decisions": 7,
+          "jev_ms": 952,
+          "text_ms": 979,
+          "final_url": "https://news.ycombinator.com/item?id=43708025",
+          "ops": [
+            "TYPE_TEXT:Search stories by title, url o",
+            "FOLLOW_UP:Press enter",
+            "CLICK:OpenAI   Codex  CLI: Lightweig"
+          ],
+          "events": [
+            "TYPE_TEXT:Search stories by title, url o@2383",
+            "FOLLOW_UP:Press enter@2448",
+            "CLICK:OpenAI   Codex  CLI: Lightweig@3798",
+            "DONE:OpenAI   Codex  CLI: Lightweig@7408"
+          ]
+        }
+      ]
+    },
+    "wikipedia-godel": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6341,
+      "median_decisions": 6,
+      "median_jev_ms": 937,
+      "median_text_ms": 1254,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6341,
+          "steps": 2,
+          "decisions": 6,
+          "jev_ms": 937,
+          "text_ms": 1254,
+          "final_url": "https://en.wikipedia.org/wiki/G%C3%B6del%27s_incompleteness_theorems",
+          "ops": [
+            "TYPE_TEXT:Search Wikipedia",
+            "CLICK:Gödel's incompleteness theorem"
+          ],
+          "events": [
+            "TYPE_TEXT:Search Wikipedia@3357",
+            "CLICK:Gödel's incompleteness theorem@4360",
+            "DONE:Gödel's incompleteness theorem@6341"
+          ]
+        }
+      ]
+    },
+    "httpbin-form": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5161,
+      "median_decisions": 3,
+      "median_jev_ms": 1017,
+      "median_text_ms": 1068,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5161,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1017,
+          "text_ms": 1068,
+          "final_url": "https://httpbin.org/post",
+          "ops": [
+            "TYPE_TEXT:Customer name:",
+            "CLICK:Submit order"
+          ],
+          "events": [
+            "TYPE_TEXT:Customer name:@1822",
+            "CLICK:Submit order@2756",
+            "DONE:Submit order@5161"
+          ]
+        }
+      ]
+    },
+    "tin-login": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4517,
+      "median_decisions": 4,
+      "median_jev_ms": 1300,
+      "median_text_ms": 1705,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4517,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1300,
+          "text_ms": 1705,
+          "final_url": "https://the-internet.herokuapp.com/secure",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@1666",
+            "TYPE_TEXT:Password@2887",
+            "CLICK:Login@3219",
+            "DONE:Login@4517"
+          ]
+        }
+      ]
+    },
+    "tin-dropdown": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1097,
+      "median_decisions": 1,
+      "median_jev_ms": 660,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1097,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 660,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dropdown",
+          "ops": [
+            "SELECT:Please select an option \n     "
+          ],
+          "events": [
+            "SELECT:Please select an option \n     @671",
+            "SELECT:Please select an option \n     @1097"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-loading": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 10123,
+      "median_decisions": 15,
+      "median_jev_ms": 4146,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 10123,
+          "steps": 14,
+          "decisions": 15,
+          "jev_ms": 4146,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@734",
+            "WAIT:Wait for the page to update@1194",
+            "WAIT:Wait for the page to update@1594",
+            "WAIT:Wait for the page to update@2032",
+            "WAIT:Wait for the page to update@2394",
+            "WAIT:Wait for the page to update@2861",
+            "WAIT:Wait for the page to update@3382",
+            "WAIT:Wait for the page to update@3894",
+            "WAIT:Wait for the page to update@4373",
+            "WAIT:Wait for the page to update@4825",
+            "WAIT:Wait for the page to update@5322",
+            "BLOCKED:Wait for the page to update@6580",
+            "BLOCKED:Wait for the page to update@8754",
+            "BLOCKED:Wait for the page to update@9808",
+            "BLOCKED:Wait for the page to update@10123"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-controls": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1199,
+      "median_decisions": 1,
+      "median_jev_ms": 729,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1199,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 729,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_controls",
+          "ops": [
+            "CLICK:Enable"
+          ],
+          "events": [
+            "CLICK:Enable@751",
+            "CLICK:Enable@1199"
+          ]
+        }
+      ]
+    },
+    "tin-iframe": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2447,
+      "median_decisions": 1,
+      "median_jev_ms": 939,
+      "median_text_ms": 996,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2447,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 939,
+          "text_ms": 996,
+          "final_url": "https://the-internet.herokuapp.com/iframe",
+          "ops": [
+            "TYPE_TEXT:Rich Text Area. Press ALT-0 fo"
+          ],
+          "events": [
+            "TYPE_TEXT:Rich Text Area. Press ALT-0 fo@1995",
+            "TYPE_TEXT:Rich Text Area. Press ALT-0 fo@2447"
+          ]
+        }
+      ]
+    },
+    "fx-shadow": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2341,
+      "median_decisions": 2,
+      "median_jev_ms": 910,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2341,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 910,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Shadow action"
+          ],
+          "events": [
+            "CLICK:Shadow action@930",
+            "DONE:Shadow action@2341"
+          ]
+        }
+      ]
+    },
+    "fx-hover-menu": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2357,
+      "median_decisions": 2,
+      "median_jev_ms": 1823,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2357,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 1823,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "HOVER:Hover 14. Hover-only menu Dest",
+            "CLICK:Alpine stays"
+          ],
+          "events": [
+            "HOVER:Hover 14. Hover-only menu Dest@941",
+            "CLICK:Alpine stays@1913",
+            "CLICK:Alpine stays@2357"
+          ]
+        }
+      ]
+    },
+    "fx-iframe": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1499,
+      "median_decisions": 1,
+      "median_jev_ms": 1018,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1499,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 1018,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Inner frame action"
+          ],
+          "events": [
+            "CLICK:Inner frame action@1031",
+            "CLICK:Inner frame action@1499"
+          ]
+        }
+      ]
+    },
+    "fx-modal": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2686,
+      "median_decisions": 3,
+      "median_jev_ms": 1887,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2686,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1887,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Delete draft",
+            "CLICK:Confirm delete"
+          ],
+          "events": [
+            "CLICK:Delete draft@949",
+            "CLICK:Confirm delete@1950",
+            "DONE:Confirm delete@2686"
+          ]
+        }
+      ]
+    },
+    "fx-new-tab": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1415,
+      "median_decisions": 1,
+      "median_jev_ms": 924,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1415,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 924,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Open the help page in a new ta"
+          ],
+          "events": [
+            "CLICK:Open the help page in a new ta@954",
+            "CLICK:Open the help page in a new ta@1415"
+          ]
+        }
+      ]
+    },
+    "fx-disabled-redeem": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3507,
+      "median_decisions": 3,
+      "median_jev_ms": 1885,
+      "median_text_ms": 779,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3507,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1885,
+          "text_ms": 779,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "TYPE_TEXT:Invite code",
+            "CLICK:Redeem"
+          ],
+          "events": [
+            "TYPE_TEXT:Invite code@1743",
+            "CLICK:Redeem@2756",
+            "DONE:Redeem@3507"
+          ]
+        }
+      ]
+    },
+    "fx-range": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2669,
+      "median_decisions": 3,
+      "median_jev_ms": 1813,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2669,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1813,
+          "text_ms": 0,
+          "final_url": "file:///Users/pedro/Development/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Guests",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "CLICK:Guests@909",
+            "PRESS_ARROWRIGHT:Press arrowright@1900",
+            "DONE:Press arrowright@2669"
+          ]
+        }
+      ]
+    },
+    "tin-checkboxes": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1166,
+      "median_decisions": 1,
+      "median_jev_ms": 712,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1166,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 712,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/checkboxes",
+          "ops": [
+            "CLICK:checkbox"
+          ],
+          "events": [
+            "CLICK:checkbox@726",
+            "CLICK:checkbox@1166"
+          ]
+        }
+      ]
+    },
+    "tin-hovers": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1670,
+      "median_decisions": 2,
+      "median_jev_ms": 985,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1670,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 985,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/users/1",
+          "ops": [
+            "HOVER:Hover User Avatar name: user1 ",
+            "CLICK:View profile"
+          ],
+          "events": [
+            "HOVER:Hover User Avatar name: user1 @693",
+            "CLICK:View profile@1054",
+            "CLICK:View profile@1669"
+          ]
+        }
+      ]
+    },
+    "tin-file-upload": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4832,
+      "median_decisions": 4,
+      "median_jev_ms": 1476,
+      "median_text_ms": 938,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4832,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1476,
+          "text_ms": 938,
+          "final_url": "https://the-internet.herokuapp.com/upload",
+          "ops": [
+            "CLICK:Focus textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Upload"
+          ],
+          "events": [
+            "CLICK:Focus textbox@909",
+            "TYPE_TEXT:textbox@3219",
+            "CLICK:Upload@3595",
+            "DONE:Upload@4832"
+          ]
+        }
+      ]
+    },
+    "tin-key-press": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1340,
+      "median_decisions": 1,
+      "median_jev_ms": 851,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1340,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 851,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/key_presses",
+          "ops": [
+            "CLICK:Focus textbox"
+          ],
+          "events": [
+            "CLICK:Focus textbox@869",
+            "CLICK:Focus textbox@1340"
+          ]
+        }
+      ]
+    },
+    "sauce-checkout": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 13015,
+      "median_decisions": 25,
+      "median_jev_ms": 8506,
+      "median_text_ms": 3470,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 13015,
+          "steps": 25,
+          "decisions": 25,
+          "jev_ms": 8506,
+          "text_ms": 3470,
+          "final_url": "https://www.saucedemo.com/",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "CLICK:View details for Sauce Labs Ba",
+            "GO_BACK:Go back to the previous page",
+            "GO_BACK:Go back to the previous page",
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login (dom)",
+            "CLICK:Login",
+            "CLICK:Login",
+            "CLICK:Login",
+            "CLICK:Login"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@1684",
+            "TYPE_TEXT:Password@3201",
+            "CLICK:Login@3530",
+            "CLICK:View details for Sauce Labs Ba@3923",
+            "GO_BACK:Go back to the previous page@4283",
+            "CLICK:View details for Sauce Labs Ba@4633",
+            "GO_BACK:Go back to the previous page@4984",
+            "CLICK:View details for Sauce Labs Ba@5337",
+            "GO_BACK:Go back to the previous page@5683",
+            "CLICK:View details for Sauce Labs Ba@6042",
+            "GO_BACK:Go back to the previous page@6424",
+            "CLICK:View details for Sauce Labs Ba@6770",
+            "GO_BACK:Go back to the previous page@7119",
+            "CLICK:View details for Sauce Labs Ba@7486",
+            "GO_BACK:Go back to the previous page@7817",
+            "CLICK:View details for Sauce Labs Ba@8204",
+            "GO_BACK:Go back to the previous page@8577",
+            "GO_BACK:Go back to the previous page@8942",
+            "TYPE_TEXT:Username@10221",
+            "TYPE_TEXT:Password@11331",
+            "CLICK:Login@11640",
+            "CLICK:Login@12066",
+            "CLICK:Login@12364",
+            "CLICK:Login@12674",
+            "CLICK:Login@12998",
+            "CLICK:Login@13015"
+          ]
+        }
+      ]
+    },
+    "todomvc-add": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 10752,
+      "median_decisions": 14,
+      "median_jev_ms": 5392,
+      "median_text_ms": 4267,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 10752,
+          "steps": 19,
+          "decisions": 14,
+          "jev_ms": 5392,
+          "text_ms": 4267,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:Focus New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "HOVER:Hover buy milk Delete todo",
+            "CLICK:Delete todo",
+            "CLICK:Focus New Todo Input",
+            "CLICK:Focus New Todo Input",
+            "CLICK:Focus New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:Focus New Todo Input",
+            "CLICK:Focus New Todo Input",
+            "CLICK:Focus New Todo Input",
+            "CLICK:Focus New Todo Input"
+          ],
+          "events": [
+            "TYPE_TEXT:New Todo Input@1727",
+            "FOLLOW_UP:Press enter@1872",
+            "TYPE_TEXT:New Todo Input@3910",
+            "FOLLOW_UP:Press enter@3963",
+            "CLICK:Focus New Todo Input@4330",
+            "FOLLOW_UP:Press enter@4392",
+            "HOVER:Hover buy milk Delete todo@4759",
+            "CLICK:Delete todo@5098",
+            "CLICK:Focus New Todo Input@5441",
+            "CLICK:Focus New Todo Input@5825",
+            "CLICK:Focus New Todo Input@6214",
+            "FOLLOW_UP:Press enter@6240",
+            "TYPE_TEXT:New Todo Input@7691",
+            "TYPE_TEXT:New Todo Input@9202",
+            "FOLLOW_UP:Press enter@9246",
+            "CLICK:Focus New Todo Input@9641",
+            "CLICK:Focus New Todo Input@9988",
+            "CLICK:Focus New Todo Input@10339",
+            "CLICK:Focus New Todo Input@10722",
+            "CLICK:Focus New Todo Input@10752"
+          ]
+        }
+      ]
+    },
+    "tin-infinite-scroll": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3531,
+      "median_decisions": 7,
+      "median_jev_ms": 607,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3531,
+          "steps": 2,
+          "decisions": 7,
+          "jev_ms": 607,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/infinite_scroll",
+          "ops": [
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@1098",
+            "SCROLL_DOWN:Scroll down@2201",
+            "DONE:Scroll down@3531"
+          ]
+        }
+      ]
+    },
+    "tin-sortable": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2403,
+      "median_decisions": 5,
+      "median_jev_ms": 2135,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": true,
+          "elapsed_ms": 2403,
+          "steps": 5,
+          "decisions": 5,
+          "jev_ms": 2135,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/tables#edit",
+          "ops": [
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit"
+          ],
+          "events": [
+            "CLICK:edit@842",
+            "CLICK:edit@1219",
+            "CLICK:edit@1633",
+            "CLICK:edit@1964",
+            "CLICK:edit@2377",
+            "CLICK:edit@2403"
+          ]
+        }
+      ]
+    },
+    "tin-nested-frames": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3804,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": true,
+          "elapsed_ms": 3804,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/nested_frames",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1390",
+            "BLOCKED:Wait for the page to update@2423",
+            "BLOCKED:Wait for the page to update@3480",
+            "BLOCKED:Wait for the page to update@3804"
+          ]
+        }
+      ]
+    },
+    "tin-jquery-menu": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3741,
+      "median_decisions": 7,
+      "median_jev_ms": 1747,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3741,
+          "steps": 4,
+          "decisions": 7,
+          "jev_ms": 1747,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/jqueryui/menu#",
+          "ops": [
+            "HOVER:Hover button",
+            "CLICK:Downloads",
+            "CLICK:PDF",
+            "CLICK:Enabled"
+          ],
+          "events": [
+            "HOVER:Hover button@750",
+            "CLICK:Downloads@1474",
+            "CLICK:PDF@2214",
+            "CLICK:Enabled@3267",
+            "CLICK:Enabled@3741"
+          ]
+        }
+      ]
+    },
+    "tin-horizontal-slider": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2004,
+      "median_decisions": 3,
+      "median_jev_ms": 1420,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2004,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 1420,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/horizontal_slider",
+          "ops": [
+            "CLICK:slider",
+            "PRESS_ARROWRIGHT:Press arrowright",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "CLICK:slider@699",
+            "PRESS_ARROWRIGHT:Press arrowright@1019",
+            "PRESS_ARROWRIGHT:Press arrowright@1544",
+            "PRESS_ARROWRIGHT:Press arrowright@2003"
+          ]
+        }
+      ]
+    },
+    "tin-entry-ad": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1503,
+      "median_decisions": 2,
+      "median_jev_ms": 317,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1503,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 317,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/entry_ad",
+          "ops": [
+            "PRESS_ESCAPE:Press escape"
+          ],
+          "events": [
+            "PRESS_ESCAPE:Press escape@1039",
+            "PRESS_ESCAPE:Press escape@1503"
+          ]
+        }
+      ]
+    },
+    "tin-windows": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2243,
+      "median_decisions": 3,
+      "median_jev_ms": 734,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2243,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 734,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/windows/new",
+          "ops": [
+            "CLICK:Click Here"
+          ],
+          "events": [
+            "CLICK:Click Here@759",
+            "DONE:Click Here@2243"
+          ]
+        }
+      ]
+    },
+    "demoqa-autocomplete": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3319,
+      "median_decisions": 3,
+      "median_jev_ms": 318,
+      "median_text_ms": 1103,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3319,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 318,
+          "text_ms": 1103,
+          "final_url": "https://demoqa.com/auto-complete",
+          "ops": [
+            "TYPE_TEXT:combobox",
+            "FOLLOW_UP:Red Green"
+          ],
+          "events": [
+            "TYPE_TEXT:combobox@2454",
+            "FOLLOW_UP:Red Green@2522",
+            "DONE:Red Green@3319"
+          ]
+        }
+      ]
+    },
+    "jqueryui-datepicker": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2687,
+      "median_decisions": 3,
+      "median_jev_ms": 1294,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2687,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 1294,
+          "text_ms": 0,
+          "final_url": "https://jqueryui.com/datepicker/#default",
+          "ops": [
+            "CLICK:Default functionality",
+            "CLICK:Focus textbox"
+          ],
+          "events": [
+            "CLICK:Default functionality@1012",
+            "CLICK:Focus textbox@2198",
+            "CLICK:Focus textbox@2687"
+          ]
+        }
+      ]
+    },
+    "tin-shifting-content": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 1385,
+      "median_decisions": 1,
+      "median_jev_ms": 744,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": false,
+          "elapsed_ms": 1385,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 744,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/gallery/",
+          "ops": [
+            "CLICK:Gallery"
+          ],
+          "events": [
+            "CLICK:Gallery@767",
+            "CLICK:Gallery@1385"
+          ]
+        }
+      ]
+    },
+    "tin-challenging-dom": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1421,
+      "median_decisions": 1,
+      "median_jev_ms": 769,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1421,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 769,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/challenging_dom",
+          "ops": [
+            "CLICK:baz"
+          ],
+          "events": [
+            "CLICK:baz@793",
+            "CLICK:baz@1421"
+          ]
+        }
+      ]
+    },
+    "hn-paginate": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3974,
+      "median_decisions": 3,
+      "median_jev_ms": 842,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3974,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 842,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/?p=2",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:More"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1783",
+            "SCROLL_DOWN:Scroll down@2216",
+            "CLICK:More@2794",
+            "CLICK:More@3974"
+          ]
+        }
+      ]
+    },
+    "tin-redirector": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1508,
+      "median_decisions": 1,
+      "median_jev_ms": 726,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1508,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 726,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/status_codes",
+          "ops": [
+            "CLICK:here"
+          ],
+          "events": [
+            "CLICK:here@742",
+            "CLICK:here@1508"
+          ]
+        }
+      ]
+    },
+    "tin-notification": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1525,
+      "median_decisions": 1,
+      "median_jev_ms": 728,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1525,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 728,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/notification_message_rendered",
+          "ops": [
+            "CLICK:Click here"
+          ],
+          "events": [
+            "CLICK:Click here@749",
+            "CLICK:Click here@1525"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-content": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1373,
+      "median_decisions": 1,
+      "median_jev_ms": 716,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1373,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 716,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_content?with_content=static",
+          "ops": [
+            "CLICK:click here"
+          ],
+          "events": [
+            "CLICK:click here@736",
+            "CLICK:click here@1373"
+          ]
+        }
+      ]
+    },
+    "tin-slow": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1250,
+      "median_decisions": 1,
+      "median_jev_ms": 728,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1250,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 728,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/slow",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "WAIT:Wait for the page to update@838",
+            "WAIT:Wait for the page to update@1250"
+          ]
+        }
+      ]
+    },
+    "wikipedia-search-nav": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6658,
+      "median_decisions": 5,
+      "median_jev_ms": 750,
+      "median_text_ms": 1094,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6658,
+          "steps": 2,
+          "decisions": 5,
+          "jev_ms": 750,
+          "text_ms": 1094,
+          "final_url": "https://en.wikipedia.org/wiki/Turing_machine",
+          "ops": [
+            "TYPE_TEXT:Search Wikipedia",
+            "CLICK:Turing machine   Computation m"
+          ],
+          "events": [
+            "TYPE_TEXT:Search Wikipedia@3276",
+            "CLICK:Turing machine   Computation m@4342",
+            "DONE:Turing machine   Computation m@6658"
+          ]
+        }
+      ]
+    },
+    "lobsters-comments": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2789,
+      "median_decisions": 3,
+      "median_jev_ms": 941,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2789,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 941,
+          "text_ms": 0,
+          "final_url": "https://lobste.rs/s/lcjf7c/what_is_still_exciting_tech",
+          "ops": [
+            "CLICK:150 comments"
+          ],
+          "events": [
+            "CLICK:150 comments@993",
+            "DONE:150 comments@2789"
+          ]
+        }
+      ]
+    },
+    "crates-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4077,
+      "median_decisions": 4,
+      "median_jev_ms": 314,
+      "median_text_ms": 963,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4077,
+          "steps": 2,
+          "decisions": 4,
+          "jev_ms": 314,
+          "text_ms": 963,
+          "final_url": "https://crates.io/search?q=serde",
+          "ops": [
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search@2487",
+            "FOLLOW_UP:Press enter@2552",
+            "DONE:Press enter@4077"
+          ]
+        }
+      ]
+    },
+    "europa-consent": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1523,
+      "median_decisions": 2,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1523,
+          "steps": 0,
+          "decisions": 2,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://european-union.europa.eu/index_en",
+          "ops": [],
+          "events": [
+            "DONE:@1522"
+          ]
+        }
+      ]
+    },
+    "mdn-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4773,
+      "median_decisions": 4,
+      "median_jev_ms": 1407,
+      "median_text_ms": 982,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4773,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 1407,
+          "text_ms": 982,
+          "final_url": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API",
+          "ops": [
+            "CLICK:Search the site",
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "CLICK:Search the site@968",
+            "TYPE_TEXT:Search@2647",
+            "FOLLOW_UP:Press enter@2953",
+            "DONE:Press enter@4773"
+          ]
+        }
+      ]
+    },
+    "github-issues": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6212,
+      "median_decisions": 6,
+      "median_jev_ms": 437,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6212,
+          "steps": 1,
+          "decisions": 6,
+          "jev_ms": 437,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node/issues",
+          "ops": [
+            "CLICK:Issues \n           624"
+          ],
+          "events": [
+            "CLICK:Issues \n           624@1876",
+            "DONE:Issues \n           624@6212"
+          ]
+        }
+      ]
+    },
+    "flights-zurich-london": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 15554,
+      "median_decisions": 20,
+      "median_jev_ms": 4211,
+      "median_text_ms": 2198,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 15554,
+          "steps": 12,
+          "decisions": 20,
+          "jev_ms": 4211,
+          "text_ms": 2198,
+          "final_url": "https://www.google.com/travel/flights/search?tfs=CBwQAhooEgoyMDI2LTA5LTIwagwIAxIIL20vMDg5NjZyDAgDEggvbS8wNGpwbEABSAFwAYIBCwj___________8BmAEC&hl=en",
+          "ops": [
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:One way",
+            "TYPE_TEXT:Where from?",
+            "CLICK:Zürich, Switzerland",
+            "TYPE_TEXT:Where to? ",
+            "FOLLOW_UP:London, United Kingdom",
+            "CLICK:Focus Departure",
+            "CLICK:Sunday, September 20, 2026 ???",
+            "CLICK:Done. Search for one-way fligh",
+            "CLICK:Search",
+            "CLICK:Reload",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Change ticket type. Round trip@952",
+            "CLICK:One way@1467",
+            "TYPE_TEXT:Where from?@3607",
+            "CLICK:Zürich, Switzerland@4536",
+            "TYPE_TEXT:Where to? @6900",
+            "FOLLOW_UP:London, United Kingdom@7168",
+            "CLICK:Focus Departure@8230",
+            "CLICK:Sunday, September 20, 2026 ???@9306",
+            "CLICK:Done. Search for one-way fligh@9868",
+            "CLICK:Search@11482",
+            "CLICK:Reload@12772",
+            "WAIT:Wait for the page to update@13260",
+            "DONE:Wait for the page to update@15554"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 171712
+}

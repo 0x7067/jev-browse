@@ -1,0 +1,207 @@
+{
+  "label": "realworld-v1",
+  "started": "2026-09-19T02:34:49.925Z",
+  "tasks": {
+    "wikipedia-search-nav": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 7892,
+      "median_decisions": 6,
+      "median_jev_ms": 1013,
+      "median_text_ms": 1294,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 7892,
+          "steps": 2,
+          "decisions": 6,
+          "jev_ms": 1013,
+          "text_ms": 1294,
+          "final_url": "https://en.wikipedia.org/wiki/Turing_machine",
+          "ops": [
+            "TYPE_TEXT:Search Wikipedia",
+            "CLICK:Turing machine   Computation m"
+          ],
+          "events": [
+            "TYPE_TEXT:@2413",
+            "TYPE_TEXT:@2450",
+            "TYPE_TEXT:@2530",
+            "TYPE_TEXT:@2950",
+            "TYPE_TEXT:Search Wikipedia@4383",
+            "TYPE_TEXT:Search Wikipedia@4471",
+            "TYPE_TEXT:Search Wikipedia@4558",
+            "TYPE_TEXT:Search Wikipedia@4596",
+            "CLICK:Search Wikipedia@4990",
+            "CLICK:Search Wikipedia@5019",
+            "CLICK:Search Wikipedia@5066",
+            "CLICK:Search Wikipedia@6006",
+            "CLICK:Turing machine   Computation m@6023",
+            "CLICK:Turing machine   Computation m@6365",
+            "CLICK:Turing machine   Computation m@6398",
+            "CLICK:Turing machine   Computation m@6416",
+            "DONE:Turing machine   Computation m@6773",
+            "DONE:Turing machine   Computation m@6839",
+            "DONE:Turing machine   Computation m@6904",
+            "DONE:Turing machine   Computation m@7330",
+            "DONE:Turing machine   Computation m@7892"
+          ]
+        }
+      ]
+    },
+    "reddit-comments": {
+      "runs": 1,
+      "verified": 0,
+      "median_ms": 3751,
+      "median_decisions": 4,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "elapsed_ms": 3751,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://old.reddit.com/login/?reason=lor2&dest=https%3A%2F%2Fold.reddit.com%2F",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:@761",
+            "BLOCKED:Wait for the page to update@1471",
+            "BLOCKED:Wait for the page to update@1780",
+            "BLOCKED:Wait for the page to update@2506",
+            "BLOCKED:Wait for the page to update@2778",
+            "BLOCKED:Wait for the page to update@3482",
+            "BLOCKED:Wait for the page to update@3749",
+            "BLOCKED:Wait for the page to update@3751"
+          ]
+        }
+      ]
+    },
+    "crates-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3197,
+      "median_decisions": 4,
+      "median_jev_ms": 369,
+      "median_text_ms": 803,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3197,
+          "steps": 2,
+          "decisions": 4,
+          "jev_ms": 369,
+          "text_ms": 803,
+          "final_url": "https://crates.io/search?q=serde",
+          "ops": [
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "BLOCKED:@696",
+            "BLOCKED:@703",
+            "BLOCKED:@710",
+            "TYPE_TEXT:@1085",
+            "TYPE_TEXT:Search@1912",
+            "TYPE_TEXT:Search@1952",
+            "TYPE_TEXT:Search@1958",
+            "TYPE_TEXT:Press enter@1972",
+            "TYPE_TEXT:Press enter@2038",
+            "DONE:Press enter@2320",
+            "DONE:Press enter@2368",
+            "DONE:Press enter@2375",
+            "DONE:Press enter@2697",
+            "DONE:Press enter@3197"
+          ]
+        }
+      ]
+    },
+    "europa-consent": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2641,
+      "median_decisions": 3,
+      "median_jev_ms": 389,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2641,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 389,
+          "text_ms": 0,
+          "final_url": "https://european-union.europa.eu/index_en",
+          "ops": [
+            "CLICK:Accept only essential cookies"
+          ],
+          "events": [
+            "DONE:@1177",
+            "DONE:@1221",
+            "DONE:@1250",
+            "CLICK:@1655",
+            "CLICK:@1675",
+            "CLICK:@1708",
+            "CLICK:@2154",
+            "CLICK:Accept only essential cookies@2165",
+            "CLICK:Accept only essential cookies@2212",
+            "CLICK:Accept only essential cookies@2641"
+          ]
+        }
+      ]
+    },
+    "mdn-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5515,
+      "median_decisions": 5,
+      "median_jev_ms": 1916,
+      "median_text_ms": 1228,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5515,
+          "steps": 3,
+          "decisions": 5,
+          "jev_ms": 1916,
+          "text_ms": 1228,
+          "final_url": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API",
+          "ops": [
+            "CLICK:Search the site",
+            "TYPE_TEXT:Search",
+            "CLICK:Web APIs \n                    "
+          ],
+          "events": [
+            "undefined:@50",
+            "undefined:@71",
+            "CLICK:@1361",
+            "CLICK:Search the site@1419",
+            "CLICK:Search the site@1516",
+            "TYPE_TEXT:Search the site@1924",
+            "TYPE_TEXT:Search@3225",
+            "TYPE_TEXT:Search@3449",
+            "CLICK:Search@3776",
+            "CLICK:Web APIs \n                    @3790",
+            "CLICK:Web APIs \n                    @4121",
+            "DONE:Web APIs \n                    @4571",
+            "DONE:Web APIs \n                    @4607",
+            "DONE:Web APIs \n                    @4661",
+            "DONE:Web APIs \n                    @5010",
+            "DONE:Web APIs \n                    @5515"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 22996
+}

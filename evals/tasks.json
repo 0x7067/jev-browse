@@ -241,6 +241,36 @@
     "expect": {}
   },
   {
+    "id": "wikipedia-search-nav",
+    "url": "https://en.wikipedia.org/",
+    "goal": "Search Wikipedia for \"Turing machine\", open the article, then stop on the article page.",
+    "expect": { "url_match": "wiki/Turing" }
+  },
+  {
+    "id": "lobsters-comments",
+    "url": "https://lobste.rs/",
+    "goal": "Open the comments page of the top story and stop.",
+    "expect": { "url_match": "lobste.rs/s/" }
+  },
+  {
+    "id": "crates-search",
+    "url": "https://crates.io/",
+    "goal": "Search crates.io for \"serde\" and stop on the results page.",
+    "expect": { "url_match": "q=serde|search" }
+  },
+  {
+    "id": "europa-consent",
+    "url": "https://european-union.europa.eu/",
+    "goal": "Dismiss the cookie consent banner if one appears, then stop.",
+    "expect": {}
+  },
+  {
+    "id": "mdn-search",
+    "url": "https://developer.mozilla.org/",
+    "goal": "Search MDN for \"fetch api\" and stop when results or the article shows.",
+    "expect": {}
+  },
+  {
     "id": "github-issues",
     "url": "https://github.com/nodejs/node",
     "goal": "Open the Issues tab of this repository.",

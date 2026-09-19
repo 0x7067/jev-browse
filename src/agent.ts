@@ -99,6 +99,8 @@ export class Agent {
     decision: Decision;
   } | null = null;
   private settleEntry: HistoryEntry | null = null;
+  private stuckRetried = false;
+  private lastOperation: string | null = null;
   private phase: Phase = "observe";
   private startedAt = 0;
   private maxSteps: number;
@@ -189,6 +191,7 @@ export class Agent {
         const resolved = this.resolveFollowUp(fu);
 
         if (resolved) {
+          this.lastOperation = "FOLLOW_UP";
           this.decision = {
             choice: resolved,
             operation: "FOLLOW_UP",
@@ -210,8 +213,16 @@ export class Agent {
       }
     }
 
-    this.decision = await choose(this.client, this.page, this.goal, this.history);
+    // A fuse asked for one repair consult: say it plainly. The history
+    // already shows the failed pattern; the model needs the nudge to try a
+    // different approach instead of repeating it once more.
+    const goal = this.stuckRetried
+      ? `${this.goal}\n\nYour recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.`
+      : this.goal;
+
+    this.decision = await choose(this.client, this.page, goal, this.history);
     this.decisions.push(this.decision);
+    this.lastOperation = this.decision.operation;
     this.phase = "act";
   }
 
@@ -281,6 +292,10 @@ export class Agent {
       // Bounded by earlyWaits; mutating retries stay forbidden.
       if (selected === "BLOCKED" && this.earlyWaits < 3) {
         this.earlyWaits++;
+        // A give-up claim is a stuck signal too — the re-decide carries the
+        // repair hint so it tries a different approach instead of repeating
+        // the same claim.
+        this.stuckRetried = true;
         const entry = this.waitEntry("Wait for the page to update", page);
         await sleep(700);
         this.page = await this.browser.observe();
@@ -469,14 +484,23 @@ export class Agent {
 
     const seen = trail.filter((f) => f === this.page.fingerprint).length;
 
-    this.phase =
+    const fused =
       (repeated.length === 3 &&
         repeated.every((h) => h.page_changed === false && h.kind !== "wait")) ||
       idleMs >= 10_000 ||
       seen >= 4 ||
-      this.cycling()
-        ? "blocked"
-        : "decide";
+      this.cycling();
+
+    if (!fused) {
+      this.stuckRetried = false;
+      this.phase = "decide";
+    } else if (!this.stuckRetried) {
+      // Repair before verdict: one consult with the stuck signal spelled out.
+      this.stuckRetried = true;
+      this.phase = "decide";
+    } else {
+      this.phase = "blocked";
+    }
   }
 
   /** True when the recent fingerprint trail is a short cycle repeated whole. */
@@ -520,6 +544,8 @@ export class Agent {
   }
 
   async run(onEvent?: (event: { type: string; [k: string]: JsonValue }) => void): Promise<RunResult> {
+    let emitted = 0;
+
     while (
       this.phase !== "done" &&
       this.phase !== "blocked" &&
@@ -550,17 +576,22 @@ export class Agent {
         }
       }
 
-      const last = this.history[this.history.length - 1];
-      onEvent?.({
-        type: "step",
-        status: this.status,
-        phase: this.phase,
-        elapsed_ms: this.elapsed(),
-        action: last?.action,
-        kind: last?.kind,
-        operation: this.decisions[this.decisions.length - 1]?.operation,
-        url: this.page.url,
-      });
+      // One event per recorded action (or terminal transition) — phase
+      // boundaries without a new entry are loop internals, not steps.
+      if (this.history.length !== emitted || this.status !== "ready") {
+        emitted = this.history.length;
+        const last = this.history[this.history.length - 1];
+        onEvent?.({
+          type: "step",
+          status: this.status,
+          phase: this.phase,
+          elapsed_ms: this.elapsed(),
+          action: last?.action,
+          kind: last?.kind,
+          operation: this.lastOperation,
+          url: this.page.url,
+        });
+      }
     }
 
     return {

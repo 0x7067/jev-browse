@@ -4,7 +4,7 @@
  * atomic snapshots, semantic freshness guards.
  */
 
-import { spawn, type ChildProcess } from "node:child_process";
+import { execSync, spawn, type ChildProcess } from "node:child_process";
 import { homedir, platform } from "node:os";
 import { join } from "node:path";
 
@@ -63,6 +63,30 @@ const KEYS: ReadonlyMap<string, KeyEventParams> = new Map(
 /** Input types typed via real key events — insertText cannot drive them. */
 const KEY_TYPED_INPUTS = new Set(["date", "time", "datetime-local", "month", "week"]);
 
+/** Kill Chrome instances still bound to our profile dir. True when any were reaped. */
+function reapProfileChrome(profileDir: string): boolean {
+  try {
+    const out = execSync(`pgrep -f "user-data-dir=${profileDir}"`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+
+    const pids = out.trim().split(/\s+/).filter(Boolean);
+
+    for (const pid of pids) {
+      try {
+        process.kill(Number(pid), "SIGKILL");
+      } catch {
+        /* already gone */
+      }
+    }
+
+    return pids.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export interface CdpOptions {
   /** Attach to an existing debug endpoint (http://host:port) instead of launching. */
   cdpUrl?: string;
@@ -77,6 +101,7 @@ export class CdpBrowser implements BrowserDriver {
   private session!: string;
   private target!: string;
   private proc: ChildProcess | null = null;
+  private launchProfileDir: string | null = null;
   private afterInput: ObservedAction | null = null;
   private seen = new Set<string>();
   private adopted: string[] = [];
@@ -108,6 +133,7 @@ export class CdpBrowser implements BrowserDriver {
       else args.push("--window-size=1120,900", "--window-position=40,40");
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
       browser.proc.on("error", () => {});
+      browser.launchProfileDir = profileDir;
     }
 
     try {
@@ -128,7 +154,27 @@ export class CdpBrowser implements BrowserDriver {
 
         wsUrl = info.webSocketDebuggerUrl;
       } else {
-        wsUrl = await browserWsUrl(port!);
+        try {
+          wsUrl = await browserWsUrl(port!);
+        } catch (error) {
+          // A crashed predecessor can hold the profile dir hostage: Chrome's
+          // SingletonLock makes the new process defer to the stale instance
+          // and no CDP port ever appears. Reap ours, then retry the launch
+          // once on a fresh port.
+          if (!browser.launchProfileDir || !reapProfileChrome(browser.launchProfileDir)) {
+            throw error;
+          }
+
+          port = await freePort();
+
+          const args2 = browser.proc!.spawnargs.map((a) =>
+            a.startsWith("--remote-debugging-port=") ? `--remote-debugging-port=${port}` : a,
+          );
+
+          browser.proc = spawn(args2[0], args2.slice(1), { stdio: "ignore" });
+          browser.proc.on("error", () => {});
+          wsUrl = await browserWsUrl(port);
+        }
       }
 
       browser.socket = await CdpSocket.connect(wsUrl);
