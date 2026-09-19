@@ -1,0 +1,68 @@
+evals/results/verify-a-hovermenu-1789792937641.json
+  s_0503a55d84ed51::t_256ad66e41f73f 1-37
+evals/results/repair-check-1789793701964.json
+  s_0503a55d84ed51::t_3634065cb460cb 1-164
+evals/results/repair-check-1789794886906.json
+  s_0503a55d84ed51::t_b780a693b74745 1-47
+src/snapshot.js
+  s_0503a55d84ed51::t_c6e348f877b251 59,63-68,76,82,112-115,154-159,161-167,202-205,242
+  s_0503a55d84ed51::t_d0852b7b45f3d0 69-75,77-81,238-240
+evals/results/repair-check-1789794616151.json
+  s_0503a55d84ed51::t_d0852b7b45f3d0 1-97
+evals/results/verify-a-1789792886114.json
+  s_0503a55d84ed51::t_3b6578e8389f09 1-379
+evals/results/repair-check-1789794945634.json
+  s_0503a55d84ed51::t_b780a693b74745 1-123
+evals/results/verify-b-retry-1789793047032.json
+  s_0503a55d84ed51::t_256ad66e41f73f 1-239
+evals/results/repair-check-1789793928832.json
+  s_0503a55d84ed51::t_8d11622ff47e8e 1-90
+evals/results/verify-b-1789792920709.json
+  s_0503a55d84ed51::t_256ad66e41f73f 1-494
+src/types.ts
+  s_0503a55d84ed51::t_c6e348f877b251 45-46
+evals/results/repair-check-1789793470698.json
+  s_0503a55d84ed51::t_3634065cb460cb 1-62
+src/cdp/browser.ts
+  s_0503a55d84ed51::t_c6e348f877b251 75-78,138-139,236-239,462,483-499
+  s_0503a55d84ed51::t_d0852b7b45f3d0 745-757
+  s_0503a55d84ed51::t_f8573a7971097b 500-501
+evals/results/repair-check-1789794812372.json
+  s_0503a55d84ed51::t_b780a693b74745 1-98
+src/model/decide.ts
+  s_0503a55d84ed51::t_b780a693b74745 172-173,197-205
+  s_0503a55d84ed51::t_c6e348f877b251 12,124,164,179-186,189,194-196,207-208,288-291,294,298,309
+src/agent.ts
+  s_0503a55d84ed51::t_b780a693b74745 418-424,554-563
+  s_0503a55d84ed51::t_d0852b7b45f3d0 709
+  s_0503a55d84ed51::t_c6e348f877b251 189,368-386,692-694,696-708
+evals/results/verify-b-retry2-1789793208194.json
+  s_0503a55d84ed51::t_256ad66e41f73f 1-116
+evals/results/repair-check-1789794466933.json
+  s_0503a55d84ed51::t_d0852b7b45f3d0 1-35
+evals/results/repair-check-1789794720398.json
+  s_0503a55d84ed51::t_b780a693b74745 1-317
+evals/results/repair-check-1789794413036.json
+  s_0503a55d84ed51::t_d0852b7b45f3d0 1-99
+src/model/space.ts
+  s_0503a55d84ed51::t_d0852b7b45f3d0 116
+  s_0503a55d84ed51::t_c6e348f877b251 112-115,117-118
+evals/results/repair-check-1789794636902.json
+  s_0503a55d84ed51::t_d0852b7b45f3d0 1-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8c3182a3c26d979f1123b77288fdcc58286a9fd9",
+  "prompts": {},
+  "sessions": {
+    "s_0503a55d84ed51": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0b69a-d05f-7247-bf8a-be3bd59f7de7",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
