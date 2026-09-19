@@ -2,6 +2,9 @@
 
 // src/mcp.ts
 import { createInterface } from "node:readline";
+import { readFileSync as readFileSync4 } from "node:fs";
+import { fileURLToPath as fileURLToPath4 } from "node:url";
+import { join as join6 } from "node:path";
 
 // src/cli.ts
 import { mkdirSync, readFileSync as readFileSync3, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -2451,6 +2454,16 @@ if (invokedAsScript) await main();
 
 // src/mcp.ts
 var PROTOCOL_VERSION = "2024-11-05";
+var PKG_VERSION = (() => {
+  try {
+    const pkg = JSON.parse(
+      readFileSync4(join6(fileURLToPath4(new URL("..", import.meta.url)), "package.json"), "utf8")
+    );
+    return isString(pkg.version) ? pkg.version : "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+})();
 var ALLOWED_ARGS = /* @__PURE__ */ new Set(["goal", "url", "engine", "max_steps"]);
 var TOOL = {
   name: "jev_browse",
@@ -2536,7 +2549,7 @@ async function handle(request) {
       respond(id, {
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
-        serverInfo: { name: "jev-browse", version: "0.1.0" }
+        serverInfo: { name: "jev-browse", version: PKG_VERSION }
       });
       return;
     case "notifications/initialized":

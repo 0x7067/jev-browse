@@ -52,6 +52,7 @@ function parseArgs(argv) {
       case "--repeat": args.repeat = Number(val()); break;
       case "--label": args.label = val(); break;
       case "--tasks": args.tasks = val().split(","); break;
+      case "--engine": args.engine = val(); break;
       case "--compare": args.compare = [val(), val()]; i++; break;
       default: throw new Error(`Unknown argument: ${argv[i]}`);
     }
@@ -79,7 +80,7 @@ function verify(task, result) {
   return true;
 }
 
-function runOnce(task, env) {
+function runOnce(task, env, engine) {
   return new Promise((resolvePromise) => {
     const url = task.file_url ? `file://${join(ROOT, task.url)}` : task.url;
     const childEnv = task.file_url ? { ...env, JEV_ALLOW_FILE_URLS: "1" } : env;
@@ -90,6 +91,7 @@ function runOnce(task, env) {
         join(ROOT, "src", "cli.ts"),
         "--url", url,
         "--goal", task.goal,
+        ...(engine ? ["--engine", engine] : []),
         ...(task.file_url ? ["--allow-file-urls"] : []),
       ],
       { cwd: ROOT, env: childEnv },
@@ -191,7 +193,7 @@ async function main() {
     const runs = [];
 
     for (let i = 0; i < args.repeat; i++) {
-      const r = await runOnce(task, env);
+      const r = await runOnce(task, env, args.engine);
       runs.push(r);
       console.log(
         `${task.id.padEnd(24)} run ${i + 1}/${args.repeat}  ${String(r.status).padEnd(8)} verified:${r.verified ? "yes" : "NO "} ${String(r.elapsed_ms).padStart(6)}ms  steps:${r.steps} decisions:${r.decisions} jev:${r.jev_ms}ms txt:${r.text_ms}ms${r.error ? `  err:${r.error.slice(0, 80)}` : ""}`,

@@ -12,6 +12,9 @@
  */
 
 import { createInterface } from "node:readline";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 import { runOnce } from "./cli.ts";
 import { loadDotEnv } from "./env.ts";
@@ -29,6 +32,18 @@ interface JsonRpcRequest {
 }
 
 const PROTOCOL_VERSION = "2024-11-05";
+
+const PKG_VERSION = (() => {
+  try {
+    const pkg = JSON.parse(
+      readFileSync(join(fileURLToPath(new URL("..", import.meta.url)), "package.json"), "utf8"),
+    );
+
+    return isString(pkg.version) ? pkg.version : "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+})();
 
 const ALLOWED_ARGS = new Set(["goal", "url", "engine", "max_steps"]);
 
@@ -142,7 +157,7 @@ async function handle(request: JsonRpcRequest): Promise<void> {
       respond(id, {
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
-        serverInfo: { name: "jev-browse", version: "0.1.0" },
+        serverInfo: { name: "jev-browse", version: PKG_VERSION },
       });
 
       return;
