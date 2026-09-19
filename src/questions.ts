@@ -18,8 +18,10 @@ to reach the requested value. HOVER reveals hover-only menus before they can be 
 GO_BACK/GO_FORWARD navigate history. If an action opened a new tab, continue there.
 Content the goal names but the table doesn't show is usually behind a HOVER target or
 below the fold — try revealing actions before concluding the task is impossible.
-DONE requires visible evidence that ALL requirements are satisfied. If asked to open a result,
-a matching link is not enough. BLOCKED means no supported operation can make progress.`;
+DONE requires visible evidence that ALL requirements are satisfied on the CURRENT page, not
+on a page you intend to reach. A link or tab named after the destination is not the
+destination — if asked to open a result or section, a matching link is not enough; click it
+and confirm what loaded. BLOCKED means no supported operation can make progress.`;
 
 export const TARGET = `Choose the best observed target if the next operation is the one specified in this question.
 Use the user's entire goal, field values, nearby text, and recent actions. This question chooses only
