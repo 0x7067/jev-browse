@@ -3,7 +3,7 @@
 import { mkdtempSync } from "node:fs"; import { tmpdir } from "node:os"; import { join } from "node:path";
 import { CdpBrowser } from "../../src/cdp/browser.ts";
 process.env.JEV_ALLOW_FILE_URLS="1";
-const URL="file://"+new URL("../../fixture-interactions.html", import.meta.url).pathname;
+const FIXTURE_URL="file://"+new URL("../../fixture-interactions.html", import.meta.url).pathname;
 type Step = { find: RegExp; kind?: string; text?: string; press?: string; expect?: RegExp; name: string };
 const scenarios: Step[][] = [
  [{name:"shadow", find:/Shadow action/i, expect:/DONE\(shadow\)/}],
@@ -21,7 +21,7 @@ const scenarios: Step[][] = [
 ];
 for (const sc of scenarios) {
   process.env.JEV_PROFILE = mkdtempSync(join(tmpdir(),"jev-mach-"));
-  const b = await CdpBrowser.open(URL,{}); const t0=performance.now(); let log:string[]=[];
+  const b = await CdpBrowser.open(FIXTURE_URL,{}); const t0=performance.now(); let log:string[]=[];
   try {
     let page = await b.observe();
     for (const st of sc) {

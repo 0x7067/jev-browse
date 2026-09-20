@@ -27,6 +27,43 @@ import { MAX_STEPS } from "./questions.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** Bounds for the first-observation settle (see settleFirstObservation). */
+const FIRST_SETTLE_MS = 1500;
+
+const FIRST_SETTLE_POLL_MS = 150;
+
+/** The page offers something to read or something to operate — anything past
+ *  the baseline scroll/wait/press/back/forward controls is element-backed. */
+function hasContent(page: PageState): boolean {
+  return Boolean(page.text.trim()) || page.actions.some((a) => a.node !== undefined);
+}
+
+/** An SPA can commit its document before painting anything: the first snapshot
+ *  then carries no text and no controls, and the first decision is spent on a
+ *  WAIT. Re-observe until content appears or the network goes quiet, bounded
+ *  so a genuinely empty page costs no more than FIRST_SETTLE_MS. Pages that
+ *  already have content return untouched. */
+async function settleFirstObservation(
+  browser: BrowserDriver,
+  page: PageState,
+): Promise<PageState> {
+  if (hasContent(page)) return page;
+  const deadline = performance.now() + FIRST_SETTLE_MS;
+  let latest = page;
+
+  while (performance.now() < deadline) {
+    await sleep(FIRST_SETTLE_POLL_MS);
+    latest = await browser.observe();
+
+    if (hasContent(latest)) break;
+
+    // Nothing in flight and still nothing rendered — waiting buys nothing.
+    if (!latest.pending_requests && !latest.pending_nav) break;
+  }
+
+  return latest;
+}
+
 /** True when `needle` occurs in `haystack` starting at a word boundary —
  *  "pari" matches "Paris, France" but "art" does not match "Start". */
 function atWordBoundary(haystack: string, needle: string): boolean {
@@ -126,6 +163,7 @@ export class Agent {
   private staleStreak = 0;
   private lastOperation: string | null = null;
   private phase: Phase = "observe";
+  private terminalError: string | null = null;
   private startedAt = 0;
   private maxSteps: number;
   private client = makeClient();
@@ -148,7 +186,7 @@ export class Agent {
     agent.browser = await agent.openDriver(opts.url);
 
     try {
-      agent.page = await agent.browser.observe();
+      agent.page = await settleFirstObservation(agent.browser, await agent.browser.observe());
     } catch (error) {
       await agent.browser.close();
       throw error;
@@ -776,8 +814,41 @@ export class Agent {
     return entry;
   }
 
+  /** A page nothing can be done on: a Chrome error page, or a bot wall that
+   *  offers no control to solve it. A challenge with a checkbox or button is
+   *  still worth attempting, so only the empty case short-circuits. */
+  private deadPageReason(page: PageState): string | null {
+    if (page.actions.some((a) => a.node !== undefined)) return null;
+
+    if (page.url.startsWith("chrome-error://")) {
+      return `Browser error page: ${page.title || page.url}`;
+    }
+
+    if (page.challenge) return "Bot challenge with no solvable controls";
+
+    return null;
+  }
+
   async run(onEvent?: (event: { type: string; [k: string]: JsonValue }) => void): Promise<RunResult> {
     let emitted = 0;
+
+    if (!this.startedAt) this.startedAt = performance.now();
+    // Nothing to read and nothing to click — spend no decisions on it.
+    const dead = this.deadPageReason(this.page);
+
+    if (dead) {
+      this.phase = "blocked";
+      this.terminalError = dead;
+      onEvent?.({
+        type: "step",
+        status: this.status,
+        phase: this.phase,
+        elapsed_ms: this.elapsed(),
+        operation: "BLOCKED",
+        reason: dead,
+        url: this.page.url,
+      });
+    }
 
     while (
       this.phase !== "done" &&
@@ -856,7 +927,7 @@ export class Agent {
     // can outlive the last observation (SPA URL commits land after the DONE
     // stability window). One final read so final_url/final_text describe the
     // page the run actually ended on.
-    if (this.status !== "ready") {
+    if (this.status !== "ready" && !this.terminalError) {
       try {
         // SPA commits can land a beat after the DONE confirm window — re-read
         // until url/title settle, bounded so reporting never hangs.
@@ -906,6 +977,8 @@ export class Agent {
     };
 
     if (answer !== undefined) result.answer = answer;
+
+    if (this.terminalError) result.error = this.terminalError;
 
     if (this.page.downloads?.length) result.downloads = this.page.downloads;
 

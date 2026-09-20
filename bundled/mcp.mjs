@@ -1158,6 +1158,23 @@ var StalePage = class extends Error {
 
 // src/agent.ts
 var sleep3 = (ms) => new Promise((r) => setTimeout(r, ms));
+var FIRST_SETTLE_MS = 1500;
+var FIRST_SETTLE_POLL_MS = 150;
+function hasContent(page) {
+  return Boolean(page.text.trim()) || page.actions.some((a) => a.node !== void 0);
+}
+async function settleFirstObservation(browser, page) {
+  if (hasContent(page)) return page;
+  const deadline = performance.now() + FIRST_SETTLE_MS;
+  let latest = page;
+  while (performance.now() < deadline) {
+    await sleep3(FIRST_SETTLE_POLL_MS);
+    latest = await browser.observe();
+    if (hasContent(latest)) break;
+    if (!latest.pending_requests && !latest.pending_nav) break;
+  }
+  return latest;
+}
 function atWordBoundary(haystack, needle) {
   let i = haystack.indexOf(needle);
   while (i !== -1) {
@@ -1189,6 +1206,7 @@ var Agent = class _Agent {
   staleStreak = 0;
   lastOperation = null;
   phase = "observe";
+  terminalError = null;
   startedAt = 0;
   maxSteps;
   client = makeClient();
@@ -1207,7 +1225,7 @@ var Agent = class _Agent {
     const agent = new _Agent(opts);
     agent.browser = await agent.openDriver(opts.url);
     try {
-      agent.page = await agent.browser.observe();
+      agent.page = await settleFirstObservation(agent.browser, await agent.browser.observe());
     } catch (error) {
       await agent.browser.close();
       throw error;
@@ -1598,8 +1616,34 @@ ${repair}` : this.goal;
     this.staleStreak = 0;
     return entry;
   }
+  /** A page nothing can be done on: a Chrome error page, or a bot wall that
+   *  offers no control to solve it. A challenge with a checkbox or button is
+   *  still worth attempting, so only the empty case short-circuits. */
+  deadPageReason(page) {
+    if (page.actions.some((a) => a.node !== void 0)) return null;
+    if (page.url.startsWith("chrome-error://")) {
+      return `Browser error page: ${page.title || page.url}`;
+    }
+    if (page.challenge) return "Bot challenge with no solvable controls";
+    return null;
+  }
   async run(onEvent) {
     let emitted = 0;
+    if (!this.startedAt) this.startedAt = performance.now();
+    const dead = this.deadPageReason(this.page);
+    if (dead) {
+      this.phase = "blocked";
+      this.terminalError = dead;
+      onEvent?.({
+        type: "step",
+        status: this.status,
+        phase: this.phase,
+        elapsed_ms: this.elapsed(),
+        operation: "BLOCKED",
+        reason: dead,
+        url: this.page.url
+      });
+    }
     while (this.phase !== "done" && this.phase !== "blocked" && this.phase !== "error") {
       try {
         switch (this.phase) {
@@ -1659,7 +1703,7 @@ ${repair}` : this.goal;
         });
       }
     }
-    if (this.status !== "ready") {
+    if (this.status !== "ready" && !this.terminalError) {
       try {
         for (let i = 0; i < 8; i++) {
           const latest = await this.browser.observe();
@@ -1691,6 +1735,7 @@ ${repair}` : this.goal;
       final_text: this.page.text
     };
     if (answer !== void 0) result.answer = answer;
+    if (this.terminalError) result.error = this.terminalError;
     if (this.page.downloads?.length) result.downloads = this.page.downloads;
     return result;
   }
