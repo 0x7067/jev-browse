@@ -1,0 +1,32 @@
+evals/tasks-hard.json
+  s_7b579ac2781e1c::t_65e0d82aaf8368 150-152,154
+evals/tasks-harder.json
+  s_7b579ac2781e1c::t_b6949735a373ae 159-161,163
+src/model/text.ts
+  s_7b579ac2781e1c::t_d3d847e555eba4 151,153
+AGENTS.md
+  s_7b579ac2781e1c::t_46734b196d123d 1-12,17-40
+  s_7b579ac2781e1c::t_3d8ba24bd3c6e7 13-16
+fixture-interactions.html
+  s_7b579ac2781e1c::t_0cafe3a000a1a0 103-106
+bundled/cli.mjs
+  s_7b579ac2781e1c::t_71902256f9eefe 503-504
+bundled/mcp.mjs
+  s_7b579ac2781e1c::t_71902256f9eefe 509-510
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "62e61f7a92dc786d5811d07d5c8e01961cd3ca8e",
+  "prompts": {},
+  "sessions": {
+    "s_7b579ac2781e1c": {
+      "agent_id": {
+        "tool": "windsurf",
+        "id": "reinvented-lunch",
+        "model": "unknown"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
