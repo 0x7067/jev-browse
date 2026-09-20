@@ -200,14 +200,15 @@ export class Agent {
       this.followUp = null;
 
       if (fu.type === "DONE") {
-        await this.confirmDone(this.page);
-
+        // The consult is a cheap decision; the stability window is not.
+        // Ask first, so a claim that gets re-decided never pays the window.
         if (this.prematureDone()) {
           this.phase = "decide";
 
           return;
         }
 
+        await this.confirmDone(this.page);
         this.phase = "done";
 
         return;
@@ -380,11 +381,16 @@ export class Agent {
       if (selected === "BLOCKED" && this.earlyWaits < 3 && !this.probeConsulted) {
         this.earlyWaits++;
         const entry = this.waitEntry("Wait for the page to update", page);
-        const deadline = Date.now() + 10_000;
+        const started = Date.now();
+        // Patience scales with evidence of work: a page with requests in
+        // flight earns the full window; an idle page earns a shorter one.
+        let deadline = started + 4_000;
 
         for (;;) {
           await sleep(800);
           this.page = await this.browser.observe();
+
+          if ((this.page.pending_requests ?? 0) > 0) deadline = started + 10_000;
 
           const changed = this.page.fingerprint !== page.fingerprint;
 
@@ -419,13 +425,13 @@ export class Agent {
       }
 
       if (selected === "DONE") {
-        await this.confirmDone(page);
-
         if (this.prematureDone()) {
           this.phase = "decide";
 
           return;
         }
+
+        await this.confirmDone(page);
       }
 
       this.phase = selected === "DONE" ? "done" : "blocked";
