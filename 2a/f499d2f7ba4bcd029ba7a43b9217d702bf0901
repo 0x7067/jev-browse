@@ -1,0 +1,44 @@
+src/snapshot.js
+  s_7b579ac2781e1c::t_a9542c47d09ac8 383-426
+  s_7b579ac2781e1c::t_e9b802ac760da3 382
+src/types.ts
+  s_7b579ac2781e1c::t_42e12b4ca8dbe3 98-100
+README.md
+  s_7b579ac2781e1c::t_ea00b0a80ed98a 235-237
+  s_7b579ac2781e1c::t_b2c4d3bdd8f895 146,148-154
+bundled/snapshot.js
+  s_7b579ac2781e1c::t_f2bc893d64f580 382-425
+  s_7b579ac2781e1c::t_280ca106505c1f 426
+src/cdp/browser.ts
+  s_7b579ac2781e1c::t_1bb9d7c3edfe43 101
+  s_7b579ac2781e1c::t_806800e58138ed 218-228,230-232
+  s_7b579ac2781e1c::t_5c0a39a6a0d1de 97-100,102-134
+bundled/cli.mjs
+  s_7b579ac2781e1c::t_f2bc893d64f580 69-70,1890-1917,1976-1983
+src/agent.ts
+  s_7b579ac2781e1c::t_bcea543440cd1b 368-370
+package.json
+  s_7b579ac2781e1c::t_22865beda1ee87 25
+src/json.ts
+  s_7b579ac2781e1c::t_65d65df8242212 42-46,57-60,62,66-67
+.env.example
+  s_7b579ac2781e1c::t_e8aa7e6ca3a653 8-10
+bundled/mcp.mjs
+  s_7b579ac2781e1c::t_f2bc893d64f580 75-76,1896-1923,1982-1989
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2af499d2f7ba4bcd029ba7a43b9217d702bf0901",
+  "prompts": {},
+  "sessions": {
+    "s_7b579ac2781e1c": {
+      "agent_id": {
+        "tool": "windsurf",
+        "id": "reinvented-lunch",
+        "model": "unknown"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
