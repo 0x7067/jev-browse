@@ -16,6 +16,8 @@ export default defineConfig({
 		"bundled/**",
 		"dist/**",
 		"tools/oxlint/anti-slop/**",
+		// One-off evidence scripts from the 2026-09-20 capability audit; see docs/HANDOFF-2026-09-20.md.
+		"scripts/probes/**",
 	],
 	jsPlugins: [{ name: "anti-slop", specifier: "./tools/oxlint/anti-slop/index.ts" }],
 	rules: {
