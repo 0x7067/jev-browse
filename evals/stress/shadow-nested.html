@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Nested shadow</title></head>
+<body style="font-family:system-ui"><h1>Shadow inside shadow, with a form</h1><div id="host"></div><div id="out"></div>
+<script>
+const s1=host.attachShadow({mode:'open'});s1.innerHTML='<div id="inner"></div>';
+const s2=s1.getElementById('inner').attachShadow({mode:'open'});
+s2.innerHTML='<label>Coupon <input id="coupon" placeholder="Coupon code"></label><button id="apply">Apply coupon</button>';
+s2.getElementById('apply').onclick=()=>{const v=s2.getElementById('coupon').value;out.textContent=v?'DONE: coupon '+v+' applied':'Enter a code';};
+</script></body></html>

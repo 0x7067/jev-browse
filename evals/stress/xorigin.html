@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Cross-origin iframe</title></head>
+<body style="font-family:system-ui"><h1>Cross-origin iframe (opaque by design)</h1>
+<p>The frame below is served from localhost, a different origin from 127.0.0.1.</p>
+<iframe id="x" style="width:500px;height:200px;border:1px solid #999"></iframe>
+<script>x.src=location.href.replace('127.0.0.1','localhost').replace(/xorigin\.html$/,'nested-l3.html');</script>
+</body></html>

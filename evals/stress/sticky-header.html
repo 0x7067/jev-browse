@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Sticky header</title>
+<style>header{position:sticky;top:0;height:120px;background:#333;color:#fff;padding:8px}section{height:300px;border-bottom:1px solid #ccc;padding:8px}</style></head>
+<body style="font-family:system-ui;margin:0"><header>Tall sticky header</header>
+<section>Section 1</section><section>Section 2</section><section>Section 3</section>
+<section><button id="target">Request quote</button></section>
+<section>Section 5</section><section>Section 6</section>
+<div id="out" style="position:fixed;bottom:0;left:0;background:#dfd;padding:4px"></div>
+<script>target.onclick=()=>out.textContent='DONE: quote requested';</script>
+</body></html>

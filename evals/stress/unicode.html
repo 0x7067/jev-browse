@@ -1,0 +1,6 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>Unicode</title></head>
+<body style="font-family:system-ui"><h1>多言語フォーム · نموذج متعدد اللغات</h1>
+<label>お名前 <input id="nm" placeholder="お名前を入力"></label> <button id="ok">送信する</button>
+<p dir="rtl"><button id="ar">إرسال</button></p><div id="out"></div>
+<script>ok.onclick=()=>out.textContent=nm.value?'DONE: '+nm.value+' 送信済み':'名前が必要です';ar.onclick=()=>out.textContent='DONE: عربي';</script>
+</body></html>

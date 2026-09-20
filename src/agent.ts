@@ -333,14 +333,14 @@ export class Agent {
       const deadline = Date.now() + 2500;
 
       while (Date.now() < deadline && this.browser.pendingNav?.()) {
-        if (!(await this.browser.fresh(page))) {
+        if (!(await this.browser.fresh(page, undefined, "structure"))) {
           throw new StalePage("Navigation committed while confirming DONE. Choose again.");
         }
 
         await sleep(120);
       }
 
-      if (!(await this.browser.fresh(page))) {
+      if (!(await this.browser.fresh(page, undefined, "structure"))) {
         throw new StalePage("Page changed while confirming DONE. Choose again.");
       }
     }
@@ -349,7 +349,7 @@ export class Agent {
 
     await sleep(window_);
 
-    if (!(await this.browser.fresh(page))) {
+    if (!(await this.browser.fresh(page, undefined, "structure"))) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }
   }
@@ -364,7 +364,10 @@ export class Agent {
     const selected = decision.choice;
 
     if (selected === "DONE" || selected === "BLOCKED") {
-      if (!(await this.browser.fresh(page))) {
+      // A claim is about the page's state, not its text stream: a clock or
+      // ticker must not turn every DONE into a stale storm. Structure-level
+      // freshness still catches navigations and content swaps.
+      if (!(await this.browser.fresh(page, undefined, "structure"))) {
         throw new StalePage("Page changed since the decision. Choose again.");
       }
 
@@ -372,7 +375,9 @@ export class Agent {
       // page moves (recovery — re-decide) or the patience a WAIT-loop would
       // buy expires (accept the claim). Bounded by earlyWaits; mutating
       // retries stay forbidden.
-      if (selected === "BLOCKED" && this.earlyWaits < 3) {
+      // One full patience window per stuck episode: a claim repeated after
+      // the repair consult, with nothing having moved, is accepted as is.
+      if (selected === "BLOCKED" && this.earlyWaits < 3 && !this.probeConsulted) {
         this.earlyWaits++;
         const entry = this.waitEntry("Wait for the page to update", page);
         const deadline = Date.now() + 10_000;
@@ -464,7 +469,9 @@ export class Agent {
     let helper: { model: string; latency_ms: number; usage?: unknown } | null = null;
 
     if (action.kind === "fill") {
-      if (!(await this.browser.fresh(page))) {
+      // Same document and field state is what the helper's context needs;
+      // ambient text churn is not a reason to re-decide.
+      if (!(await this.browser.fresh(page, undefined, "page"))) {
         throw new StalePage("Page changed before text generation. Choose again.");
       }
 
@@ -790,7 +797,7 @@ export class Agent {
       decisions: this.decisions.length,
       elapsed_ms: this.elapsed(),
       history: this.history,
-      final_text: this.page.text.slice(0, 2000),
+      final_text: this.page.text,
     };
   }
 

@@ -95,8 +95,13 @@ export interface BrowserDriver {
   observe(): Promise<PageState>;
   /** Is `page` still the live document? With an action, compare only its guard.
    *  level "page" compares just the document key (for actions that don't care
-   *  about text churn); "full" (default) includes text and scroll. */
-  fresh(page: PageState, action?: ObservedAction, level?: "full" | "page"): Promise<boolean>;
+   *  about text churn); "structure" adds title and the offered-control set but
+   *  still ignores text churn; "full" (default) includes text and scroll. */
+  fresh(
+    page: PageState,
+    action?: ObservedAction,
+    level?: "full" | "page" | "structure",
+  ): Promise<boolean>;
   /** Execute an observed action. Must re-check freshness before input. */
   act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
   /** In-page event synthesis, used when trusted input delivers nothing. */

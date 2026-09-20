@@ -1,0 +1,1017 @@
+[
+  {
+    "id": "fx-select",
+    "url": "/fixture-interactions.html",
+    "goal": "Set the Region select to Alpine. Stop when the page confirms region=Alpine.",
+    "script": [
+      {
+        "op": "SELECT",
+        "target": "Region",
+        "option": "Alpine",
+        "until": "DONE: region=Alpine"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: region=Alpine"
+    }
+  },
+  {
+    "id": "fx-radio-check",
+    "url": "/fixture-interactions.html",
+    "goal": "Choose party size Crew and subscribe to the tide report. Stop when both confirmations show.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "^Crew$",
+        "until": "DONE: crew selected"
+      },
+      {
+        "op": "CLICK",
+        "target": "Subscribe to the tide report",
+        "until": "DONE: subscribed"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: crew selected[\\s\\S]*DONE: subscribed"
+    }
+  },
+  {
+    "id": "fx-textarea-submit",
+    "url": "/fixture-interactions.html",
+    "goal": "Type 'Bring towels' in the note box and post it. Stop when the note is confirmed.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Leave a note",
+        "text": "Bring towels",
+        "until": {
+          "value": [
+            "^Leave a note",
+            "Bring towels"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "Post note",
+        "until": "DONE: Bring towels"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: Bring towels"
+    }
+  },
+  {
+    "id": "fx-autocomplete-followup",
+    "url": "/fixture-interactions.html",
+    "goal": "Type 'Lis' into the city field and pick Lisbon from the suggestions. Stop when Lisbon is confirmed.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Type a city",
+        "text": "Lis",
+        "follow_up": "CLICK_MATCH_TYPED",
+        "until": {
+          "value": [
+            "^Type a city",
+            "Lis"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "^Lisbon$",
+        "until": "DONE: Lisbon"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: Lisbon",
+      "action_match": "FOLLOW_UP"
+    }
+  },
+  {
+    "id": "fx-date",
+    "url": "/fixture-interactions.html",
+    "goal": "Set arrival to 2026-10-05. Stop when the date is confirmed.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Arrival",
+        "text": "2026-10-05",
+        "until": "DONE: 2026-10-05"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: 2026-10-05"
+    }
+  },
+  {
+    "id": "fx-modal",
+    "url": "/fixture-interactions.html",
+    "goal": "Delete the draft and confirm in the dialog. Stop when the draft is deleted.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "^Delete draft$",
+        "until": "Really delete the draft"
+      },
+      {
+        "op": "CLICK",
+        "target": "Confirm delete",
+        "until": "DONE: draft deleted"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: draft deleted"
+    }
+  },
+  {
+    "id": "fx-tabs-details",
+    "url": "/fixture-interactions.html",
+    "goal": "Open the Amenities tab and expand House rules. Stop when amenities and rules are visible.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "^Amenities$",
+        "until": "DONE: amenities"
+      },
+      {
+        "op": "CLICK",
+        "target": "House rules",
+        "until": "DONE: rules expanded"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: amenities[\\s\\S]*DONE: rules expanded"
+    }
+  },
+  {
+    "id": "fx-disabled-redeem",
+    "url": "/fixture-interactions.html",
+    "goal": "Enter invite code TIDE42 and redeem it. Stop when the code is redeemed.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Invite code",
+        "text": "TIDE42",
+        "until": {
+          "value": [
+            "^Invite code",
+            "TIDE42"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "^Redeem$",
+        "until": "DONE: code redeemed"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: code redeemed"
+    }
+  },
+  {
+    "id": "fx-iframe",
+    "url": "/fixture-interactions.html",
+    "goal": "Click the button inside the iframe. Stop when the frame click is confirmed.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Inner frame action",
+        "until": "DONE\\(frame\\)"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE\\(frame\\)"
+    }
+  },
+  {
+    "id": "fx-shadow",
+    "url": "/fixture-interactions.html",
+    "goal": "Click the shadow DOM button. Stop when the shadow click is confirmed.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Shadow action",
+        "until": "DONE\\(shadow\\)"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE\\(shadow\\)"
+    }
+  },
+  {
+    "id": "fx-hover-menu",
+    "url": "/fixture-interactions.html",
+    "goal": "Hover the destinations menu and pick Alpine stays. Stop when alpine is picked.",
+    "script": [
+      {
+        "op": "HOVER",
+        "target": "Destinations menu",
+        "until": [
+          {
+            "element": "^Alpine stays$"
+          },
+          "DONE: alpine picked"
+        ],
+        "missing": "WAIT"
+      },
+      {
+        "op": "CLICK",
+        "target": "Alpine stays",
+        "until": "DONE: alpine picked"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: alpine picked"
+    }
+  },
+  {
+    "id": "fx-range",
+    "url": "/fixture-interactions.html",
+    "goal": "Set Guests to 6 using the slider. Stop when guests=6 is confirmed.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "^Guests$",
+        "until": {
+          "acted": "^Guests$"
+        }
+      },
+      {
+        "op": "PRESS_ARROWRIGHT",
+        "until": "DONE: guests=[6-8]"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: guests=[6-8]"
+    }
+  },
+  {
+    "id": "fx-palette-enter",
+    "url": "/fixture-interactions.html",
+    "goal": "Type 'deploy' into the palette and press Enter. Stop when deploy is confirmed.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Type then press Enter",
+        "text": "deploy",
+        "follow_up": "PRESS_ENTER",
+        "until": {
+          "value": [
+            "^Type then press Enter",
+            "deploy"
+          ]
+        }
+      },
+      {
+        "op": "PRESS_ENTER",
+        "until": "DONE: deploy"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: deploy"
+    }
+  },
+  {
+    "id": "fx-contenteditable",
+    "url": "/fixture-interactions.html",
+    "goal": "Write 'hello crew' in the message composer and send it. Stop when the note is sent.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "Message composer",
+        "text": "hello crew",
+        "until": {
+          "value": [
+            "Message composer",
+            "hello crew"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "Send note",
+        "until": "DONE: hello crew"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: hello crew"
+    }
+  },
+  {
+    "id": "fx-drag",
+    "url": "/fixture-interactions.html",
+    "goal": "Drag the postcard onto the drop zone. Stop when the drop is confirmed.",
+    "script": [
+      {
+        "op": "DRAG",
+        "source": "Postcard",
+        "target": "Drop zone",
+        "until": "DONE: postcard dropped"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: postcard dropped"
+    }
+  },
+  {
+    "id": "fx-context",
+    "url": "/fixture-interactions.html",
+    "goal": "Right-click the tile. Stop when the context menu is confirmed.",
+    "script": [
+      {
+        "op": "CONTEXT_CLICK",
+        "target": "Right-click this tile",
+        "until": "DONE: context menu opened"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: context menu opened"
+    }
+  },
+  {
+    "id": "fx-new-tab",
+    "url": "/fixture-interactions.html",
+    "goal": "Open the help page in a new tab. Stop when the help page is visible.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Open the help page in a new tab",
+        "until": "DONE: help visible"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: help visible"
+    }
+  },
+  {
+    "id": "big-dom",
+    "url": "/big-dom.html",
+    "goal": "Press Item 3777. Stop when item 3777 is confirmed.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "^Item 3777$",
+        "until": "DONE: item 3777",
+        "missing": "SCROLL_DOWN"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: item 3777"
+    },
+    "max_steps": 200
+  },
+  {
+    "id": "slow-ajax",
+    "url": "/slow-ajax.html",
+    "goal": "Load the report, then approve it. Stop when the report is approved.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Load report",
+        "until": "Report ready"
+      },
+      {
+        "op": "CLICK",
+        "target": "Approve report",
+        "until": "DONE: report approved"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: report approved"
+    }
+  },
+  {
+    "id": "late-render",
+    "url": "/late-render.html",
+    "goal": "Start the countdown, then claim the reward. Stop when the reward is claimed.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Start countdown",
+        "until": "Preparing|Claim reward|DONE"
+      },
+      {
+        "op": "CLICK",
+        "target": "Claim reward",
+        "until": "DONE: reward claimed"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: reward claimed"
+    }
+  },
+  {
+    "id": "spa-router",
+    "url": "/spa-router.html",
+    "goal": "Go to Products, open Widget, add it to the cart. Stop when the cart shows the widget.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "^Products$",
+        "until": "^Products$|Widget|Cart"
+      },
+      {
+        "op": "CLICK",
+        "target": "^Widget$",
+        "until": "Add widget to cart|DONE"
+      },
+      {
+        "op": "CLICK",
+        "target": "Add widget to cart",
+        "until": "DONE: widget in cart"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: widget in cart",
+      "url_match": "#/cart"
+    }
+  },
+  {
+    "id": "nested-iframes",
+    "url": "/nested-iframes.html",
+    "goal": "Click the deep action button three iframes down. Stop when the deep click is confirmed.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Deep action",
+        "until": "DONE: deep button clicked"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: deep button clicked"
+    }
+  },
+  {
+    "id": "shadow-nested",
+    "url": "/shadow-nested.html",
+    "goal": "Enter coupon SAVE10 and apply it. Stop when the coupon is applied.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "Coupon",
+        "text": "SAVE10",
+        "until": {
+          "value": [
+            "Coupon",
+            "SAVE10"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "Apply coupon",
+        "until": "DONE: coupon SAVE10 applied"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: coupon SAVE10 applied"
+    }
+  },
+  {
+    "id": "mutating",
+    "url": "/mutating.html",
+    "goal": "Subscribe to alerts. Stop when subscribed.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Subscribe to alerts",
+        "until": "DONE: subscribed to alerts"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: subscribed to alerts"
+    }
+  },
+  {
+    "id": "rerender",
+    "url": "/rerender.html",
+    "goal": "Search for kayak and add the Sea kayak. Stop when the kayak is added.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "Search things",
+        "text": "kayak",
+        "until": {
+          "value": [
+            "Search things",
+            "kayak"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "^Search$",
+        "until": "Add Sea kayak|DONE"
+      },
+      {
+        "op": "CLICK",
+        "target": "Add Sea kayak",
+        "until": "DONE: kayak added"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: kayak added"
+    }
+  },
+  {
+    "id": "overlay",
+    "url": "/overlay.html",
+    "goal": "Accept cookies, then start the free trial. Stop when the trial has started.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Accept all",
+        "until": "^(?![\\s\\S]*We use cookies)"
+      },
+      {
+        "op": "CLICK",
+        "target": "Start free trial",
+        "until": "DONE: trial started"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: trial started"
+    }
+  },
+  {
+    "id": "overlay-click-through",
+    "url": "/overlay.html",
+    "goal": "Start the free trial directly. Stop when the trial has started.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Start free trial",
+        "until": "DONE: trial started",
+        "missing": "WAIT"
+      }
+    ],
+    "expect": {
+      "status": "blocked"
+    },
+    "max_steps": 12,
+    "note": "The CTA sits under a full-screen overlay. A covered click must not be reported as executed; the honest outcome is blocked."
+  },
+  {
+    "id": "form-multi",
+    "url": "/form-multi.html",
+    "goal": "Book for Ana Silva, ana@example.com, phone 555-0100, 3 guests, Deluxe room, arrival 2026-11-02, accept terms, note 'late arrival', then submit. Stop when submitted.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Full name",
+        "text": "Ana Silva",
+        "until": {
+          "value": [
+            "^Full name",
+            "Ana Silva"
+          ]
+        }
+      },
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Email",
+        "text": "ana@example.com",
+        "until": {
+          "value": [
+            "^Email",
+            "ana@example.com"
+          ]
+        }
+      },
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Phone",
+        "text": "555-0100",
+        "until": {
+          "value": [
+            "^Phone",
+            "555-0100"
+          ]
+        }
+      },
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Guests",
+        "text": "3",
+        "until": {
+          "value": [
+            "^Guests",
+            "^3$"
+          ]
+        }
+      },
+      {
+        "op": "SELECT",
+        "target": "^Room",
+        "option": "Deluxe",
+        "until": {
+          "value": [
+            "^Room",
+            "Deluxe"
+          ]
+        }
+      },
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Arrival",
+        "text": "2026-11-02",
+        "until": {
+          "value": [
+            "^Arrival",
+            "2026-11-02"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "I accept the terms",
+        "until": {
+          "checked": [
+            "I accept the terms",
+            "true"
+          ]
+        },
+        "missing": "WAIT"
+      },
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Notes",
+        "text": "late arrival",
+        "until": {
+          "value": [
+            "^Notes",
+            "late arrival"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "Book now",
+        "until": "DONE: submitted"
+      }
+    ],
+    "expect": {
+      "text_match": "name=Ana Silva[\\s\\S]*email=ana@example.com[\\s\\S]*phone=555-0100[\\s\\S]*guests=3[\\s\\S]*room=dlx[\\s\\S]*arrival=2026-11-02[\\s\\S]*terms=yes[\\s\\S]*notes=late arrival[\\s\\S]*DONE: submitted"
+    },
+    "done_when": "DONE: submitted"
+  },
+  {
+    "id": "infinite-scroll",
+    "url": "/infinite-scroll.html",
+    "goal": "Scroll the feed until the rare post appears and open it. Stop when the rare post is open.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Open rare post",
+        "until": "DONE: rare post opened",
+        "missing": "SCROLL_DOWN"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: rare post opened"
+    },
+    "max_steps": 40
+  },
+  {
+    "id": "dialogs",
+    "url": "/dialogs.html",
+    "goal": "Delete the account and accept the confirmations. Stop when the account is deleted.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Delete account",
+        "until": "DONE: account deleted"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: account deleted"
+    }
+  },
+  {
+    "id": "keyboard-list",
+    "url": "/keyboard-list.html",
+    "goal": "Focus the Fruits listbox, move down to Cherry with the arrow keys, and press Enter. Stop when Cherry is chosen.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Fruits",
+        "until": {
+          "acted": "Fruits"
+        }
+      },
+      {
+        "op": "PRESS_ARROWDOWN",
+        "until": {
+          "acted_count": [
+            "Press arrowdown",
+            2
+          ]
+        }
+      },
+      {
+        "op": "PRESS_ENTER",
+        "until": "DONE: chose"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: chose Cherry"
+    }
+  },
+  {
+    "id": "new-tab-real-url",
+    "url": "/new-tab.html",
+    "goal": "Open help in a new tab, then open the FAQ. Stop when the FAQ is visible.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Open help in a new tab",
+        "until": "DONE: help visible|DONE: faq"
+      },
+      {
+        "op": "CLICK",
+        "target": "^FAQ$",
+        "until": "DONE: faq visible"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: faq visible",
+      "url_match": "/help/faq$"
+    }
+  },
+  {
+    "id": "unicode",
+    "url": "/unicode.html",
+    "goal": "Enter 山田太郎 as the name and submit. Stop when the submission is confirmed.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "お名前",
+        "text": "山田太郎",
+        "until": {
+          "value": [
+            "お名前",
+            "山田太郎"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "送信する",
+        "until": "DONE: 山田太郎"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: 山田太郎 送信済み"
+    }
+  },
+  {
+    "id": "huge-text",
+    "url": "/huge-text.html",
+    "goal": "Scroll to the bottom and agree to the terms. Stop when agreed.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "I agree to the terms",
+        "until": "DONE: agreed",
+        "missing": "PRESS_END"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: agreed"
+    }
+  },
+  {
+    "id": "delayed-enable",
+    "url": "/delayed-enable.html",
+    "goal": "Enter promo code SUMMER and apply it once the button enables. Stop when the promo is applied.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Promo$",
+        "text": "SUMMER",
+        "until": {
+          "value": [
+            "^Promo$",
+            "SUMMER"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "Apply promo",
+        "until": "DONE: promo SUMMER"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: promo SUMMER"
+    }
+  },
+  {
+    "id": "redirect-chain",
+    "url": "/redirect/3",
+    "goal": "Follow the redirect chain and continue to the final page. Stop when the final page is reached.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Continue to the final page",
+        "until": "DONE: final page reached"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: final page reached",
+      "url_match": "/redirect-final$"
+    }
+  },
+  {
+    "id": "login-flow",
+    "url": "/login",
+    "goal": "Sign in as alice with password s3cret, open Reports, export as PDF. Stop when the export is queued.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Username",
+        "text": "alice",
+        "until": [
+          {
+            "value": [
+              "^Username",
+              "alice"
+            ]
+          },
+          {
+            "url": "/dashboard|/reports|/export"
+          }
+        ]
+      },
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Password",
+        "text": "s3cret",
+        "until": [
+          {
+            "value": [
+              "^Password",
+              "s3cret"
+            ]
+          },
+          {
+            "url": "/dashboard|/reports|/export"
+          }
+        ]
+      },
+      {
+        "op": "CLICK",
+        "target": "^Sign in$",
+        "until": "Welcome, alice|Reports|DONE"
+      },
+      {
+        "op": "CLICK",
+        "target": "^Reports$",
+        "until": "DONE: reports page|DONE: export"
+      },
+      {
+        "op": "SELECT",
+        "target": "^Format",
+        "option": "PDF",
+        "until": {
+          "value": [
+            "^Format",
+            "PDF"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "^Export$",
+        "until": "DONE: export PDF"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: export PDF",
+      "url_match": "/export$"
+    },
+    "done_when": "DONE: export PDF"
+  },
+  {
+    "id": "slow-navigation",
+    "url": "/slow-page?ms=4000",
+    "goal": "Wait for the slow page. Stop when it has loaded.",
+    "script": [],
+    "expect": {
+      "text_match": "DONE: slow page loaded"
+    }
+  },
+  {
+    "id": "back-nav",
+    "url": "/help",
+    "goal": "Open the FAQ, then go back to the help center. Stop when the help center is visible again.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "^FAQ$",
+        "until": {
+          "acted": "^FAQ$"
+        }
+      },
+      {
+        "op": "GO_BACK",
+        "until": {
+          "acted": "Go back"
+        }
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: help visible",
+      "url_match": "/help$"
+    }
+  },
+  {
+    "id": "xorigin-honest",
+    "url": "/xorigin.html",
+    "goal": "Click the Deep action button inside the frame. Stop when it is confirmed.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Deep action",
+        "until": "DONE",
+        "missing": "BLOCKED"
+      }
+    ],
+    "expect": {
+      "status": "blocked"
+    },
+    "max_steps": 8,
+    "note": "Cross-origin frames are opaque; the honest outcome is blocked, quickly."
+  },
+  {
+    "id": "debounce-search",
+    "url": "/debounce-search.html",
+    "goal": "Search for 'trail' and pick Trail pack. Stop when it is picked.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "Search products",
+        "text": "trail",
+        "until": {
+          "value": [
+            "Search products",
+            "trail"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "^Trail pack$",
+        "until": "DONE: picked Trail pack"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: picked Trail pack"
+    }
+  },
+  {
+    "id": "upload",
+    "url": "/upload.html",
+    "goal": "Attach the file /home/user/jev-browse/LICENSE and send it. Stop when the upload is confirmed.",
+    "script": [
+      {
+        "op": "TYPE_TEXT",
+        "target": "^Attachment",
+        "text": "/home/user/jev-browse/LICENSE",
+        "until": {
+          "value": [
+            "^Attachment",
+            "LICENSE"
+          ]
+        }
+      },
+      {
+        "op": "CLICK",
+        "target": "Send attachment",
+        "until": "DONE: uploaded LICENSE"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: uploaded LICENSE"
+    }
+  },
+  {
+    "id": "sticky-header",
+    "url": "/sticky-header.html",
+    "goal": "Request a quote. Stop when the quote is requested.",
+    "script": [
+      {
+        "op": "CLICK",
+        "target": "Request quote",
+        "until": "DONE: quote requested",
+        "missing": "SCROLL_DOWN"
+      }
+    ],
+    "expect": {
+      "text_match": "DONE: quote requested"
+    }
+  }
+]

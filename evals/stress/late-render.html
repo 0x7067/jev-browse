@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Late render</title></head>
+<body style="font-family:system-ui"><h1>Late render (timer only, no network)</h1>
+<button id="start">Start countdown</button><div id="box">Idle</div>
+<script>
+start.onclick=()=>{box.textContent='Preparing…';setTimeout(()=>{box.innerHTML='<button id="claim">Claim reward</button>';claim.onclick=()=>box.textContent='DONE: reward claimed';},4500);};
+</script></body></html>

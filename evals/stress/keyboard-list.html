@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Keyboard listbox</title>
+<style>[aria-selected=true]{background:#cde}</style></head>
+<body style="font-family:system-ui"><h1>Arrow-key listbox</h1>
+<ul id="lb" role="listbox" tabindex="0" aria-label="Fruits"><li role="option" aria-selected="true">Apple</li><li role="option">Banana</li><li role="option">Cherry</li><li role="option">Date</li></ul><div id="out"></div>
+<script>
+const items=[...lb.children];let i=0;
+lb.onkeydown=e=>{if(e.key==='ArrowDown')i=Math.min(items.length-1,i+1);else if(e.key==='ArrowUp')i=Math.max(0,i-1);else if(e.key==='Enter'){out.textContent='DONE: chose '+items[i].textContent;return;}else return;items.forEach((el,k)=>el.setAttribute('aria-selected',k===i));e.preventDefault();};
+</script></body></html>

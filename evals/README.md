@@ -33,6 +33,95 @@ key presses, AJAX waits, disabled-until-input controls, modals, new tabs,
 range sliders, and a full Google Flights flow. `fixture-interactions.html`
 runs through `file_url` tasks for deterministic coverage.
 
+## Machinery stress suite (no API keys)
+
+`node scripts/stress.mjs` runs `stress.json` through the real CLI against a
+local site (`scripts/stress/site.mjs`) and a scripted stand-in for both model
+endpoints (`scripts/stress/mock-model.mjs`). The decision path in `src/` is
+untouched; only `TYPESAFE_BASE_URL` and `TEXT_MODEL_BASE_URL` point at the
+mock. Every task carries a step script the mock resolves statelessly against
+the observed state, so what the suite measures is the browser driver, the
+snapshot extractor, the freshness guards, the fuses, and the loop — not the
+model. `--latency 800` adds a simulated model round-trip so stale windows
+open the way they do in production.
+
+```bash
+npm run stress                                # 43 tasks, one run each
+node scripts/stress.mjs --latency 800         # with simulated model latency
+node scripts/stress.mjs --repeat 3 --parallel 4
+node scripts/stress.mjs --tasks big-dom,rerender --label probe
+node scripts/stress.mjs --cli bundled         # exercise the committed bundle
+node scripts/stress/probe.mjs URL "label regex" "field regex:text" @scroll_down
+```
+
+Task classes: every `fixture-interactions.html` section, a 4000-control grid,
+slow XHR, timer-only late render, hash-router SPA, three-deep same-origin
+iframes, shadow-in-shadow forms, a 150 ms text ticker, a 300 ms virtual-DOM
+re-render that recreates every node, a full-screen consent overlay (dismiss,
+and click-through must report `blocked`), a nine-field server-side form,
+infinite scroll, native `confirm`/`alert`, arrow-key listbox, a real-URL
+new tab, CJK/RTL labels, a 4000-clause page, a button that enables after a
+server check, a 302 chain, a cookie-session login flow, a 4 s server-held
+navigation, history back, a cross-origin iframe (must report `blocked`
+fast), a 600 ms debounced search, file upload, and a sticky header.
+
+### Results
+
+Run `2026-09-20`, headless Chromium 1194, 43 tasks. "Before" is the same
+harness on the previous `src/`; six of its eleven failures were harness
+scripts, not the agent, and are marked so.
+
+| | before | after, 0 ms | after, 800 ms latency | 3× repeat, 4 parallel |
+| --- | --- | --- | --- | --- |
+| verified | 28 / 39 | 43 / 43 | 43 / 43 | 129 / 129 |
+| median total | 110.7 s | 67.4 s | 211.0 s | — |
+| suite wall (3 workers) | 49.6 s | 39.0 s | 84.1 s | 85.0 s |
+
+Results: `baseline-1789872308343.json`, `final0-1789873404443.json`,
+`final800-1789873492724.json`, `repeat3-1789873631813.json`.
+
+### What the suite found and what changed
+
+| Symptom (task) | Root cause | Fix |
+| --- | --- | --- |
+| Chrome never exposes CDP as root (every task, containers/CI) | Chrome refuses to start as uid 0 without `--no-sandbox` | flag added when `getuid()===0`; `JEV_CHROME_ARGS` for operator flags |
+| clicks on the autocomplete suggestion did nothing (fx-autocomplete) | the `#sugg` container had an `onclick` delegation handler, so it was indexed as a button named "Lisbon" ahead of the real button; the click landed beside it | delegation containers with offered interactive descendants are no longer offered themselves |
+| TYPE_TEXT and CLICK stale forever in shadow-in-shadow (shadow-nested) | `document.elementFromPoint` stops at the outer host; the covered check saw a stranger | hit test descends open shadow roots; e's own host chain counts as uncovered |
+| DONE claim → 8 stale cycles → `blocked` on a page with a clock (mutating) | claim freshness compared the full marker, text included | DONE/BLOCKED use `structure` freshness: identity, URL, title, controls, form state — never text |
+| same on a 300 ms virtual-DOM re-render (rerender) | node ids churn; the page key and marker embed them; the fill path re-checked the full marker | page key and structure compare by meaning, not node id; `cache.node()` re-resolves a swapped node by root+role+name once; pre-fill check is page-level |
+| click guard fails after ~150 ms next to a ticker | guard included the scope's `innerText` | guard is identity, semantics, rounded rect |
+| scroll steps cost ~1 s each; the first wheel after launch is dropped (big-dom, infinite-scroll) | headless Chrome acks a `mouseWheel` only after ~1 s; smooth scrolling added ~750 ms | programmatic `scrollBy` on the inner scroller under the probe points (overflow panes, same-origin iframes), else the window; `--disable-smooth-scrolling` |
+| 30 model calls per 3.5 s XHR (slow-ajax), 40 per 4.5 s timer (late-render) | WAIT slept 100 ms and returned | WAIT polls up to 1.5 s and returns on marker change or network idle: 6 and 5 decisions |
+| honest BLOCKED took 21 s on a static page (xorigin) | two 10 s probes per stuck episode | one full probe; a claim repeated after the repair consult is accepted |
+| confirmation at the DOM tail invisible on long pages (huge-text) | text budget kept the first 6000 chars | over budget: 4500 head + 1500 tail |
+| verifier could not see the tail | `RunResult.final_text` was capped at 2000 chars | full page text |
+
+Mock-script failures in the "before" column (fixed in `stress.json`, not in
+`src/`): fx-hover-menu, form-multi, delayed-enable, login-flow, huge-text's
+verifier, and big-dom's off-screen confirmation.
+
+### Machinery costs measured (0 ms mock latency)
+
+- Chrome launch to first observation: ~600 ms on a small page, ~1.2 s on
+  the 4000-control grid.
+- One decision cycle (observe, guard, act, settle): 60–120 ms typical;
+  ~250 ms on 4000 controls (snapshot dominates).
+- The `DONE` stability window: 400 ms, 1500 ms with requests in flight.
+- The premature-done consult costs one extra decision on every one-action
+  imperative goal (`fx-select`: 1 step, 3 decisions). At production latency
+  that is ~1 s per short task; it exists because the model claims DONE
+  early on two-part goals.
+
+### Still open
+
+- The 250-control cap is positional: on a dense grid the 251st visible
+  control cannot be reached. A token-budget cap would help.
+- `PRESS_END`/`PRESS_HOME` scroll only while focus is on the document.
+- A `BLOCKED` on a static page still costs one 10 s probe.
+- This suite cannot judge decision quality. The live `tasks.json` suite
+  needs `TYPESAFE_API_KEY` and `TEXT_MODEL_API_KEY`; run it after every
+  change to `src/questions.ts` or `src/model/`.
+
 ## bench-v9 vs full-v7
 
 `bench-v9-1789795504888.json` vs baseline `full-v7-1789789722092.json`

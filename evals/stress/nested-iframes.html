@@ -1,0 +1,5 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Nested iframes</title></head>
+<body style="font-family:system-ui"><h1>Three levels of same-origin iframes</h1><div id="out"></div>
+<iframe src="/nested-l2.html" style="width:600px;height:300px;border:1px solid #999"></iframe>
+<script>addEventListener('message',e=>{if(e.data==='deep')out.textContent='DONE: deep button clicked';});</script>
+</body></html>

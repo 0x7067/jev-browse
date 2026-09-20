@@ -10,7 +10,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { fingerprint, isJsonObject } from "./json.ts";
+import { fingerprint, isJsonObject, structureOf } from "./json.ts";
 import { loadSnapshotJs } from "./snapshot-loader.ts";
 import {
   StalePage,
@@ -222,7 +222,7 @@ export class AgentBrowser implements BrowserDriver {
 
       try {
         await this.evaluate(`(action => new Promise(resolve => {
-          const field=window.__jevFast?.nodes.get(action.node);
+          const field=window.__jevFast?.node(action.node);
           const autocomplete=action.kind==='fill' && field?.getAttribute('role')==='combobox';
           let frames=0, stopped=false;
           const finish=()=>{stopped=true;resolve()};
@@ -272,7 +272,7 @@ export class AgentBrowser implements BrowserDriver {
   async fresh(
     page: PageState,
     action?: ObservedAction,
-    level: "full" | "page" = "full",
+    level: "full" | "page" | "structure" = "full",
   ): Promise<boolean> {
     if (action && (action.kind === "click" || action.kind === "select")) {
       const node = action.node;
@@ -280,7 +280,7 @@ export class AgentBrowser implements BrowserDriver {
       if (node === undefined) return false;
 
       const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`,
+        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`,
       );
 
       return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
@@ -295,7 +295,15 @@ export class AgentBrowser implements BrowserDriver {
       return JSON.stringify(current) === JSON.stringify(page.page_key);
     }
 
-    return JSON.stringify(await this.evaluate(MARKER)) === JSON.stringify(page.marker);
+    const marker = await this.evaluate<JsonValue>(MARKER);
+
+    // 'structure' level: identity, URL, title, controls, form state — text
+    // churn (clocks, tickers) is ignored.
+    if (level === "structure") {
+      return JSON.stringify(structureOf(marker)) === JSON.stringify(structureOf(page.marker));
+    }
+
+    return JSON.stringify(marker) === JSON.stringify(page.marker);
   }
 
   async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {
@@ -341,7 +349,7 @@ export class AgentBrowser implements BrowserDriver {
     // Tag the observed node so agent-browser can target it by selector. The
     // model never emits selectors; code maps its own node id to an attribute.
     const tagged = await this.evaluate<string | false>(`(() => {
-      const e=window.__jevFast?.nodes.get(${action.node});
+      const e=window.__jevFast?.node(${action.node});
       // Visibility alone doesn't decide clickability — the covered check
       // below arbitrates; opacity:0 controls win their own hit test.
       if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return false;
@@ -370,7 +378,7 @@ export class AgentBrowser implements BrowserDriver {
       if (kind === "drag" && action.dragTo !== undefined) {
         await this.evaluate(`(() => {
           const c=window.__jevFast;
-          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
           if (!src || !dst) return "stale";
           const dt=new DataTransfer();
           const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
@@ -439,7 +447,7 @@ export class AgentBrowser implements BrowserDriver {
 
     if (action.kind === "fill") {
       await this.evaluate(`(() => {
-        const e=window.__jevFast?.nodes.get(${action.node});
+        const e=window.__jevFast?.node(${action.node});
         if (!e?.isConnected) return "stale";
         if (e.isContentEditable) {
           e.innerText=${JSON.stringify(text ?? "")};
@@ -462,7 +470,7 @@ export class AgentBrowser implements BrowserDriver {
         : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
 
     await this.evaluate(`(() => {
-      const e=window.__jevFast?.nodes.get(${action.node});
+      const e=window.__jevFast?.node(${action.node});
       if (!e) return "stale";
       const r=e.getBoundingClientRect();
       const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};

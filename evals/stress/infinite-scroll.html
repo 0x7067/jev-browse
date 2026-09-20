@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Infinite scroll</title></head>
+<body style="font-family:system-ui"><h1>Feed</h1><div id="out" style="position:fixed;top:0;right:0;background:#dfd;padding:4px"></div><div id="feed"></div>
+<script>
+let n=0;function more(){for(let i=0;i<12;i++){n++;const d=document.createElement('div');d.style.height='90px';d.innerHTML=`<p>Post ${n}</p>`+(n===40?'<button id="rare">Open rare post</button>':'');feed.appendChild(d);}
+const r=document.getElementById('rare');if(r)r.onclick=()=>out.textContent='DONE: rare post opened';}
+more();addEventListener('scroll',()=>{if(innerHeight+scrollY>=document.body.scrollHeight-200&&n<80)setTimeout(more,250);});
+</script></body></html>

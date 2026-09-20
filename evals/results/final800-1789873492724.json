@@ -1,0 +1,1750 @@
+{
+  "label": "final800",
+  "started": "2026-09-20T03:03:28.668Z",
+  "latency_ms": 800,
+  "parallel": 3,
+  "tasks": {
+    "fx-select": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3510,
+      "median_wall_ms": 4505,
+      "median_machinery_ms": 2697,
+      "median_steps": 1,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3510,
+          "wall_ms": 4505,
+          "model_ms": 813,
+          "machinery_ms": 2697,
+          "steps": 1,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "sts\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nRight-click this tile\nInner frame action",
+          "ops": [
+            "SELECT:Region → Alpine"
+          ],
+          "events": [
+            "step:SELECT:Region → Alpine@836",
+            "step:DONE:Region → Alpine@3510"
+          ],
+          "mock_log": [
+            "SELECT (SELECT 1:3) n=26",
+            "DONE (all steps satisfied) n=26",
+            "DONE (all steps satisfied) n=26"
+          ]
+        }
+      ]
+    },
+    "fx-radio-check": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3320,
+      "median_wall_ms": 4329,
+      "median_machinery_ms": 1707,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3320,
+          "wall_ms": 4329,
+          "model_ms": 1613,
+          "machinery_ms": 1707,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": ")\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "ops": [
+            "CLICK:Crew",
+            "CLICK:Subscribe to the tide report"
+          ],
+          "events": [
+            "step:CLICK:Crew@833",
+            "step:CLICK:Subscribe to the tide report@1878",
+            "step:DONE:Subscribe to the tide report@3320"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 4) n=26",
+            "CLICK (CLICK 5) n=25",
+            "DONE (all steps satisfied) n=25"
+          ]
+        }
+      ]
+    },
+    "fx-textarea-submit": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4003,
+      "median_wall_ms": 5055,
+      "median_machinery_ms": 1578,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4003,
+          "wall_ms": 5055,
+          "model_ms": 2425,
+          "machinery_ms": 1578,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": ")\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "ops": [
+            "TYPE_TEXT:Leave a note",
+            "CLICK:Post note"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Leave a note@1672",
+            "step:CLICK:Post note@2554",
+            "step:DONE:Post note@4003"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 6) n=26",
+            "CLICK (CLICK 7) n=26",
+            "DONE (all steps satisfied) n=25"
+          ]
+        }
+      ]
+    },
+    "fx-autocomplete-followup": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3175,
+      "median_wall_ms": 3934,
+      "median_machinery_ms": 1557,
+      "median_steps": 2,
+      "median_decisions": 2,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3175,
+          "wall_ms": 3934,
+          "model_ms": 1618,
+          "machinery_ms": 1557,
+          "steps": 2,
+          "decisions": 2,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "tions menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\nInner frame action",
+          "ops": [
+            "TYPE_TEXT:Type a city",
+            "FOLLOW_UP:Lisbon"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Type a city@1653",
+            "step:FOLLOW_UP:Lisbon@1737",
+            "step:DONE:Lisbon@3175"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 8) n=26",
+            "DONE (all steps satisfied) n=26"
+          ]
+        }
+      ]
+    },
+    "fx-date": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3002,
+      "median_wall_ms": 3715,
+      "median_machinery_ms": 1389,
+      "median_steps": 1,
+      "median_decisions": 2,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3002,
+          "wall_ms": 3715,
+          "model_ms": 1613,
+          "machinery_ms": 1389,
+          "steps": 1,
+          "decisions": 2,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": ")\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "ops": [
+            "TYPE_TEXT:Arrival (dom)"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Arrival@1650",
+            "step:DONE:Arrival (dom)@3002"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 9) n=26",
+            "DONE (all steps satisfied) n=25"
+          ]
+        }
+      ]
+    },
+    "fx-modal": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4467,
+      "median_wall_ms": 5083,
+      "median_machinery_ms": 2048,
+      "median_steps": 3,
+      "median_decisions": 4,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4467,
+          "wall_ms": 5083,
+          "model_ms": 2419,
+          "machinery_ms": 2048,
+          "steps": 3,
+          "decisions": 4,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": ")\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "ops": [
+            "CLICK:Delete draft",
+            "CLICK:Confirm delete",
+            "CLICK:Delete draft"
+          ],
+          "events": [
+            "step:CLICK:Delete draft@827",
+            "step:CLICK:Confirm delete@1880",
+            "step:CLICK:Delete draft@2960",
+            "step:DONE:Delete draft@4466"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 10) n=26",
+            "CLICK (CLICK 11) n=27",
+            "CLICK (CLICK 10) n=25",
+            "DONE (all steps satisfied) n=26"
+          ]
+        }
+      ]
+    },
+    "fx-tabs-details": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3318,
+      "median_wall_ms": 4111,
+      "median_machinery_ms": 1702,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3318,
+          "wall_ms": 4111,
+          "model_ms": 1616,
+          "machinery_ms": 1702,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "nu\nDestinations menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\n18. Drag and drop\nPostcard\nDrop zone\nInner frame action",
+          "ops": [
+            "CLICK:Amenities",
+            "CLICK:House rules"
+          ],
+          "events": [
+            "step:CLICK:Amenities@830",
+            "step:CLICK:House rules@1875",
+            "step:DONE:House rules@3318"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 12) n=26",
+            "CLICK (CLICK 13) n=25",
+            "DONE (all steps satisfied) n=24"
+          ]
+        }
+      ]
+    },
+    "fx-disabled-redeem": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3975,
+      "median_wall_ms": 4735,
+      "median_machinery_ms": 1556,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3975,
+          "wall_ms": 4735,
+          "model_ms": 2419,
+          "machinery_ms": 1556,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": ")\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "ops": [
+            "TYPE_TEXT:Invite code",
+            "CLICK:Redeem"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Invite code@1642",
+            "step:CLICK:Redeem@2532",
+            "step:DONE:Redeem@3975"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 14) n=26",
+            "CLICK (CLICK 15) n=27",
+            "DONE (all steps satisfied) n=26"
+          ]
+        }
+      ]
+    },
+    "fx-iframe": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3502,
+      "median_wall_ms": 4095,
+      "median_machinery_ms": 2694,
+      "median_steps": 1,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3502,
+          "wall_ms": 4095,
+          "model_ms": 808,
+          "machinery_ms": 2694,
+          "steps": 1,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "sts\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nRight-click this tile\nInner frame action",
+          "ops": [
+            "CLICK:Inner frame action"
+          ],
+          "events": [
+            "step:CLICK:Inner frame action@828",
+            "step:DONE:Inner frame action@3502"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 24) n=26",
+            "DONE (all steps satisfied) n=26",
+            "DONE (all steps satisfied) n=26"
+          ]
+        }
+      ]
+    },
+    "fx-shadow": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3500,
+      "median_wall_ms": 4108,
+      "median_machinery_ms": 2691,
+      "median_steps": 1,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3500,
+          "wall_ms": 4108,
+          "model_ms": 809,
+          "machinery_ms": 2691,
+          "steps": 1,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "sts\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nRight-click this tile\nInner frame action",
+          "ops": [
+            "CLICK:Shadow action"
+          ],
+          "events": [
+            "step:CLICK:Shadow action@829",
+            "step:DONE:Shadow action@3500"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 16) n=26",
+            "DONE (all steps satisfied) n=26",
+            "DONE (all steps satisfied) n=26"
+          ]
+        }
+      ]
+    },
+    "fx-hover-menu": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3406,
+      "median_wall_ms": 3992,
+      "median_machinery_ms": 1787,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3406,
+          "wall_ms": 3992,
+          "model_ms": 1619,
+          "machinery_ms": 1787,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "d\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "ops": [
+            "HOVER:Hover Destinations menu (hover",
+            "CLICK:Alpine stays"
+          ],
+          "events": [
+            "step:HOVER:Hover Destinations menu (hover) Alpine s@1057",
+            "step:CLICK:Alpine stays@1963",
+            "step:DONE:Alpine stays@3406"
+          ],
+          "mock_log": [
+            "HOVER (HOVER 26) n=26",
+            "CLICK (CLICK 17) n=26",
+            "DONE (all steps satisfied) n=25"
+          ]
+        }
+      ]
+    },
+    "fx-range": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3327,
+      "median_wall_ms": 3959,
+      "median_machinery_ms": 1713,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3327,
+          "wall_ms": 3959,
+          "model_ms": 1614,
+          "machinery_ms": 1713,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "der\nGuests\nDONE: guests=6\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "ops": [
+            "CLICK:Guests",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "step:CLICK:Guests@828",
+            "step:PRESS_ARROWRIGHT:Press arrowright@1885",
+            "step:DONE:Press arrowright@3327"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 17) n=26",
+            "PRESS_ARROWRIGHT (control PRESS_ARROWRIGHT) n=26",
+            "DONE (all steps satisfied) n=25"
+          ]
+        }
+      ]
+    },
+    "fx-palette-enter": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3183,
+      "median_wall_ms": 3827,
+      "median_machinery_ms": 1571,
+      "median_steps": 2,
+      "median_decisions": 2,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3183,
+          "wall_ms": 3827,
+          "model_ms": 1612,
+          "machinery_ms": 1571,
+          "steps": 2,
+          "decisions": 2,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "lider\nGuests\n16. Enter-only palette\nDONE: deploy\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "ops": [
+            "TYPE_TEXT:Type then press Enter",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Type then press Enter@1665",
+            "step:FOLLOW_UP:Press enter@1742",
+            "step:DONE:Press enter@3183"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 18) n=26",
+            "DONE (all steps satisfied) n=25"
+          ]
+        }
+      ]
+    },
+    "fx-contenteditable": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3975,
+      "median_wall_ms": 4600,
+      "median_machinery_ms": 1557,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3975,
+          "wall_ms": 4600,
+          "model_ms": 2418,
+          "machinery_ms": 1557,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": ". Enter-only palette\n17. Contenteditable composer\nhello crew\nSend note\nDONE: hello crew\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "ops": [
+            "TYPE_TEXT:Message composer",
+            "CLICK:Send note"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Message composer@1646",
+            "step:CLICK:Send note@2534",
+            "step:DONE:Send note@3974"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 19) n=26",
+            "CLICK (CLICK 20) n=26",
+            "DONE (all steps satisfied) n=25"
+          ]
+        }
+      ]
+    },
+    "fx-drag": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3597,
+      "median_wall_ms": 4217,
+      "median_machinery_ms": 2788,
+      "median_steps": 1,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3597,
+          "wall_ms": 4217,
+          "model_ms": 809,
+          "machinery_ms": 2788,
+          "steps": 1,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "tte\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\nDONE: postcard dropped\n19. Context menu\nRight-click this tile\nInner frame action",
+          "ops": [
+            "DRAG:Postcard"
+          ],
+          "events": [
+            "step:DRAG:Postcard@1065",
+            "step:DONE:Postcard@3597"
+          ],
+          "mock_log": [
+            "DRAG (drag 21 → 22) n=26",
+            "DONE (all steps satisfied) n=26",
+            "DONE (all steps satisfied) n=26"
+          ]
+        }
+      ]
+    },
+    "fx-context": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3546,
+      "median_wall_ms": 4155,
+      "median_machinery_ms": 2738,
+      "median_steps": 1,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3546,
+          "wall_ms": 4155,
+          "model_ms": 808,
+          "machinery_ms": 2738,
+          "steps": 1,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nRight-click this tile\nDONE: context menu opened\nInner frame action",
+          "ops": [
+            "CONTEXT_CLICK:Right-click this tile"
+          ],
+          "events": [
+            "step:CONTEXT_CLICK:Right-click this tile@833",
+            "step:DONE:Right-click this tile@3546"
+          ],
+          "mock_log": [
+            "CONTEXT_CLICK (CONTEXT_CLICK 23) n=26",
+            "DONE (all steps satisfied) n=26",
+            "DONE (all steps satisfied) n=26"
+          ]
+        }
+      ]
+    },
+    "fx-new-tab": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3497,
+      "median_wall_ms": 4108,
+      "median_machinery_ms": 2689,
+      "median_steps": 1,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3497,
+          "wall_ms": 4108,
+          "model_ms": 808,
+          "machinery_ms": 2689,
+          "steps": 1,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/fixture-interactions.html",
+          "final_text_tail": "Help page\nDONE: help visible",
+          "ops": [
+            "CLICK:Open the help page in a new ta"
+          ],
+          "events": [
+            "step:CLICK:Open the help page in a new tab@865",
+            "step:DONE:Open the help page in a new tab@3497"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 15) n=26",
+            "DONE (all steps satisfied) n=0",
+            "DONE (all steps satisfied) n=0"
+          ]
+        }
+      ]
+    },
+    "big-dom": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 15952,
+      "median_wall_ms": 16661,
+      "median_machinery_ms": 3868,
+      "median_steps": 15,
+      "median_decisions": 16,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 15952,
+          "wall_ms": 16661,
+          "model_ms": 12084,
+          "machinery_ms": 3868,
+          "steps": 15,
+          "decisions": 16,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/big-dom.html",
+          "final_text_tail": "5\nItem 3976\nItem 3977\nItem 3978\nItem 3979\nItem 3980\nItem 3981\nItem 3982\nItem 3983\nItem 3984\n[86 more interactive elements not shown — scroll or narrow the page]",
+          "ops": [
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:Item 3777"
+          ],
+          "events": [
+            "step:SCROLL_DOWN:Scroll down@869",
+            "step:SCROLL_DOWN:Scroll down@1831",
+            "step:SCROLL_DOWN:Scroll down@2796",
+            "step:SCROLL_DOWN:Scroll down@3789",
+            "step:SCROLL_DOWN:Scroll down@4744",
+            "step:SCROLL_DOWN:Scroll down@5725",
+            "step:SCROLL_DOWN:Scroll down@6681",
+            "step:SCROLL_DOWN:Scroll down@7644",
+            "step:SCROLL_DOWN:Scroll down@8600",
+            "step:SCROLL_DOWN:Scroll down@9565",
+            "step:SCROLL_DOWN:Scroll down@10530",
+            "step:SCROLL_DOWN:Scroll down@11486",
+            "step:SCROLL_DOWN:Scroll down@12440",
+            "step:SCROLL_DOWN:Scroll down@13390",
+            "step:CLICK:Item 3777@14374",
+            "step:DONE:Item 3777@15951"
+          ],
+          "mock_log": [
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "SCROLL_DOWN (target /^Item 3777$/ absent) n=250",
+            "CLICK (CLICK 129) n=250",
+            "DONE (all steps satisfied) n=250"
+          ]
+        }
+      ]
+    },
+    "slow-ajax": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 6596,
+      "median_wall_ms": 7164,
+      "median_machinery_ms": 3371,
+      "median_steps": 4,
+      "median_decisions": 5,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 6596,
+          "wall_ms": 7164,
+          "model_ms": 3225,
+          "machinery_ms": 3371,
+          "steps": 4,
+          "decisions": 5,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/slow-ajax.html",
+          "final_text_tail": "Slow AJAX\nLoad report\nReport ready (3500ms)\nApprove report\nDONE: report approved",
+          "ops": [
+            "CLICK:Load report",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "CLICK:Approve report"
+          ],
+          "events": [
+            "step:CLICK:Load report@828",
+            "step:WAIT:Wait for the page to update@3432",
+            "step:WAIT:Wait for the page to update@4346",
+            "step:CLICK:Approve report@5164",
+            "step:DONE:Approve report@6596"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=1",
+            "WAIT (CLICK not offered) n=0",
+            "WAIT (CLICK not offered) n=0",
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    },
+    "late-render": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 7599,
+      "median_wall_ms": 8160,
+      "median_machinery_ms": 4377,
+      "median_steps": 4,
+      "median_decisions": 5,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 7599,
+          "wall_ms": 8160,
+          "model_ms": 3222,
+          "machinery_ms": 4377,
+          "steps": 4,
+          "decisions": 5,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/late-render.html",
+          "final_text_tail": "Late render (timer only, no network)\nStart countdown\nDONE: reward claimed",
+          "ops": [
+            "CLICK:Start countdown",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "CLICK:Claim reward"
+          ],
+          "events": [
+            "step:CLICK:Start countdown@822",
+            "step:WAIT:Wait for the page to update@3401",
+            "step:WAIT:Wait for the page to update@5348",
+            "step:CLICK:Claim reward@6168",
+            "step:DONE:Claim reward@7599"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=1",
+            "WAIT (target /Claim reward/ absent) n=1",
+            "WAIT (target /Claim reward/ absent) n=1",
+            "CLICK (CLICK 2) n=2",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    },
+    "spa-router": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 4355,
+      "median_wall_ms": 4906,
+      "median_machinery_ms": 1938,
+      "median_steps": 3,
+      "median_decisions": 4,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 4355,
+          "wall_ms": 4906,
+          "model_ms": 2417,
+          "machinery_ms": 1938,
+          "steps": 3,
+          "decisions": 4,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/spa-router.html#/cart",
+          "final_text_tail": "Home\nProducts\nAbout\nCart\nDONE: widget in cart",
+          "ops": [
+            "CLICK:Products",
+            "CLICK:Widget",
+            "CLICK:Add widget to cart"
+          ],
+          "events": [
+            "step:CLICK:Products@826",
+            "step:CLICK:Widget@1879",
+            "step:CLICK:Add widget to cart@2922",
+            "step:DONE:Add widget to cart@4355"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 2) n=3",
+            "CLICK (CLICK 4) n=5",
+            "CLICK (CLICK 4) n=4",
+            "DONE (all steps satisfied) n=3"
+          ]
+        }
+      ]
+    },
+    "nested-iframes": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3481,
+      "median_wall_ms": 4041,
+      "median_machinery_ms": 2672,
+      "median_steps": 1,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3481,
+          "wall_ms": 4041,
+          "model_ms": 809,
+          "machinery_ms": 2672,
+          "steps": 1,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/nested-iframes.html",
+          "final_text_tail": "Three levels of same-origin iframes\nDONE: deep button clicked\nLevel 2\nLevel 3\nDeep action",
+          "ops": [
+            "CLICK:Deep action"
+          ],
+          "events": [
+            "step:CLICK:Deep action@825",
+            "step:DONE:Deep action@3481"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=1",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    },
+    "shadow-nested": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3977,
+      "median_wall_ms": 4570,
+      "median_machinery_ms": 1549,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3977,
+          "wall_ms": 4570,
+          "model_ms": 2428,
+          "machinery_ms": 1549,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/shadow-nested.html",
+          "final_text_tail": "Shadow inside shadow, with a form\nDONE: coupon SAVE10 applied",
+          "ops": [
+            "TYPE_TEXT:Coupon",
+            "CLICK:Apply coupon"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Coupon@1637",
+            "step:CLICK:Apply coupon@2532",
+            "step:DONE:Apply coupon@3977"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 1) n=2",
+            "CLICK (CLICK 2) n=2",
+            "DONE (all steps satisfied) n=2"
+          ]
+        }
+      ]
+    },
+    "mutating": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2278,
+      "median_wall_ms": 2822,
+      "median_machinery_ms": 1470,
+      "median_steps": 1,
+      "median_decisions": 2,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2278,
+          "wall_ms": 2822,
+          "model_ms": 808,
+          "machinery_ms": 1470,
+          "steps": 1,
+          "decisions": 2,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/mutating.html",
+          "final_text_tail": "Live ticker page\nClock:\n2026-09-20T03:04:08.161Z\nPrice:\n104.49\nSubscribe to alerts\nDONE: subscribed to alerts",
+          "ops": [
+            "CLICK:Subscribe to alerts"
+          ],
+          "events": [
+            "step:CLICK:Subscribe to alerts@828",
+            "step:DONE:Subscribe to alerts@2278"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    },
+    "rerender": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5006,
+      "median_wall_ms": 5612,
+      "median_machinery_ms": 1784,
+      "median_steps": 3,
+      "median_decisions": 4,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5006,
+          "wall_ms": 5612,
+          "model_ms": 3222,
+          "machinery_ms": 1784,
+          "steps": 3,
+          "decisions": 4,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/rerender.html",
+          "final_text_tail": "Virtual-DOM style rerender every 300ms\ntick 12\nSearch\nDONE: kayak added",
+          "ops": [
+            "TYPE_TEXT:Search things",
+            "CLICK:Search",
+            "CLICK:Add Sea kayak"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Search things@1651",
+            "step:CLICK:Search@2526",
+            "step:CLICK:Add Sea kayak@3572",
+            "step:DONE:Add Sea kayak@5006"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 1) n=2",
+            "CLICK (CLICK 2) n=2",
+            "CLICK (CLICK 3) n=3",
+            "DONE (all steps satisfied) n=2"
+          ]
+        }
+      ]
+    },
+    "overlay": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3296,
+      "median_wall_ms": 3919,
+      "median_machinery_ms": 1681,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3296,
+          "wall_ms": 3919,
+          "model_ms": 1615,
+          "machinery_ms": 1681,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/overlay.html",
+          "final_text_tail": "Page behind a consent overlay\nStart free trial\nDONE: trial started",
+          "ops": [
+            "CLICK:Accept all",
+            "CLICK:Start free trial"
+          ],
+          "events": [
+            "step:CLICK:Accept all@825",
+            "step:CLICK:Start free trial@1865",
+            "step:DONE:Start free trial@3296"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 2) n=3",
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    },
+    "overlay-click-through": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 7353,
+      "median_wall_ms": 7991,
+      "median_machinery_ms": 7353,
+      "median_steps": 0,
+      "median_decisions": 9,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": true,
+          "elapsed_ms": 7353,
+          "wall_ms": 7991,
+          "model_ms": 0,
+          "machinery_ms": 7353,
+          "steps": 0,
+          "decisions": 9,
+          "stale": 9,
+          "final_url": "http://127.0.0.1:35215/overlay.html",
+          "final_text_tail": "Page behind a consent overlay\nStart free trial\nWe use cookies.\nAccept all\nReject",
+          "ops": [],
+          "events": [
+            "stale:CLICK:@819",
+            "stale:CLICK:@1632",
+            "stale:CLICK:@2446",
+            "stale:CLICK:@3260",
+            "stale:CLICK:@4104",
+            "stale:CLICK:@4916",
+            "stale:CLICK:@5727",
+            "stale:CLICK:@6540",
+            "stale:CLICK:@7353",
+            "step:CLICK:@7353"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=3",
+            "CLICK (CLICK 1) n=3",
+            "CLICK (CLICK 1) n=3",
+            "CLICK (CLICK 1) n=3",
+            "CLICK (CLICK 1) n=3",
+            "CLICK (CLICK 1) n=3",
+            "CLICK (CLICK 1) n=3",
+            "CLICK (CLICK 1) n=3",
+            "CLICK (CLICK 1) n=3"
+          ]
+        }
+      ]
+    },
+    "form-multi": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 14471,
+      "median_wall_ms": 15204,
+      "median_machinery_ms": 2411,
+      "median_steps": 9,
+      "median_decisions": 10,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 14471,
+          "wall_ms": 15204,
+          "model_ms": 12060,
+          "machinery_ms": 2411,
+          "steps": 9,
+          "decisions": 10,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/submit",
+          "final_text_tail": "Submitted\nname=Ana Silva\nemail=ana@example.com\nphone=555-0100\nguests=3\nroom=dlx\narrival=2026-11-02\nterms=yes\nnotes=late arrival\nDONE: submitted",
+          "ops": [
+            "TYPE_TEXT:Full name",
+            "TYPE_TEXT:Email",
+            "TYPE_TEXT:Phone",
+            "TYPE_TEXT:Guests",
+            "SELECT:Room → Deluxe",
+            "TYPE_TEXT:Arrival (dom)",
+            "CLICK:I accept the terms",
+            "TYPE_TEXT:Notes",
+            "CLICK:Book now"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Full name@1640",
+            "step:TYPE_TEXT:Email@3321",
+            "step:TYPE_TEXT:Phone@5008",
+            "step:TYPE_TEXT:Guests@6686",
+            "step:SELECT:Room → Deluxe@7555",
+            "step:TYPE_TEXT:Arrival@9408",
+            "step:CLICK:I accept the terms@10344",
+            "step:TYPE_TEXT:Notes@12187",
+            "step:CLICK:Book now@13080",
+            "step:DONE:Book now@14471"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 1) n=9",
+            "TYPE_TEXT (TYPE_TEXT 2) n=9",
+            "TYPE_TEXT (TYPE_TEXT 3) n=9",
+            "TYPE_TEXT (TYPE_TEXT 4) n=9",
+            "SELECT (SELECT 5:2) n=9",
+            "TYPE_TEXT (TYPE_TEXT 6) n=9",
+            "CLICK (CLICK 7) n=9",
+            "TYPE_TEXT (TYPE_TEXT 8) n=9",
+            "CLICK (CLICK 9) n=9",
+            "DONE (done_when matched) n=0"
+          ]
+        }
+      ]
+    },
+    "infinite-scroll": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 13071,
+      "median_wall_ms": 13758,
+      "median_machinery_ms": 5023,
+      "median_steps": 10,
+      "median_decisions": 11,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 13071,
+          "wall_ms": 13758,
+          "model_ms": 8048,
+          "machinery_ms": 5023,
+          "steps": 10,
+          "decisions": 11,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/infinite-scroll.html",
+          "final_text_tail": "DONE: rare post opened\nPost 36\nPost 37\nPost 38\nPost 39\nPost 40\nOpen rare post\nPost 41\nPost 42",
+          "ops": [
+            "SCROLL_DOWN:Scroll down",
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:Open rare post"
+          ],
+          "events": [
+            "step:SCROLL_DOWN:Scroll down@829",
+            "step:WAIT:Wait for the page to update@3247",
+            "step:SCROLL_DOWN:Scroll down@4059",
+            "step:SCROLL_DOWN:Scroll down@4942",
+            "step:SCROLL_DOWN:Scroll down@5807",
+            "step:WAIT:Wait for the page to update@8221",
+            "step:SCROLL_DOWN:Scroll down@9034",
+            "step:SCROLL_DOWN:Scroll down@9898",
+            "step:SCROLL_DOWN:Scroll down@10766",
+            "step:CLICK:Open rare post@11639",
+            "step:DONE:Open rare post@13071"
+          ],
+          "mock_log": [
+            "SCROLL_DOWN (CLICK not offered) n=0",
+            "WAIT (CLICK not offered) n=0",
+            "SCROLL_DOWN (CLICK not offered) n=0",
+            "SCROLL_DOWN (CLICK not offered) n=0",
+            "SCROLL_DOWN (CLICK not offered) n=0",
+            "WAIT (CLICK not offered) n=0",
+            "SCROLL_DOWN (CLICK not offered) n=0",
+            "SCROLL_DOWN (CLICK not offered) n=0",
+            "SCROLL_DOWN (CLICK not offered) n=0",
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    },
+    "dialogs": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2267,
+      "median_wall_ms": 2815,
+      "median_machinery_ms": 1459,
+      "median_steps": 1,
+      "median_decisions": 2,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2267,
+          "wall_ms": 2815,
+          "model_ms": 808,
+          "machinery_ms": 1459,
+          "steps": 1,
+          "decisions": 2,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/dialogs.html",
+          "final_text_tail": "Native dialogs\nDelete account\nDONE: account deleted",
+          "ops": [
+            "CLICK:Delete account"
+          ],
+          "events": [
+            "step:CLICK:Delete account@834",
+            "step:DONE:Delete account@2267"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    },
+    "keyboard-list": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5354,
+      "median_wall_ms": 5931,
+      "median_machinery_ms": 2134,
+      "median_steps": 4,
+      "median_decisions": 5,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5354,
+          "wall_ms": 5931,
+          "model_ms": 3220,
+          "machinery_ms": 2134,
+          "steps": 4,
+          "decisions": 5,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/keyboard-list.html",
+          "final_text_tail": "Arrow-key listbox\nApple\nBanana\nCherry\nDate\nDONE: chose Cherry",
+          "ops": [
+            "CLICK:Fruits",
+            "PRESS_ARROWDOWN:Press arrowdown",
+            "PRESS_ARROWDOWN:Press arrowdown",
+            "PRESS_ENTER:Press enter"
+          ],
+          "events": [
+            "step:CLICK:Fruits@823",
+            "step:PRESS_ARROWDOWN:Press arrowdown@1864",
+            "step:PRESS_ARROWDOWN:Press arrowdown@2893",
+            "step:PRESS_ENTER:Press enter@3922",
+            "step:DONE:Press enter@5354"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=5",
+            "PRESS_ARROWDOWN (control PRESS_ARROWDOWN) n=5",
+            "PRESS_ARROWDOWN (control PRESS_ARROWDOWN) n=5",
+            "PRESS_ENTER (control PRESS_ENTER) n=5",
+            "DONE (all steps satisfied) n=5"
+          ]
+        }
+      ]
+    },
+    "new-tab-real-url": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3299,
+      "median_wall_ms": 3825,
+      "median_machinery_ms": 1686,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3299,
+          "wall_ms": 3825,
+          "model_ms": 1613,
+          "machinery_ms": 1686,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/help/faq",
+          "final_text_tail": "FAQ\nDONE: faq visible",
+          "ops": [
+            "CLICK:Open help in a new tab",
+            "CLICK:FAQ"
+          ],
+          "events": [
+            "step:CLICK:Open help in a new tab@844",
+            "step:CLICK:FAQ@1889",
+            "step:DONE:FAQ@3299"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=1",
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=0"
+          ]
+        }
+      ]
+    },
+    "unicode": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3946,
+      "median_wall_ms": 4512,
+      "median_machinery_ms": 1530,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3946,
+          "wall_ms": 4512,
+          "model_ms": 2416,
+          "machinery_ms": 1530,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/unicode.html",
+          "final_text_tail": "多言語フォーム · نموذج متعدد اللغات\nお名前\n送信する\nإرسال\nDONE: 山田太郎 送信済み",
+          "ops": [
+            "TYPE_TEXT:お名前",
+            "CLICK:送信する"
+          ],
+          "events": [
+            "step:TYPE_TEXT:お名前@1634",
+            "step:CLICK:送信する@2513",
+            "step:DONE:送信する@3946"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 1) n=3",
+            "CLICK (CLICK 2) n=3",
+            "DONE (all steps satisfied) n=3"
+          ]
+        }
+      ]
+    },
+    "huge-text": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3436,
+      "median_wall_ms": 4133,
+      "median_machinery_ms": 1823,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3436,
+          "wall_ms": 4133,
+          "model_ms": 1613,
+          "machinery_ms": 1823,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/huge-text.html",
+          "final_text_tail": "se 3999: The party of the first part shall indemnify the party of the second part against all claims arising under section 22.\nI agree to the terms\nDONE: agreed",
+          "ops": [
+            "PRESS_END:Press end",
+            "CLICK:I agree to the terms"
+          ],
+          "events": [
+            "step:PRESS_END:Press end@846",
+            "step:CLICK:I agree to the terms@1919",
+            "step:DONE:I agree to the terms@3436"
+          ],
+          "mock_log": [
+            "PRESS_END (CLICK not offered) n=0",
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    },
+    "delayed-enable": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5485,
+      "median_wall_ms": 6050,
+      "median_machinery_ms": 2265,
+      "median_steps": 3,
+      "median_decisions": 4,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5485,
+          "wall_ms": 6050,
+          "model_ms": 3220,
+          "machinery_ms": 2265,
+          "steps": 3,
+          "decisions": 4,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/delayed-enable.html",
+          "final_text_tail": "Button enables after a server check\nPromo\nApply promo\nDONE: promo SUMMER",
+          "ops": [
+            "TYPE_TEXT:Promo",
+            "WAIT:Wait for the page to update",
+            "CLICK:Apply promo"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Promo@1638",
+            "step:WAIT:Wait for the page to update@3233",
+            "step:CLICK:Apply promo@4054",
+            "step:DONE:Apply promo@5485"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 1) n=1",
+            "WAIT (target /Apply promo/ absent) n=1",
+            "CLICK (CLICK 2) n=2",
+            "DONE (all steps satisfied) n=2"
+          ]
+        }
+      ]
+    },
+    "redirect-chain": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 2234,
+      "median_wall_ms": 3259,
+      "median_machinery_ms": 1426,
+      "median_steps": 1,
+      "median_decisions": 2,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 2234,
+          "wall_ms": 3259,
+          "model_ms": 808,
+          "machinery_ms": 1426,
+          "steps": 1,
+          "decisions": 2,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/redirect-final",
+          "final_text_tail": "Final page\nDONE: final page reached",
+          "ops": [
+            "CLICK:Continue to the final page"
+          ],
+          "events": [
+            "step:CLICK:Continue to the final page@848",
+            "step:DONE:Continue to the final page@2234"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=0"
+          ]
+        }
+      ]
+    },
+    "login-flow": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 8564,
+      "median_wall_ms": 9134,
+      "median_machinery_ms": 2125,
+      "median_steps": 6,
+      "median_decisions": 7,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 8564,
+          "wall_ms": 9134,
+          "model_ms": 6439,
+          "machinery_ms": 2125,
+          "steps": 6,
+          "decisions": 7,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/export",
+          "final_text_tail": "Export queued\nDONE: export PDF",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Sign in",
+            "CLICK:Reports",
+            "SELECT:Format → PDF",
+            "CLICK:Export"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Username@1635",
+            "step:TYPE_TEXT:Password@3318",
+            "step:CLICK:Sign in@4192",
+            "step:CLICK:Reports@5202",
+            "step:SELECT:Format → PDF@6194",
+            "step:CLICK:Export@7218",
+            "step:DONE:Export@8563"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 1) n=3",
+            "TYPE_TEXT (TYPE_TEXT 2) n=3",
+            "CLICK (CLICK 3) n=3",
+            "CLICK (CLICK 1) n=2",
+            "SELECT (SELECT 1:1) n=2",
+            "CLICK (CLICK 2) n=2",
+            "DONE (done_when matched) n=0"
+          ]
+        }
+      ]
+    },
+    "slow-navigation": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 1224,
+      "median_wall_ms": 5766,
+      "median_machinery_ms": 1224,
+      "median_steps": 0,
+      "median_decisions": 1,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 1224,
+          "wall_ms": 5766,
+          "model_ms": 0,
+          "machinery_ms": 1224,
+          "steps": 0,
+          "decisions": 1,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/slow-page?ms=4000",
+          "final_text_tail": "Slow page\nDONE: slow page loaded",
+          "ops": [],
+          "events": [
+            "step:DONE:@1224"
+          ],
+          "mock_log": [
+            "DONE (all steps satisfied) n=0"
+          ]
+        }
+      ]
+    },
+    "back-nav": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3061,
+      "median_wall_ms": 3622,
+      "median_machinery_ms": 1449,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3061,
+          "wall_ms": 3622,
+          "model_ms": 1612,
+          "machinery_ms": 1449,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/help",
+          "final_text_tail": "Help center\nDONE: help visible\nFAQ",
+          "ops": [
+            "CLICK:FAQ",
+            "GO_BACK:Go back to the previous page"
+          ],
+          "events": [
+            "step:CLICK:FAQ@847",
+            "step:GO_BACK:Go back to the previous page@1835",
+            "step:DONE:Go back to the previous page@3061"
+          ],
+          "mock_log": [
+            "CLICK (CLICK 1) n=1",
+            "GO_BACK (control GO_BACK) n=0",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    },
+    "xorigin-honest": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 12090,
+      "median_wall_ms": 12665,
+      "median_machinery_ms": 12090,
+      "median_steps": 1,
+      "median_decisions": 2,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": true,
+          "elapsed_ms": 12090,
+          "wall_ms": 12665,
+          "model_ms": 0,
+          "machinery_ms": 12090,
+          "steps": 1,
+          "decisions": 2,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/xorigin.html",
+          "final_text_tail": "Cross-origin iframe (opaque by design)\nThe frame below is served from localhost, a different origin from 127.0.0.1.",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "step:BLOCKED:Wait for the page to update@11280",
+            "step:BLOCKED:Wait for the page to update@12090"
+          ],
+          "mock_log": [
+            "BLOCKED (CLICK not offered) n=0",
+            "BLOCKED (CLICK not offered) n=0"
+          ]
+        }
+      ]
+    },
+    "debounce-search": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 5218,
+      "median_wall_ms": 5793,
+      "median_machinery_ms": 1998,
+      "median_steps": 3,
+      "median_decisions": 4,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 5218,
+          "wall_ms": 5793,
+          "model_ms": 3220,
+          "machinery_ms": 1998,
+          "steps": 3,
+          "decisions": 4,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/debounce-search.html",
+          "final_text_tail": "Debounced search (600ms, then XHR)\nTrail shoes\nTrail pack\nDONE: picked Trail pack",
+          "ops": [
+            "TYPE_TEXT:Search products",
+            "WAIT:Wait for the page to update",
+            "CLICK:Trail pack"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Search products@1637",
+            "step:WAIT:Wait for the page to update@2966",
+            "step:CLICK:Trail pack@3786",
+            "step:DONE:Trail pack@5218"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 1) n=1",
+            "WAIT (target /^Trail pack$/ absent) n=1",
+            "CLICK (CLICK 4) n=4",
+            "DONE (all steps satisfied) n=4"
+          ]
+        }
+      ]
+    },
+    "upload": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3935,
+      "median_wall_ms": 4490,
+      "median_machinery_ms": 1519,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3935,
+          "wall_ms": 4490,
+          "model_ms": 2416,
+          "machinery_ms": 1519,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/upload.html",
+          "final_text_tail": "File upload\nAttachment\nSend attachment\nDONE: uploaded LICENSE",
+          "ops": [
+            "TYPE_TEXT:Attachment",
+            "CLICK:Send attachment"
+          ],
+          "events": [
+            "step:TYPE_TEXT:Attachment@1627",
+            "step:CLICK:Send attachment@2499",
+            "step:DONE:Send attachment@3935"
+          ],
+          "mock_log": [
+            "TYPE_TEXT (TYPE_TEXT 1) n=2",
+            "CLICK (CLICK 2) n=2",
+            "DONE (all steps satisfied) n=2"
+          ]
+        }
+      ]
+    },
+    "sticky-header": {
+      "runs": 1,
+      "verified": 1,
+      "median_ms": 3134,
+      "median_wall_ms": 3684,
+      "median_machinery_ms": 1522,
+      "median_steps": 2,
+      "median_decisions": 3,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "elapsed_ms": 3134,
+          "wall_ms": 3684,
+          "model_ms": 1612,
+          "machinery_ms": 1522,
+          "steps": 2,
+          "decisions": 3,
+          "stale": 0,
+          "final_url": "http://127.0.0.1:35215/sticky-header.html",
+          "final_text_tail": "Tall sticky header\nSection 3\nRequest quote\nDONE: quote requested",
+          "ops": [
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:Request quote"
+          ],
+          "events": [
+            "step:SCROLL_DOWN:Scroll down@820",
+            "step:CLICK:Request quote@1693",
+            "step:DONE:Request quote@3134"
+          ],
+          "mock_log": [
+            "SCROLL_DOWN (CLICK not offered) n=0",
+            "CLICK (CLICK 1) n=1",
+            "DONE (all steps satisfied) n=1"
+          ]
+        }
+      ]
+    }
+  },
+  "suite_wall_ms": 84056,
+  "mock_calls": {
+    "decide": 169,
+    "text": 20,
+    "unmatched": 0
+  },
+  "median_total_ms": 210985
+}

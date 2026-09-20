@@ -8,13 +8,14 @@ import { execSync, spawn, type ChildProcess } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { fingerprint } from "../json.ts";
+import { fingerprint, structureOf } from "../json.ts";
 import { loadSnapshotJs } from "../snapshot-loader.ts";
 import {
   StalePage,
   type ActResult,
   type BrowserDriver,
   type JsonObject,
+  type JsonValue,
   type ObservedAction,
   type PageState,
 } from "../types.ts";
@@ -84,6 +85,11 @@ const VIEWPORT_H = 780;
 
 /** Fallback wheel delta: roughly a pane's worth of the forced viewport. */
 const SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
+
+/** WAIT polls the page for this long before handing control back. */
+const WAIT_BUDGET_MS = 1500;
+
+const WAIT_POLL_MS = 100;
 
 /** Interpolated mouseMoved events between drag press and release. */
 const DRAG_STEPS = 8;
@@ -165,11 +171,23 @@ export class CdpBrowser implements BrowserDriver {
         "--no-default-browser-check",
         "--disable-session-crashed-bubble",
         "--hide-crash-restore-bubble",
+        // Smooth scrolling animates wheel input; CDP acks the wheel event
+        // only when the animation lands, ~750ms per scroll step.
+        "--disable-smooth-scrolling",
       ];
 
       if (!opts.headed) args.push("--headless=new");
       else
         args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
+
+      // Chrome refuses to start as root without --no-sandbox (containers, CI).
+      // JEV_CHROME_ARGS appends operator flags, whitespace-separated.
+      if (process.getuid?.() === 0) args.push("--no-sandbox");
+
+      for (const extra of (process.env.JEV_CHROME_ARGS ?? "").split(/\s+/)) {
+        if (extra) args.push(extra);
+      }
+
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
       browser.proc.on("error", () => {});
       browser.launchProfileDir = profileDir;
@@ -428,7 +446,7 @@ export class CdpBrowser implements BrowserDriver {
         // evaluate() checks exceptionDetails — a field disconnecting
         // mid-wait throws there instead of inside the page script.
         await this.evaluate(`(action => new Promise(resolve => {
-            const field=window.__jevFast?.nodes.get(action.node);
+            const field=window.__jevFast?.node(action.node);
             const autocomplete=action.kind==='fill' && field?.getAttribute('role')==='combobox';
             let frames=0, stopped=false;
             const finish=()=>{stopped=true;resolve()};
@@ -506,7 +524,7 @@ export class CdpBrowser implements BrowserDriver {
   async fresh(
     page: PageState,
     action?: ObservedAction,
-    level: "full" | "page" = "full",
+    level: "full" | "page" | "structure" = "full",
   ): Promise<boolean> {
     if (action && (action.kind === "click" || action.kind === "select")) {
       const node = action.node;
@@ -514,12 +532,21 @@ export class CdpBrowser implements BrowserDriver {
       if (node === undefined) return false;
 
       const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`,
+        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`,
       );
 
       return (
         JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]])
       );
+    }
+
+    // 'structure' level: same document, field state, title, and offered
+    // controls — text churn (clocks, tickers, counters) is ignored, a
+    // navigation or a content swap that changes the control set is not.
+    if (level === "structure") {
+      const current = await this.evaluate<JsonValue>(MARKER);
+
+      return JSON.stringify(structureOf(current)) === JSON.stringify(structureOf(page.marker));
     }
 
     // 'page' level: same document and field state, ignoring text churn.
@@ -544,47 +571,53 @@ export class CdpBrowser implements BrowserDriver {
     const kind = action.kind;
 
     if (kind === "wait") {
-      await sleep(100);
+      // A wait is a bet that the page is working. Poll for the outcome
+      // instead of sleeping a fixed slice: return as soon as the document
+      // key or text/marker moves, or the network goes idle after activity,
+      // or the patience budget runs out. Each early return saves a decision.
+      const deadline = Date.now() + WAIT_BUDGET_MS;
+      const hadRequests = this.pendingCount(this.session) > 0;
+
+      while (Date.now() < deadline) {
+        await sleep(WAIT_POLL_MS);
+
+        if (!(await this.fresh(page))) break;
+
+        if (hadRequests && this.pendingCount(this.session) === 0) break;
+      }
 
       return { executed: action.id };
     }
 
     if (kind === "scroll") {
-      // A fixed/sticky pane (cookie bar, nav drawer) at the wheel point
-      // swallows the scroll. Probe a few columns for a hit in the document
-      // flow, and send ~80% of the live viewport height.
-      const point = await this.evaluate<{ x: number; y: number; delta: number } | null>(
+      // Programmatic scroll, not a wheel event: headless Chrome drops the
+      // first wheel after launch and acks every later one only after ~1s.
+      // scrollBy is instant and still fires scroll events (infinite feeds
+      // listen to those). Prefer an inner scroller under the probe points
+      // (overflow panes, same-origin iframes); fall back to the window.
+      await this.evaluate(
         `(delta => {
           const sign=Math.sign(delta)||1;
-          const fixed=e=>{
-            for (let n=e;n && n!==document.documentElement;n=n.parentElement) {
-              const p=getComputedStyle(n).position;
-              if (p==='fixed'||p==='sticky') return true;
-            }
-            return false;
-          };
+          const dy=Math.round(sign*innerHeight*0.8);
+          const moved=(n,by)=>{const b=n.scrollTop;n.scrollBy({top:by,behavior:'instant'});return n.scrollTop!==b;};
           for (const fx of [0.5,0.3,0.7,0.15,0.85]) {
-            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.8);
-            const hit=document.elementFromPoint(x,y);
-            if (hit && !fixed(hit)) return {x,y,delta:Math.round(sign*innerHeight*0.8)};
+            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.6);
+            let e=document.elementFromPoint(x,y);
+            while (e?.shadowRoot) { const d=e.shadowRoot.elementFromPoint(x,y); if (!d||d===e) break; e=d; }
+            for (let n=e; n && n!==document.documentElement && n!==document.body; n=n.parentElement||n.getRootNode()?.host) {
+              if (n.tagName==='IFRAME') {
+                try { const w=n.contentWindow, b=w.scrollY; w.scrollBy({top:dy,behavior:'instant'}); if (w.scrollY!==b) return 'iframe'; } catch {}
+                continue;
+              }
+              const cs=getComputedStyle(n);
+              if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight>n.clientHeight+1 && moved(n,dy)) return 'element';
+            }
           }
-          return null;
+          const b=scrollY; scrollBy({top:dy,behavior:'instant'});
+          return scrollY!==b ? 'window' : 'none';
         })(${JSON.stringify(action.delta ?? SCROLL_DELTA)})`,
       ).catch(() => null);
 
-      const wheel = point ?? {
-        x: Math.round(VIEWPORT_W / 2),
-        y: Math.round(VIEWPORT_H * 0.8),
-        delta: action.delta ?? SCROLL_DELTA,
-      };
-
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mouseWheel",
-        x: wheel.x,
-        y: wheel.y,
-        deltaX: 0,
-        deltaY: wheel.delta,
-      });
       this.afterInput = action;
 
       return { executed: action.id };
@@ -615,7 +648,7 @@ export class CdpBrowser implements BrowserDriver {
 
     try {
       target = await this.evaluate(`(action => {
-        const e=window.__jevFast?.nodes.get(action.node);
+        const e=window.__jevFast?.node(action.node);
         // Visibility alone doesn't decide clickability — opacity:0 custom
         // controls fail checkVisibility yet win their own hit test. The
         // covered check below is the real arbiter.
@@ -631,14 +664,17 @@ export class CdpBrowser implements BrowserDriver {
           r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
         }
         if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return null;
-        const hit=d.elementFromPoint(lx,ly), root=e.getRootNode();
+        // elementFromPoint stops at the outermost shadow host; descend
+        // through open roots so nested shadow content can be hit directly.
+        let hit=d.elementFromPoint(lx,ly);
+        while (hit?.shadowRoot) { const deeper=hit.shadowRoot.elementFromPoint(lx,ly); if (!deeper||deeper===hit) break; hit=deeper; }
         // Composed containment: not covered when the hit is the target, is
         // inside it across shadow boundaries (walk hit's host chain up to e),
-        // or is e's own shadow host. An unrelated overlay in the same shadow
-        // root still counts as covered.
+        // or is one of e's own shadow hosts. An unrelated overlay in the
+        // same shadow root still counts as covered.
         const inside=h=>{for(let n=h;n;){if(n===e)return true;const r=n.getRootNode();n=r instanceof ShadowRoot?r.host:n.parentElement;}return false;};
-        const covered = !(hit===e || e.contains(hit) || inside(hit) ||
-          (root instanceof ShadowRoot && hit===root.host));
+        const hosts=new Set(); for (let r=e.getRootNode();r instanceof ShadowRoot;r=r.host.getRootNode()) hosts.add(r.host);
+        const covered = !(hit===e || e.contains(hit) || inside(hit) || hosts.has(hit));
         if (covered) return null;
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
@@ -691,7 +727,7 @@ export class CdpBrowser implements BrowserDriver {
 
     if (kind === "drag" && action.dragTo !== undefined) {
       const dest = await this.evaluate<{ x: number; y: number } | null>(`(() => {
-        const e=window.__jevFast?.nodes.get(${action.dragTo});
+        const e=window.__jevFast?.node(${action.dragTo});
         if (!e?.isConnected) return null;
         const r=e.getBoundingClientRect();
         return {x:r.x+r.width/2,y:r.y+r.height/2};
@@ -747,7 +783,7 @@ export class CdpBrowser implements BrowserDriver {
       // sees what the input caused.
       if (kind === "click" || kind === "context" || kind === "fill") {
         await this.evaluate(`(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${action.node});
           if (!e?.isConnected) return;
           const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView||window;
           if (r.top<0 || r.left<0 || r.bottom>w.innerHeight || r.right>w.innerWidth)
@@ -810,7 +846,7 @@ export class CdpBrowser implements BrowserDriver {
       // e.value= is invisible to React-style frameworks.
       await this.evaluate(
         `(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${action.node});
           if (!e?.isConnected) return "stale";
           if (e.isContentEditable) {
             e.innerText=${JSON.stringify(text ?? "")};
@@ -833,7 +869,7 @@ export class CdpBrowser implements BrowserDriver {
       await this.evaluate(
         `(() => {
           const c=window.__jevFast;
-          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
           if (!src || !dst) return "stale";
           const dt=new DataTransfer();
           const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
@@ -854,7 +890,7 @@ export class CdpBrowser implements BrowserDriver {
 
     await this.evaluate(
       `(() => {
-        const e=window.__jevFast?.nodes.get(${action.node});
+        const e=window.__jevFast?.node(${action.node});
         if (!e) return "stale";
         const r=e.getBoundingClientRect();
         const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};

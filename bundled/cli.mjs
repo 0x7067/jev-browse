@@ -62,6 +62,12 @@ function fingerprint(state) {
   };
   return createHash("sha256").update(JSON.stringify(canonicalize(content))).digest("hex");
 }
+function structureOf(marker) {
+  if (!Array.isArray(marker)) return null;
+  const strip = (a) => isJsonObject(a) ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id")) : a;
+  const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
+  return [marker[0], marker[1], marker[6], controls, marker[9]];
+}
 
 // src/model/space.ts
 function actionSpace(actions) {
@@ -1264,18 +1270,18 @@ ${repair}` : this.goal;
     if (page.pending_nav || this.browser.pendingNav?.()) {
       const deadline = Date.now() + 2500;
       while (Date.now() < deadline && this.browser.pendingNav?.()) {
-        if (!await this.browser.fresh(page)) {
+        if (!await this.browser.fresh(page, void 0, "structure")) {
           throw new StalePage("Navigation committed while confirming DONE. Choose again.");
         }
         await sleep3(120);
       }
-      if (!await this.browser.fresh(page)) {
+      if (!await this.browser.fresh(page, void 0, "structure")) {
         throw new StalePage("Page changed while confirming DONE. Choose again.");
       }
     }
     const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
     await sleep3(window_);
-    if (!await this.browser.fresh(page)) {
+    if (!await this.browser.fresh(page, void 0, "structure")) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }
   }
@@ -1286,10 +1292,10 @@ ${repair}` : this.goal;
     this.decision = null;
     const selected = decision.choice;
     if (selected === "DONE" || selected === "BLOCKED") {
-      if (!await this.browser.fresh(page)) {
+      if (!await this.browser.fresh(page, void 0, "structure")) {
         throw new StalePage("Page changed since the decision. Choose again.");
       }
-      if (selected === "BLOCKED" && this.earlyWaits < 3) {
+      if (selected === "BLOCKED" && this.earlyWaits < 3 && !this.probeConsulted) {
         this.earlyWaits++;
         const entry2 = this.waitEntry("Wait for the page to update", page);
         const deadline = Date.now() + 1e4;
@@ -1346,7 +1352,7 @@ ${repair}` : this.goal;
     let text = null;
     let helper = null;
     if (action.kind === "fill") {
-      if (!await this.browser.fresh(page)) {
+      if (!await this.browser.fresh(page, void 0, "page")) {
         throw new StalePage("Page changed before text generation. Choose again.");
       }
       const context = fieldContext(this.goal, action, page, this.history);
@@ -1566,7 +1572,7 @@ ${repair}` : this.goal;
       decisions: this.decisions.length,
       elapsed_ms: this.elapsed(),
       history: this.history,
-      final_text: this.page.text.slice(0, 2e3)
+      final_text: this.page.text
     };
   }
   async close() {
@@ -1874,6 +1880,8 @@ var PENDING_GRACE_MS = 1e4;
 var VIEWPORT_W = 1120;
 var VIEWPORT_H = 780;
 var SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
+var WAIT_BUDGET_MS = 1500;
+var WAIT_POLL_MS = 100;
 var DRAG_STEPS = 8;
 function reapProfileChrome(profileDir) {
   try {
@@ -1928,11 +1936,18 @@ var CdpBrowser = class _CdpBrowser {
         "--no-first-run",
         "--no-default-browser-check",
         "--disable-session-crashed-bubble",
-        "--hide-crash-restore-bubble"
+        "--hide-crash-restore-bubble",
+        // Smooth scrolling animates wheel input; CDP acks the wheel event
+        // only when the animation lands, ~750ms per scroll step.
+        "--disable-smooth-scrolling"
       ];
       if (!opts.headed) args.push("--headless=new");
       else
         args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
+      if (process.getuid?.() === 0) args.push("--no-sandbox");
+      for (const extra of (process.env.JEV_CHROME_ARGS ?? "").split(/\s+/)) {
+        if (extra) args.push(extra);
+      }
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
       browser.proc.on("error", () => {
       });
@@ -2115,7 +2130,7 @@ var CdpBrowser = class _CdpBrowser {
       this.afterInput = null;
       try {
         await this.evaluate(`(action => new Promise(resolve => {
-            const field=window.__jevFast?.nodes.get(action.node);
+            const field=window.__jevFast?.node(action.node);
             const autocomplete=action.kind==='fill' && field?.getAttribute('role')==='combobox';
             let frames=0, stopped=false;
             const finish=()=>{stopped=true;resolve()};
@@ -2179,9 +2194,13 @@ var CdpBrowser = class _CdpBrowser {
       const node = action.node;
       if (node === void 0) return false;
       const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`
+        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`
       );
       return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
+    }
+    if (level === "structure") {
+      const current = await this.evaluate(MARKER);
+      return JSON.stringify(structureOf(current)) === JSON.stringify(structureOf(page.marker));
     }
     if (level === "page") {
       const current = await this.evaluate(
@@ -2197,40 +2216,38 @@ var CdpBrowser = class _CdpBrowser {
     }
     const kind = action.kind;
     if (kind === "wait") {
-      await sleep4(100);
+      const deadline = Date.now() + WAIT_BUDGET_MS;
+      const hadRequests = this.pendingCount(this.session) > 0;
+      while (Date.now() < deadline) {
+        await sleep4(WAIT_POLL_MS);
+        if (!await this.fresh(page)) break;
+        if (hadRequests && this.pendingCount(this.session) === 0) break;
+      }
       return { executed: action.id };
     }
     if (kind === "scroll") {
-      const point = await this.evaluate(
+      await this.evaluate(
         `(delta => {
           const sign=Math.sign(delta)||1;
-          const fixed=e=>{
-            for (let n=e;n && n!==document.documentElement;n=n.parentElement) {
-              const p=getComputedStyle(n).position;
-              if (p==='fixed'||p==='sticky') return true;
-            }
-            return false;
-          };
+          const dy=Math.round(sign*innerHeight*0.8);
+          const moved=(n,by)=>{const b=n.scrollTop;n.scrollBy({top:by,behavior:'instant'});return n.scrollTop!==b;};
           for (const fx of [0.5,0.3,0.7,0.15,0.85]) {
-            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.8);
-            const hit=document.elementFromPoint(x,y);
-            if (hit && !fixed(hit)) return {x,y,delta:Math.round(sign*innerHeight*0.8)};
+            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.6);
+            let e=document.elementFromPoint(x,y);
+            while (e?.shadowRoot) { const d=e.shadowRoot.elementFromPoint(x,y); if (!d||d===e) break; e=d; }
+            for (let n=e; n && n!==document.documentElement && n!==document.body; n=n.parentElement||n.getRootNode()?.host) {
+              if (n.tagName==='IFRAME') {
+                try { const w=n.contentWindow, b=w.scrollY; w.scrollBy({top:dy,behavior:'instant'}); if (w.scrollY!==b) return 'iframe'; } catch {}
+                continue;
+              }
+              const cs=getComputedStyle(n);
+              if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight>n.clientHeight+1 && moved(n,dy)) return 'element';
+            }
           }
-          return null;
+          const b=scrollY; scrollBy({top:dy,behavior:'instant'});
+          return scrollY!==b ? 'window' : 'none';
         })(${JSON.stringify(action.delta ?? SCROLL_DELTA)})`
       ).catch(() => null);
-      const wheel = point ?? {
-        x: Math.round(VIEWPORT_W / 2),
-        y: Math.round(VIEWPORT_H * 0.8),
-        delta: action.delta ?? SCROLL_DELTA
-      };
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mouseWheel",
-        x: wheel.x,
-        y: wheel.y,
-        deltaX: 0,
-        deltaY: wheel.delta
-      });
       this.afterInput = action;
       return { executed: action.id };
     }
@@ -2250,7 +2267,7 @@ var CdpBrowser = class _CdpBrowser {
     let target;
     try {
       target = await this.evaluate(`(action => {
-        const e=window.__jevFast?.nodes.get(action.node);
+        const e=window.__jevFast?.node(action.node);
         // Visibility alone doesn't decide clickability \u2014 opacity:0 custom
         // controls fail checkVisibility yet win their own hit test. The
         // covered check below is the real arbiter.
@@ -2266,14 +2283,17 @@ var CdpBrowser = class _CdpBrowser {
           r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
         }
         if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return null;
-        const hit=d.elementFromPoint(lx,ly), root=e.getRootNode();
+        // elementFromPoint stops at the outermost shadow host; descend
+        // through open roots so nested shadow content can be hit directly.
+        let hit=d.elementFromPoint(lx,ly);
+        while (hit?.shadowRoot) { const deeper=hit.shadowRoot.elementFromPoint(lx,ly); if (!deeper||deeper===hit) break; hit=deeper; }
         // Composed containment: not covered when the hit is the target, is
         // inside it across shadow boundaries (walk hit's host chain up to e),
-        // or is e's own shadow host. An unrelated overlay in the same shadow
-        // root still counts as covered.
+        // or is one of e's own shadow hosts. An unrelated overlay in the
+        // same shadow root still counts as covered.
         const inside=h=>{for(let n=h;n;){if(n===e)return true;const r=n.getRootNode();n=r instanceof ShadowRoot?r.host:n.parentElement;}return false;};
-        const covered = !(hit===e || e.contains(hit) || inside(hit) ||
-          (root instanceof ShadowRoot && hit===root.host));
+        const hosts=new Set(); for (let r=e.getRootNode();r instanceof ShadowRoot;r=r.host.getRootNode()) hosts.add(r.host);
+        const covered = !(hit===e || e.contains(hit) || inside(hit) || hosts.has(hit));
         if (covered) return null;
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
@@ -2315,7 +2335,7 @@ var CdpBrowser = class _CdpBrowser {
     }
     if (kind === "drag" && action.dragTo !== void 0) {
       const dest = await this.evaluate(`(() => {
-        const e=window.__jevFast?.nodes.get(${action.dragTo});
+        const e=window.__jevFast?.node(${action.dragTo});
         if (!e?.isConnected) return null;
         const r=e.getBoundingClientRect();
         return {x:r.x+r.width/2,y:r.y+r.height/2};
@@ -2359,7 +2379,7 @@ var CdpBrowser = class _CdpBrowser {
       }
       if (kind === "click" || kind === "context" || kind === "fill") {
         await this.evaluate(`(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${action.node});
           if (!e?.isConnected) return;
           const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView||window;
           if (r.top<0 || r.left<0 || r.bottom>w.innerHeight || r.right>w.innerWidth)
@@ -2410,7 +2430,7 @@ var CdpBrowser = class _CdpBrowser {
     if (action.kind === "fill") {
       await this.evaluate(
         `(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${action.node});
           if (!e?.isConnected) return "stale";
           if (e.isContentEditable) {
             e.innerText=${JSON.stringify(text ?? "")};
@@ -2430,7 +2450,7 @@ var CdpBrowser = class _CdpBrowser {
       await this.evaluate(
         `(() => {
           const c=window.__jevFast;
-          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
           if (!src || !dst) return "stale";
           const dt=new DataTransfer();
           const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
@@ -2445,7 +2465,7 @@ var CdpBrowser = class _CdpBrowser {
     const types = action.kind === "hover" ? ["mouseover", "mousemove"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
     await this.evaluate(
       `(() => {
-        const e=window.__jevFast?.nodes.get(${action.node});
+        const e=window.__jevFast?.node(${action.node});
         if (!e) return "stale";
         const r=e.getBoundingClientRect();
         const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};
@@ -2614,7 +2634,7 @@ var AgentBrowser = class _AgentBrowser {
       this.afterInput = null;
       try {
         await this.evaluate(`(action => new Promise(resolve => {
-          const field=window.__jevFast?.nodes.get(action.node);
+          const field=window.__jevFast?.node(action.node);
           const autocomplete=action.kind==='fill' && field?.getAttribute('role')==='combobox';
           let frames=0, stopped=false;
           const finish=()=>{stopped=true;resolve()};
@@ -2656,7 +2676,7 @@ var AgentBrowser = class _AgentBrowser {
       const node = action.node;
       if (node === void 0) return false;
       const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`
+        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`
       );
       return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
     }
@@ -2666,7 +2686,11 @@ var AgentBrowser = class _AgentBrowser {
       );
       return JSON.stringify(current) === JSON.stringify(page.page_key);
     }
-    return JSON.stringify(await this.evaluate(MARKER2)) === JSON.stringify(page.marker);
+    const marker = await this.evaluate(MARKER2);
+    if (level === "structure") {
+      return JSON.stringify(structureOf(marker)) === JSON.stringify(structureOf(page.marker));
+    }
+    return JSON.stringify(marker) === JSON.stringify(page.marker);
   }
   async act(action, page, text) {
     if (!await this.fresh(page, action, "page")) {
@@ -2696,7 +2720,7 @@ var AgentBrowser = class _AgentBrowser {
     }
     if (action.node === void 0) throw new Error("Invalid observed node");
     const tagged = await this.evaluate(`(() => {
-      const e=window.__jevFast?.nodes.get(${action.node});
+      const e=window.__jevFast?.node(${action.node});
       // Visibility alone doesn't decide clickability \u2014 the covered check
       // below arbitrates; opacity:0 controls win their own hit test.
       if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return false;
@@ -2721,7 +2745,7 @@ var AgentBrowser = class _AgentBrowser {
       if (kind === "drag" && action.dragTo !== void 0) {
         await this.evaluate(`(() => {
           const c=window.__jevFast;
-          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
           if (!src || !dst) return "stale";
           const dt=new DataTransfer();
           const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
@@ -2780,7 +2804,7 @@ var AgentBrowser = class _AgentBrowser {
     }
     if (action.kind === "fill") {
       await this.evaluate(`(() => {
-        const e=window.__jevFast?.nodes.get(${action.node});
+        const e=window.__jevFast?.node(${action.node});
         if (!e?.isConnected) return "stale";
         if (e.isContentEditable) {
           e.innerText=${JSON.stringify(text ?? "")};
@@ -2797,7 +2821,7 @@ var AgentBrowser = class _AgentBrowser {
     }
     const types = action.kind === "hover" ? ["mouseover", "mousemove"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
     await this.evaluate(`(() => {
-      const e=window.__jevFast?.nodes.get(${action.node});
+      const e=window.__jevFast?.node(${action.node});
       if (!e) return "stale";
       const r=e.getBoundingClientRect();
       const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};

@@ -10,6 +10,10 @@
   };
 
   for (const [id,e] of cache.nodes) if (!e.isConnected) cache.nodes.delete(id);
+  // Signatures outlive their nodes for one re-resolution; prune with them.
+  cache.sig ||= new Map();
+
+  for (const id of cache.sig.keys()) if (!cache.nodes.has(id)) cache.sig.delete(id);
   const safe = e => e.type !== 'hidden';
 
   const visible = e => !e.closest('[aria-hidden="true"],[inert]') &&
@@ -119,21 +123,42 @@ return s?[s]:[]}).join(' ') ||
     return null;
   };
 
+  // Field state by position and meaning, not node identity: a re-render
+  // that swaps the nodes but keeps the fields is the same page.
   cache.pageKey=()=>[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
     [...document.querySelectorAll('input,textarea,select')]
-      .flatMap(e=>safe(e)?[[identity(e),e.value,e.checked,e.selectedIndex,e.disabled,e.readOnly]]:[])];
+      .flatMap(e=>safe(e)?[[e.tagName,e.type||null,name(e),e.value,e.checked,e.selectedIndex,e.disabled,e.readOnly]]:[])];
+  // The click guard: identity, semantics, and rounded geometry. Ambient text
+  // (a clock next to the button) is not part of it — a control that kept
+  // its node, name, state, and place is the control the model chose.
   cache.guard=e=>{
     if (!e?.isConnected || !visible(e)) return null;
-    const scope=e.closest('form,dialog,[role="dialog"],article,li,tr,[role="row"]') || e.parentElement;
+    const r=e.getBoundingClientRect();
 
     return [identity(e),role(e),name(e),e.value??null,e.checked??null,e.selectedIndex??null,
       e.readOnly??null,e.matches(':disabled'),e.getAttribute('aria-disabled'),
       e.getAttribute('aria-expanded'),e.getAttribute('aria-checked'),e.getAttribute('aria-selected'),
       e.getAttribute('aria-pressed'),e.getAttribute('aria-valuenow'),e.getAttribute('aria-valuemin'),
-      e.getAttribute('aria-valuemax'),e.getAttribute('href'),scope?.innerText?.slice(0,6000)||''];
+      e.getAttribute('aria-valuemax'),e.getAttribute('href'),
+      [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]];
   };
 
   const actions=[];
+
+  // Hit-test through open shadow roots: document.elementFromPoint stops at
+  // the outermost host, so nested shadow content is never "hit" directly.
+  const deepHit=(doc,x,y)=>{
+    let hit=doc.elementFromPoint(x,y);
+
+    while (hit?.shadowRoot) {
+      const deeper=hit.shadowRoot.elementFromPoint(x,y);
+
+      if (!deeper || deeper===hit) break;
+      hit=deeper;
+    }
+
+    return hit;
+  };
 
   // Interactive elements hidden by CSS (menus, captions revealed on :hover)
   // never reach the action table — but their visible container can be
@@ -184,7 +209,7 @@ return s?[s]:[]}).join(' ') ||
               ix1 = Math.min(r.x+r.width,vw), iy1 = Math.min(r.y+r.height,vh);
 
         if (r.width > 0 && r.height > 0 && ix1 > ix0 && iy1 > iy0) {
-          const hit = d.elementFromPoint((ix0+ix1)/2, (iy0+iy1)/2);
+          const hit = deepHit(d,(ix0+ix1)/2, (iy0+iy1)/2);
           vis = hit === e || e.contains(hit) || hit?.closest?.('label')?.control === e;
         }
       }
@@ -229,6 +254,16 @@ return s?[s]:[]}).join(' ') ||
           fx+r.x+r.width<=0 || fy+r.y+r.height<=0) continue;
 
       if (rname==='gridcell' && e.querySelector('button,[role="button"]')) continue;
+
+      // Event-delegation containers (ul.onclick, grid.onclick) carry a
+      // handler but no semantics of their own; they precede their children
+      // in DOM order and take the children's text as a name, so a model
+      // picks the container and the click lands between the real targets.
+      // Offer the children instead. Containers with no offered descendant
+      // (custom widgets on plain divs) stay.
+      if (!e.matches(INTERACTIVE+',[draggable="true"],[contenteditable="true"]') && !dropZone &&
+          !e.hasAttribute('oncontextmenu') && !e.oncontextmenu &&
+          e.querySelector(INTERACTIVE+',[onclick],[draggable="true"],[contenteditable="true"]')) continue;
       const frame=(fx||fy)?{x:fx,y:fy}:undefined;
       const shadow=e.getRootNode() instanceof ShadowRoot;
 
@@ -236,6 +271,8 @@ return s?[s]:[]}).join(' ') ||
       // contains pathological pages (giant labels once blew the model request).
       const base={node:identity(e),role:rname,label:(name(e)||rname).slice(0,240),
         rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height}};
+
+      cache.sig.set(base.node,[root,rname,name(e)]);
 
       if (e.getAttribute('draggable')==='true' || e.ondragstart) base.draggable=true;
 
@@ -307,6 +344,37 @@ return s?[s]:[]}).join(' ') ||
 
   gather(document,0,0,0);
 
+  // Node lookup with one re-resolution: a virtual-DOM re-render swaps the
+  // element behind an observed node between decision and input. When the
+  // observed node is gone, the unique element in the same root with the
+  // same role and accessible name is the same control; bind it to the id
+  // unless a newer snapshot already named it.
+  cache.node=id=>{
+    const e=cache.nodes.get(id);
+
+    if (e?.isConnected) return e;
+    const sig=cache.sig.get(id);
+
+    if (!sig) return e;
+    const [root,r,n]=sig;
+    let found=null;
+
+    try {
+      for (const c of root.querySelectorAll(selector)) {
+        if (role(c)!==r || name(c)!==n) continue;
+
+        if (found) return e;
+        found=c;
+      }
+    } catch { return e; }
+
+    if (!found) return e;
+
+    if (!cache.ids.has(found)) { cache.ids.set(found,id); cache.nodes.set(id,found); }
+
+    return found;
+  };
+
   // Emit hover offers on the visible ancestors of hidden interactive content.
   for (const [a,off] of hoverZones) {
     const ar=a.getBoundingClientRect();
@@ -356,7 +424,7 @@ return s?[s]:[]}).join(' ') ||
     const body=doc.body||doc.documentElement, range=doc.createRange();
     const walker=doc.createTreeWalker(body,NodeFilter.SHOW_TEXT);
 
-    while ((node=walker.nextNode()) && length<6000) {
+    while ((node=walker.nextNode()) && length<24000) {
       const value=node.textContent.trim(), parent=node.parentElement;
 
       if (!value || !parent || parent.closest('script,style,noscript,template') || !visible(parent)) continue;
@@ -374,13 +442,17 @@ return s?[s]:[]}).join(' ') ||
         if (f.contentDocument && fr.width>0 && fr.height>0 && visible(f)) walkText(f.contentDocument);
       } catch { /* cross-origin */ }
 
-      if (length>=6000) break;
+      if (length>=24000) break;
     }
   };
 
   walkText(document);
 
-  let text=words.join('\n').slice(0,6000);
+  // The budget keeps the head of the DOM; confirmations, toasts, and results
+  // usually land at its tail. Over budget, keep both ends.
+  let text=words.join('\n');
+
+  if (text.length>6000) text=text.slice(0,4500)+'\n[… '+(text.length-6000)+' chars omitted …]\n'+text.slice(-1500);
   const height=document.documentElement.scrollHeight, page_key=cache.pageKey();
   // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
   const semantics=actions.map(({rect: _rect,...action})=>action);

@@ -37,3 +37,23 @@ export function fingerprint(state: PageState): string {
 
   return createHash("sha256").update(JSON.stringify(canonicalize(content))).digest("hex");
 }
+
+/**
+ * The part of a marker that survives text churn and node re-creation:
+ * document identity, URL, title, offered controls by semantics (not node
+ * ids), and form state. Used for DONE/BLOCKED
+ * claims, where a clock or a virtual-DOM re-render must not read as a
+ * changed page but a navigation or content swap must.
+ */
+export function structureOf(marker: JsonValue): JsonValue {
+  if (!Array.isArray(marker)) return null;
+
+  const strip = (a: JsonValue) =>
+    isJsonObject(a)
+      ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id"))
+      : a;
+
+  const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
+
+  return [marker[0], marker[1], marker[6], controls, marker[9]];
+}

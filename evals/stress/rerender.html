@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Rerender</title></head>
+<body style="font-family:system-ui"><h1>Virtual-DOM style rerender every 300ms</h1><div id="app"></div>
+<script>
+let state={q:'',added:false,tick:0};
+function render(){app.innerHTML=`<p>tick ${state.tick}</p><input id="q" placeholder="Search things" value="${state.q}"><button id="go">Search</button>${state.q==='kayak'&&!state.added?'<div><p>Result: Sea kayak</p><button id="add">Add Sea kayak</button></div>':''}${state.added?'<p>DONE: kayak added</p>':''}`;
+const q=document.getElementById('q');q.oninput=e=>{state.q=e.target.value;};
+document.getElementById('go').onclick=()=>{render();};
+const a=document.getElementById('add');if(a)a.onclick=()=>{state.added=true;render();};}
+setInterval(()=>{const q=document.getElementById('q');const focused=document.activeElement===q;const sel=q?q.selectionStart:0;state.tick++;render();if(focused){const n=document.getElementById('q');n.focus();n.setSelectionRange(sel,sel);}},300);
+render();
+</script></body></html>

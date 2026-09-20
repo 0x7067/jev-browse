@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Multi form</title></head>
+<body style="font-family:system-ui"><h1>Booking form</h1>
+<form method="post" action="/submit">
+<label>Full name <input name="name" required></label><br>
+<label>Email <input type="email" name="email" required></label><br>
+<label>Phone <input type="tel" name="phone"></label><br>
+<label>Guests <input type="number" name="guests" min="1" max="9"></label><br>
+<label>Room <select name="room"><option value="">Choose…</option><option value="std">Standard</option><option value="dlx">Deluxe</option><option value="ste">Suite</option></select></label><br>
+<label>Arrival <input type="date" name="arrival"></label><br>
+<label><input type="checkbox" name="terms" value="yes"> I accept the terms</label><br>
+<label>Notes <textarea name="notes"></textarea></label><br>
+<button type="submit">Book now</button>
+</form></body></html>

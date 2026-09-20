@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SPA</title></head>
+<body style="font-family:system-ui"><nav><a href="/spa-router.html#/home" id="nh">Home</a> <a href="/spa-router.html#/products" id="np">Products</a> <a href="/spa-router.html#/about" id="na">About</a></nav><main id="view"></main>
+<script>
+const routes={'#/home':'<h1>Home</h1>','#/products':'<h1>Products</h1><ul><li><a href="#/p/1">Widget</a></li><li><a href="#/p/2">Gadget</a></li></ul>','#/p/1':'<h1>Widget</h1><button id="buy">Add widget to cart</button>','#/p/2':'<h1>Gadget</h1>','#/about':'<h1>About</h1>','#/cart':'<h1>Cart</h1><p>DONE: widget in cart</p>'};
+function render(){const h=location.hash||'#/home';view.innerHTML=routes[h]||'<h1>404</h1>';const b=document.getElementById('buy');if(b)b.onclick=()=>{history.pushState({}, '', '#/cart');render();};}
+addEventListener('hashchange',render);addEventListener('popstate',render);render();
+</script></body></html>

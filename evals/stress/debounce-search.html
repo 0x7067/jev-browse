@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Debounced search</title></head>
+<body style="font-family:system-ui"><h1>Debounced search (600ms, then XHR)</h1>
+<input id="q" placeholder="Search products" autocomplete="off" role="combobox" aria-controls="res"><div id="res" role="listbox"></div><div id="out"></div>
+<script>
+let t;const items=['Trail shoes','Trail pack','Tent stakes','Thermos'];
+q.oninput=()=>{clearTimeout(t);res.innerHTML='';t=setTimeout(async()=>{await fetch('/api/slow?ms=700');const v=q.value.toLowerCase();res.innerHTML=items.filter(i=>i.toLowerCase().includes(v)).map(i=>`<div role="option" tabindex="0">${i}</div>`).join('');},600);};
+res.onclick=e=>{if(e.target.getAttribute('role')==='option')out.textContent='DONE: picked '+e.target.textContent;};
+</script></body></html>

@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Overlay</title>
+<style>#banner{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center}#banner div{background:#fff;padding:24px}</style></head>
+<body style="font-family:system-ui"><h1>Page behind a consent overlay</h1><button id="cta">Start free trial</button><div id="out"></div>
+<div id="banner"><div><p>We use cookies.</p><button id="accept">Accept all</button> <button id="reject">Reject</button></div></div>
+<script>accept.onclick=reject.onclick=()=>banner.remove();cta.onclick=()=>out.textContent='DONE: trial started';</script>
+</body></html>
