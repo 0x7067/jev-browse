@@ -72,7 +72,7 @@ function structureOf(marker) {
   if (!Array.isArray(marker)) return null;
   const strip = (a) => isJsonObject(a) ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id")) : a;
   const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
-  const text = isString(marker[7]) ? marker[7].replace(/\d+/g, "#") : marker[7];
+  const text = isString(marker[7]) ? marker[7].replace(new RegExp("\\p{N}+", "gu"), "#") : marker[7];
   return [marker[0], marker[1], marker[6], controls, marker[9], text];
 }
 function markerMatches(level, current, observed) {
@@ -1893,6 +1893,34 @@ var SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
 var WAIT_BUDGET_MS = 1500;
 var WAIT_POLL_MS = 100;
 var DRAG_STEPS = 8;
+function splitShellWords(input) {
+  const out = [];
+  let cur = "", quote = null, started = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (quote !== null) {
+      if (ch === quote) quote = null;
+      else cur += ch;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+      started = true;
+    } else if (ch === "\\" && i + 1 < input.length) {
+      cur += input[++i];
+      started = true;
+    } else if (/\s/.test(ch)) {
+      if (started || cur) {
+        out.push(cur);
+        cur = "";
+        started = false;
+      }
+    } else {
+      cur += ch;
+      started = true;
+    }
+  }
+  if (started || cur) out.push(cur);
+  return out;
+}
 function reapProfileChrome(profileDir) {
   try {
     const escaped = profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -1951,9 +1979,14 @@ var CdpBrowser = class _CdpBrowser {
       if (!opts.headed) args.push("--headless=new");
       else
         args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
-      if (process.getuid?.() === 0) args.push("--no-sandbox");
-      for (const extra of (process.env.JEV_CHROME_ARGS ?? "").split(/\s+/)) {
-        if (extra) args.push(extra);
+      if (process.getuid?.() === 0) {
+        args.push("--no-sandbox");
+        process.stderr.write(
+          "jev-browse: running as root \u2014 Chrome launched with --no-sandbox, renderer containment is off. Attach to a non-root Chrome via JEV_CDP_URL to keep it.\n"
+        );
+      }
+      for (const extra of splitShellWords(process.env.JEV_CHROME_ARGS ?? "")) {
+        args.push(extra);
       }
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
       browser.proc.on("error", () => {

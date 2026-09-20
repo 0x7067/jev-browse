@@ -268,17 +268,6 @@ return s?[s]:[]}).join(' ') ||
 
       if (rname==='gridcell' && e.querySelector('button,[role="button"]')) continue;
 
-      // Event-delegation containers (ul.onclick, grid.onclick) carry a
-      // handler but no semantics of their own; they precede their children
-      // in DOM order and take the children's text as a name, so a model
-      // picks the container and the click lands between the real targets.
-      // Offer the children instead. Containers with no usable descendant
-      // (custom widgets on plain divs, a card whose only button is
-      // disabled) stay.
-      if (!e.matches(INTERACTIVE+',[draggable="true"],[contenteditable="true"]') && !dropZone &&
-          !e.hasAttribute('oncontextmenu') && !e.oncontextmenu &&
-          [...e.querySelectorAll(INTERACTIVE+',[onclick],[draggable="true"],[contenteditable="true"]')]
-            .some(d=>safe(d) && !d.matches(':disabled') && visible(d))) continue;
       const frame=(fx||fy)?{x:fx,y:fy}:undefined;
       const shadow=e.getRootNode() instanceof ShadowRoot;
 
@@ -389,6 +378,51 @@ return s?[s]:[]}).join(' ') ||
     for (let i=actions.length-1;i>=0;i--) if (behindModal(cache.nodes.get(actions[i].node))) actions.splice(i,1);
 
     for (const a of hoverZones.keys()) if (behindModal(a)) hoverZones.delete(a);
+  }
+
+  // Event-delegation containers (ul.onclick, grid.onclick) carry a handler
+  // but no semantics of their own; they precede their children in DOM order
+  // and take the children's text as a name, so a model picks the container
+  // and the click lands between the real targets. Suppress one only when
+  // offered descendants cover most of its area — a container whose matching
+  // descendants were all filtered out (hidden, disabled), or whose own
+  // region does distinct work (a clickable card with one nested button), is
+  // the only way to reach that behavior and stays.
+  {
+    const offered=new Set();
+
+    for (const a of actions) {
+      const el=a.node===undefined||a.kind==='hover' ? null : cache.nodes.get(a.node);
+
+      if (el) offered.add(el);
+    }
+
+    const drop=new Set();
+
+    for (const a of actions) {
+      const e=a.node===undefined ? null : cache.nodes.get(a.node);
+
+      if (!e || drop.has(a.node) || hasDropProp(e) ||
+          e.matches(INTERACTIVE+',[draggable="true"],[contenteditable="true"]') ||
+          e.hasAttribute('oncontextmenu') || e.oncontextmenu) continue;
+
+      const r=e.getBoundingClientRect(), area=r.width*r.height;
+      let covered=0;
+
+      for (const d of e.querySelectorAll('*')) {
+        if (!offered.has(d)) continue;
+        const dr=d.getBoundingClientRect();
+
+        covered+=Math.max(0,Math.min(r.right,dr.right)-Math.max(r.left,dr.left))*
+          Math.max(0,Math.min(r.bottom,dr.bottom)-Math.max(r.top,dr.top));
+
+        if (covered>=area*0.6) break;
+      }
+
+      if (area>0 && covered>=area*0.6) drop.add(a.node);
+    }
+
+    for (let i=actions.length-1;i>=0;i--) if (drop.has(actions[i].node)) actions.splice(i,1);
   }
 
   // Node lookup with one re-resolution: a virtual-DOM re-render swaps the

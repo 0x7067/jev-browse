@@ -94,6 +94,44 @@ const WAIT_POLL_MS = 100;
 /** Interpolated mouseMoved events between drag press and release. */
 const DRAG_STEPS = 8;
 
+/** Whitespace-split with shell quoting: ".."/'..' group (even mid-word, so
+ *  --user-agent="Foo Bar" stays one argument), \ escapes the next char. */
+function splitShellWords(input: string): string[] {
+  const out: string[] = [];
+
+  let cur = "",
+    quote: string | null = null,
+    started = false;
+
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+
+    if (quote !== null) {
+      if (ch === quote) quote = null;
+      else cur += ch;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+      started = true;
+    } else if (ch === "\\" && i + 1 < input.length) {
+      cur += input[++i];
+      started = true;
+    } else if (/\s/.test(ch)) {
+      if (started || cur) {
+        out.push(cur);
+        cur = "";
+        started = false;
+      }
+    } else {
+      cur += ch;
+      started = true;
+    }
+  }
+
+  if (started || cur) out.push(cur);
+
+  return out;
+}
+
 /** Kill Chrome instances still bound to our profile dir. True when any were reaped. */
 function reapProfileChrome(profileDir: string): boolean {
   try {
@@ -177,12 +215,21 @@ export class CdpBrowser implements BrowserDriver {
       else
         args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
 
-      // Chrome refuses to start as root without --no-sandbox (containers, CI).
-      // JEV_CHROME_ARGS appends operator flags, whitespace-separated.
-      if (process.getuid?.() === 0) args.push("--no-sandbox");
+      // Chrome refuses to start as root without --no-sandbox (containers,
+      // CI) — but the flag switches off renderer containment, so say so
+      // instead of doing it silently. Attaching via --cdp/JEV_CDP_URL to a
+      // Chrome launched as a normal user keeps the sandbox.
+      if (process.getuid?.() === 0) {
+        args.push("--no-sandbox");
+        process.stderr.write(
+          "jev-browse: running as root — Chrome launched with --no-sandbox, " +
+            "renderer containment is off. Attach to a non-root Chrome via JEV_CDP_URL to keep it.\n",
+        );
+      }
 
-      for (const extra of (process.env.JEV_CHROME_ARGS ?? "").split(/\s+/)) {
-        if (extra) args.push(extra);
+      // JEV_CHROME_ARGS appends operator flags, shell-style words.
+      for (const extra of splitShellWords(process.env.JEV_CHROME_ARGS ?? "")) {
+        args.push(extra);
       }
 
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });

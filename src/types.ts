@@ -95,8 +95,9 @@ export interface BrowserDriver {
   observe(): Promise<PageState>;
   /** Is `page` still the live document? With an action, compare only its guard.
    *  level "page" compares just the document key (for actions that don't care
-   *  about text churn); "structure" adds title and the offered-control set but
-   *  still ignores text churn; "full" (default) includes text and scroll. */
+   *  about text churn); "structure" adds title, the offered-control set, and
+   *  digit-normalized text but ignores scroll and node ids; "full" (default)
+   *  is the whole marker. */
   fresh(
     page: PageState,
     action?: ObservedAction,

@@ -365,9 +365,9 @@ export class Agent {
     const selected = decision.choice;
 
     if (selected === "DONE" || selected === "BLOCKED") {
-      // A claim is about the page's state, not its text stream: a clock or
-      // ticker must not turn every DONE into a stale storm. Structure-level
-      // freshness still catches navigations and content swaps.
+      // A claim must describe the live page: structure freshness compares
+      // controls, form state, and digit-normalized text — a clock can't
+      // stale-loop DONE, but a "Processing" → "failed" swap can.
       if (!(await this.browser.fresh(page, undefined, "structure"))) {
         throw new StalePage("Page changed since the decision. Choose again.");
       }
