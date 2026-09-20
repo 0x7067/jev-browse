@@ -39,10 +39,11 @@ export function fingerprint(state: PageState): string {
 }
 
 /**
- * The part of a marker that survives text churn and node re-creation:
+ * The part of a marker that survives numeric churn and node re-creation:
  * document identity, URL, title, offered controls by semantics (not node
- * ids), and form state. A clock or a virtual-DOM re-render must not read as
- * a changed page; a navigation or a content swap must.
+ * ids), form state, and visible text with digits folded. A clock or a
+ * virtual-DOM re-render must not read as a changed page; a navigation, a
+ * content swap, or a status message changing must.
  */
 export function structureOf(marker: JsonValue): JsonValue {
   if (!Array.isArray(marker)) return null;
@@ -54,7 +55,12 @@ export function structureOf(marker: JsonValue): JsonValue {
 
   const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
 
-  return [marker[0], marker[1], marker[6], controls, marker[9]];
+  // Visible text still counts, with numbers folded: clocks, prices, and
+  // counters churn in digits; "Processing" turning into "Report failed"
+  // does not.
+  const text = isString(marker[7]) ? marker[7].replace(/\d+/g, "#") : marker[7];
+
+  return [marker[0], marker[1], marker[6], controls, marker[9], text];
 }
 
 /** Freshness compare shared by the drivers: "full" is the whole marker,

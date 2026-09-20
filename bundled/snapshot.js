@@ -272,11 +272,13 @@ return s?[s]:[]}).join(' ') ||
       // handler but no semantics of their own; they precede their children
       // in DOM order and take the children's text as a name, so a model
       // picks the container and the click lands between the real targets.
-      // Offer the children instead. Containers with no offered descendant
-      // (custom widgets on plain divs) stay.
+      // Offer the children instead. Containers with no usable descendant
+      // (custom widgets on plain divs, a card whose only button is
+      // disabled) stay.
       if (!e.matches(INTERACTIVE+',[draggable="true"],[contenteditable="true"]') && !dropZone &&
           !e.hasAttribute('oncontextmenu') && !e.oncontextmenu &&
-          e.querySelector(INTERACTIVE+',[onclick],[draggable="true"],[contenteditable="true"]')) continue;
+          [...e.querySelectorAll(INTERACTIVE+',[onclick],[draggable="true"],[contenteditable="true"]')]
+            .some(d=>safe(d) && !d.matches(':disabled') && visible(d))) continue;
       const frame=(fx||fy)?{x:fx,y:fy}:undefined;
       const shadow=e.getRootNode() instanceof ShadowRoot;
 

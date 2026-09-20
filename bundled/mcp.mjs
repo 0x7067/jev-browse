@@ -72,7 +72,8 @@ function structureOf(marker) {
   if (!Array.isArray(marker)) return null;
   const strip = (a) => isJsonObject(a) ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id")) : a;
   const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
-  return [marker[0], marker[1], marker[6], controls, marker[9]];
+  const text = isString(marker[7]) ? marker[7].replace(/\d+/g, "#") : marker[7];
+  return [marker[0], marker[1], marker[6], controls, marker[9], text];
 }
 function markerMatches(level, current, observed) {
   const project = level === "structure" ? structureOf : (m) => m;
