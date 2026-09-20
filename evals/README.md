@@ -116,17 +116,22 @@ the repair consult extends how long a stuck run persists), tin-slow +16.4s
 
 ## live-v11 (2026-09-20)
 
-Three consecutive full runs against the live TypeSafe model (`jev-latest`)
+Four consecutive full runs against the live TypeSafe model (`jev-latest`)
 with `inception/mercury-2.5` on OpenRouter as the text helper, from a
-headless Linux container behind an egress proxy. Runs 1 and 2 are the driver
-fixes below; run 3 adds the two loop changes at the end of the table.
+headless Linux container behind an egress proxy. Runs 1 and 2 carry the
+driver fixes below; run 3 adds the two loop changes; run 4 adds the modal
+and shadow-text changes at the end of the table.
 
-| | bench-v10 | live-v11 run 1 | run 2 | run 3 |
-| --- | --- | --- | --- | --- |
-| verified | 36 | 35 | 35 | see file |
-| unverifiable | 16 | 16 | 16 | 16 |
-| failed | 3 | 4 | 4 | see file |
-| median total | 388.9 s | 238.9 s | 253.0 s | see file |
+| | bench-v10 | live-v11 run 1 | run 2 | run 3 | run 4 |
+| --- | --- | --- | --- | --- | --- |
+| verified | 36 | 35 | 35 | 35 | 35 |
+| unverifiable | 16 | 16 | 16 | 16 | 16 |
+| failed | 3 | 4 | 4 | 4 | 4 |
+| median total | 388.9 s | 238.9 s | 253.0 s | 192.8 s | 182.2 s |
+
+Verdicts were identical across all four runs. The one unverifiable task
+that changed outcome is `mdn-search`: blocked in runs 1–3 (reproducibly),
+done in run 4 after the modal fix.
 
 The four failures are this container's network, not the agent, and were
 confirmed by tracing each one (`final_text` is now kept in results):
@@ -153,6 +158,9 @@ Fixes in this version, each confirmed by a live re-run of the affected task:
 | repeated BLOCKED paid a second 10 s probe | probe re-armed after the repair consult | one probe per stuck episode |
 | one-click tasks cost 3.7–3.9 s (example-link, books-toscrape) | the premature-done consult ran after the 1.5 s stability window, so the window was paid twice | consult first, window once: 2.1 s and 1.2 s |
 | a BLOCKED claim on an idle page cost 10 s (hn-paginate 13.1 s, nested-frames 11.2 s) | probe deadline fixed at 10 s | 4 s when no request is in flight, 10 s otherwise: 6.0 s and 4.6 s |
+| mdn-search: 9 stale cycles then blocked, every run | the model clicked the header Search button behind MDN's open modal; the snapshot offered it because inertness under `:modal` has no attribute to match | controls outside an open modal dialog are not offered; dialog text inside shadow roots is now read (the text walk pierces open shadow roots) |
+| nested-shadow ancestors invisible to the covered check | the composed ancestor walk jumped to the host before the ancestors inside the shadow tree | parents first, host last; a target clipped by its own scroll container is scrolled into view once before it counts as covered |
+| stale storms were opaque | events carried no reason | stale events name the target and the failed precondition |
 
 ## Known limits (not bugs)
 
