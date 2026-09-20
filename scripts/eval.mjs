@@ -151,9 +151,27 @@ function runOnce(task, env, engine) {
         .filter((e) => e?.type === "step")
         .map((e) => `${e.operation}:${(e.action ?? "").slice(0, 30)}@${e.elapsed_ms}`);
 
+      // Keep enough to judge the run without re-running it: what was typed,
+      // what changed, and what the terminal page said.
+      const trail = (result.history ?? []).map((h) => ({
+        op: h.operation,
+        action: (h.action ?? "").slice(0, 60),
+        text: h.text,
+        changed: h.page_changed,
+        follow_up: h.follow_up,
+        jev_ms: h.latency_ms,
+        text_ms: h.text_latency_ms,
+        at_ms: h.elapsed_ms,
+      }));
+
+      const stale = stderr.split("\n").filter((l) => l.includes('"type":"stale"')).length;
+
       resolvePromise({
         status: result.status,
         verified: isVerifiable(task) ? verify(task, result, ops.join(" ")) : "unverifiable",
+        stale,
+        trail,
+        final_text: (result.final_text ?? "").slice(0, 1200),
         elapsed_ms: result.elapsed_ms,
         steps: result.steps,
         decisions: result.decisions,
