@@ -52,7 +52,9 @@
     "id": "tin-dropdown",
     "url": "https://the-internet.herokuapp.com/dropdown",
     "goal": "Select \"Option 2\" from the dropdown and stop.",
-    "expect": {}
+    "expect": {
+      "action_match": "SELECT[\\s\\S]*Option 2"
+    }
   },
   {
     "id": "tin-dynamic-loading",
@@ -74,7 +76,9 @@
     "id": "tin-iframe",
     "url": "https://the-internet.herokuapp.com/iframe",
     "goal": "Type \"hello\" into the text editor inside the iframe and stop.",
-    "expect": {}
+    "expect": {
+      "text_match": "hello"
+    }
   },
   {
     "id": "fx-shadow",
@@ -170,7 +174,9 @@
     "id": "tin-checkboxes",
     "url": "https://the-internet.herokuapp.com/checkboxes",
     "goal": "Check both checkboxes and stop.",
-    "expect": {}
+    "expect": {
+      "action_match": "CLICK:checkbox[\\s\\S]*CLICK:checkbox"
+    }
   },
   {
     "id": "tin-hovers",
@@ -217,7 +223,9 @@
     "id": "tin-infinite-scroll",
     "url": "https://the-internet.herokuapp.com/infinite_scroll",
     "goal": "Scroll down twice to load more content and stop.",
-    "expect": {}
+    "expect": {
+      "action_match": "SCROLL_DOWN[\\s\\S]*SCROLL_DOWN"
+    }
   },
   {
     "id": "tin-sortable",
@@ -247,13 +255,17 @@
     "id": "tin-horizontal-slider",
     "url": "https://the-internet.herokuapp.com/horizontal_slider",
     "goal": "Move the slider to 4 or higher and stop.",
-    "expect": {}
+    "expect": {
+      "text_match": "\\b(4(\\.5)?|5) Powered by"
+    }
   },
   {
     "id": "tin-entry-ad",
     "url": "https://the-internet.herokuapp.com/entry_ad",
     "goal": "Close the modal ad that appears and stop.",
-    "expect": {}
+    "expect": {
+      "text_match": "^(?!.*[Tt]his is a modal window).*To re-enable it"
+    }
   },
   {
     "id": "tin-windows",
@@ -268,19 +280,25 @@
     "id": "demoqa-autocomplete",
     "url": "https://demoqa.com/auto-complete",
     "goal": "Type \"re\" in the multiple-color field and pick a suggestion, then stop.",
-    "expect": {}
+    "expect": {
+      "text_match": "option (Red|Green), selected"
+    }
   },
   {
     "id": "jqueryui-datepicker",
     "url": "https://jqueryui.com/datepicker/",
     "goal": "Open the date picker in the demo frame and click a day, then stop.",
-    "expect": {}
+    "expect": {
+      "action_match": "CLICK:\\d{1,2}(?: |$)"
+    }
   },
   {
     "id": "tin-challenging-dom",
     "url": "https://the-internet.herokuapp.com/challenging_dom",
     "goal": "Click any of the three colored buttons at the top of the page and stop.",
-    "expect": {}
+    "expect": {
+      "action_match": "CLICK:(foo|bar|baz|qux)"
+    }
   },
   {
     "id": "hn-paginate",
@@ -309,14 +327,19 @@
   {
     "id": "tin-dynamic-content",
     "url": "https://the-internet.herokuapp.com/dynamic_content",
-    "goal": "Click the link to refresh the dynamic content and stop.",
-    "expect": {}
+    "goal": "Click the \"click here\" link that makes some of the content static, and stop.",
+    "expect": {
+      "url_match": "with_content=static"
+    }
   },
   {
     "id": "tin-slow",
     "url": "https://the-internet.herokuapp.com/slow",
     "goal": "Wait for the page to finish loading its external resources and stop.",
-    "expect": {}
+    "expect": {
+      "url_match": "/slow$",
+      "action_match": "WAIT"
+    }
   },
   {
     "id": "wikipedia-search-nav",
@@ -346,13 +369,17 @@
     "id": "europa-consent",
     "url": "https://european-union.europa.eu/",
     "goal": "Dismiss the cookie consent banner if one appears, then stop.",
-    "expect": {}
+    "expect": {
+      "text_match": "^(?!.*Accept all cookies).*Your gateway to the European Union"
+    }
   },
   {
     "id": "mdn-search",
     "url": "https://developer.mozilla.org/",
     "goal": "Search MDN for \"fetch api\" and stop when results or the article shows.",
-    "expect": {}
+    "expect": {
+      "url_match": "developer\\.mozilla\\.org/.*(search\\?q=fetch|docs/Web/API/Fetch)"
+    }
   },
   {
     "id": "books-toscrape",
@@ -365,14 +392,18 @@
   {
     "id": "tin-large-dom",
     "url": "https://the-internet.herokuapp.com/large",
-    "goal": "Scroll down to see more of the page and stop.",
-    "expect": {}
+    "goal": "Scroll the page down to reach content below the fold, then stop.",
+    "expect": {
+      "action_match": "SCROLL_DOWN"
+    }
   },
   {
     "id": "tin-context-menu",
     "url": "https://the-internet.herokuapp.com/context_menu",
     "goal": "Right-click the hot-spot box to trigger the alert, then stop.",
-    "expect": {}
+    "expect": {
+      "action_match": "CONTEXT_CLICK"
+    }
   },
   {
     "id": "tin-js-alerts",
@@ -386,7 +417,10 @@
     "id": "tin-drag-drop",
     "url": "https://the-internet.herokuapp.com/drag_and_drop",
     "goal": "Drag element A onto element B and stop.",
-    "expect": {}
+    "expect": {
+      "action_match": "DRAG",
+      "text_match": "Drag and Drop B A"
+    }
   },
   {
     "id": "parabank-login",

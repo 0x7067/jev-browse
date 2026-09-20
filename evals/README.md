@@ -51,6 +51,20 @@ verified count rather than silently passed.
 The 16 unverifiable verdicts are tasks whose `expect` is empty — the old
 verifier counted them as passes; the new one declines to claim a check.
 
+**Since then, all 16 carry expectations.** Each formerly-empty `expect` was
+grounded in the page's real end state (page text probed through `observe()`,
+or the URL the site actually navigates to): `action_match` for the
+interaction-only goals (dropdown SELECT, checkbox clicks, scrolls,
+CONTEXT_CLICK, DRAG, calendar day click), `text_match` for pages that render
+a result string (slider value, autocomplete chip, closed entry ad, dismissed
+consent banner, swapped drag columns), and `url_match` for the navigating
+ones (dynamic_content's static link, MDN search). Two goals were sharpened so
+they name a checkable end state (`tin-dynamic-content`, `tin-large-dom`);
+nothing was removed. Because of this, verified / unverifiable counts from
+runs before this change are **not comparable** with runs after it — 16 tasks
+moved out of the unverifiable bucket and now report verified or failed on
+their own merits.
+
 **Fixed vs baseline:** github-issues (done/NO → done/yes).
 
 **New failures:**
