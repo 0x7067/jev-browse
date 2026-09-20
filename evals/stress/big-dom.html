@@ -1,9 +1,0 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Big DOM</title>
-<style>body{font-family:system-ui;font-size:12px}.grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px}.grid button{font-size:10px;padding:1px}#out{display:none;position:fixed;bottom:0;left:0;right:0;font-weight:700;padding:6px;background:#dfd}</style></head>
-<body><h1>Big DOM: 4000 controls</h1><div id="out"></div><div class="grid" id="grid"></div>
-<script>
-const g=document.getElementById('grid');let h='';
-for(let i=1;i<=4000;i++)h+=`<button data-i="${i}">Item ${i}</button>`;
-g.innerHTML=h;
-g.onclick=e=>{const i=e.target.dataset.i;if(i==='3777'){out.style.display='block';out.textContent='DONE: item 3777 pressed';}};
-</script></body></html>

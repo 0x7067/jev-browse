@@ -1,9 +1,0 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Slow AJAX</title></head>
-<body style="font-family:system-ui"><h1>Slow AJAX</h1>
-<button id="load">Load report</button><div id="status"></div><div id="result"></div>
-<script>
-load.onclick=async()=>{load.disabled=true;status.textContent='Loading…';
-const r=await fetch('/api/slow?ms=3500').then(r=>r.json());
-status.textContent='';result.innerHTML='<p>Report ready ('+r.ms+'ms)</p><button id="approve">Approve report</button>';
-approve.onclick=()=>result.innerHTML+='<p>DONE: report approved</p>';};
-</script></body></html>

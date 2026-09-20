@@ -1,5 +1,0 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Delayed enable</title></head>
-<body style="font-family:system-ui"><h1>Button enables after a server check</h1>
-<label>Promo <input id="promo" placeholder="Promo code"></label><button id="apply" disabled>Apply promo</button><div id="out"></div>
-<script>promo.oninput=async()=>{apply.disabled=true;await fetch('/api/slow?ms=1500');apply.disabled=!promo.value;};apply.onclick=()=>out.textContent='DONE: promo '+promo.value;</script>
-</body></html>

@@ -1,7 +1,0 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Mutating page</title></head>
-<body style="font-family:system-ui"><h1>Live ticker page</h1><p>Clock: <span id="clock"></span></p><p>Price: <span id="price"></span></p>
-<button id="sub">Subscribe to alerts</button><div id="out"></div>
-<script>
-setInterval(()=>{clock.textContent=new Date().toISOString();price.textContent=(100+Math.random()*10).toFixed(2);},150);
-sub.onclick=()=>out.textContent='DONE: subscribed to alerts';
-</script></body></html>

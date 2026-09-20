@@ -198,10 +198,8 @@ browser work, and loading waits. The final frame is a verified results page:
 one-way Zürich to London on September 20, 2026, with real fares. The video
 plays at 1× from CDP frame timestamps, with a ~0.8 s final hold.
 
-Verified coverage: [`fixture-interactions.html`](fixture-interactions.html),
-a [43-task machinery stress suite](evals/README.md#machinery-stress-suite-no-api-keys)
-that runs without API keys (43/43 at 0 ms and 800 ms simulated model
-latency, 129/129 over three repeats), plus a [real-world task suite](evals/) spanning
+Verified coverage: [`fixture-interactions.html`](fixture-interactions.html)
+plus a [real-world task suite](evals/) spanning
 form flows, autocomplete, iframes and framesets, shadow roots, hover-reveal
 menus, native selects, date pickers, file upload, dynamic loading, modals,
 multi-tab flows, infinite scroll, drag-and-drop, context menus, invisible
@@ -228,7 +226,6 @@ npm run typecheck    # tsc --noEmit
 npm run lint         # oxlint
 npm run build        # tsc -> dist/ and rebuilds bundled/
 npm run run -- --url ... --goal ...   # tsx src/cli.ts, no build step
-npm run stress       # 43-task machinery suite, no API keys (see evals/)
 ```
 
 Rebuild `bundled/` with `npm run build` before committing changes to `src/`;
