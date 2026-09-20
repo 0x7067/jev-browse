@@ -100,6 +100,10 @@ dialog::backdrop{background:#0006}
 <div id="ctx" style="border:1px solid #999;padding:8px" tabindex="0">Right-click this tile</div>
 <output class="out" id="r-ctx"></output></section>
 
+<section><h2>20. Downloads</h2>
+<a href="data:text/plain;base64,ZnhpdHVyZSBwYXlsb2FkIG9uZQo=" download="fixture-report.txt">Download fixture-report.txt</a>
+<a href="data:text/plain;base64,ZnhpdHVyZSBwYXlsb2FkIHR3bwo=" download="fixture-evidence.txt">Download fixture-evidence.txt</a></section>
+
 <script>
 const show=(id,msg)=>{const e=document.getElementById(id);e.style.display="block";e.textContent=msg;};
 sel.onchange=e=>show("r-select","DONE: region="+e.target.value);

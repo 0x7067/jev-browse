@@ -156,10 +156,11 @@
   },
   {
     "id": "tin-download-file",
-    "url": "https://the-internet.herokuapp.com/download",
-    "goal": "Download the file 'evidence.txt' and stop.",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Download the file 'fixture-evidence.txt' and stop.",
     "expect": {
-      "download_match": "evidence\\.txt"
+      "download_match": "fixture-evidence\\.txt"
     }
   },
   {

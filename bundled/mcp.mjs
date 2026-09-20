@@ -506,7 +506,8 @@ async function extractAnswer(goal, page) {
     false
   );
   const value = output.answer;
-  return { answer: isString(value) && value.trim() ? value.trim().slice(0, 2e3) : null, helper };
+  const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2e3) : "";
+  return { answer: text || null, helper };
 }
 
 // src/env.ts

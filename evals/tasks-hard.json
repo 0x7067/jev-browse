@@ -147,10 +147,11 @@
   },
   {
     "id": "tin-download",
-    "url": "https://the-internet.herokuapp.com/download",
-    "goal": "Download the file \"hello.json\" and stop once it has downloaded.",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Download the file \"fixture-report.txt\" and stop once it has downloaded.",
     "expect": {
-      "download_match": "hello\\.json"
+      "download_match": "fixture-report\\.txt"
     }
   },
   {

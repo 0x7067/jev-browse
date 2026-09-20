@@ -148,6 +148,7 @@ export async function extractAnswer(
   );
 
   const value: JsonValue = output.answer;
+  const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2000) : "";
 
-  return { answer: isString(value) && value.trim() ? value.trim().slice(0, 2000) : null, helper };
+  return { answer: text || null, helper };
 }
