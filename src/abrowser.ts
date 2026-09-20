@@ -10,7 +10,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { fingerprint, isJsonObject, structureOf } from "./json.ts";
+import { fingerprint, isJsonObject, markerMatches } from "./json.ts";
 import { loadSnapshotJs } from "./snapshot-loader.ts";
 import {
   StalePage,
@@ -295,15 +295,7 @@ export class AgentBrowser implements BrowserDriver {
       return JSON.stringify(current) === JSON.stringify(page.page_key);
     }
 
-    const marker = await this.evaluate<JsonValue>(MARKER);
-
-    // 'structure' level: identity, URL, title, controls, form state — text
-    // churn (clocks, tickers) is ignored.
-    if (level === "structure") {
-      return JSON.stringify(structureOf(marker)) === JSON.stringify(structureOf(page.marker));
-    }
-
-    return JSON.stringify(marker) === JSON.stringify(page.marker);
+    return markerMatches(level, await this.evaluate<JsonValue>(MARKER), page.marker);
   }
 
   async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {

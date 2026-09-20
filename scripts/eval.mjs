@@ -164,7 +164,7 @@ function runOnce(task, env, engine) {
         at_ms: h.elapsed_ms,
       }));
 
-      const stale = stderr.split("\n").filter((l) => l.includes('"type":"stale"')).length;
+      const stale = stderr.split('"type":"stale"').length - 1;
 
       resolvePromise({
         status: result.status,

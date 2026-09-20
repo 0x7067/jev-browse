@@ -408,12 +408,6 @@ export class Agent {
             // An unchanged page after a full patience window is a real
             // give-up signal — but a single borderline claim still earns one
             // hinted re-decide before the claim is accepted.
-            if (this.probeConsulted) {
-              this.phase = "blocked";
-
-              return;
-            }
-
             this.probeConsulted = true;
             this.repairHint =
               "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";

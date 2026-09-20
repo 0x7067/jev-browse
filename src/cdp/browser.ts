@@ -8,7 +8,7 @@ import { execSync, spawn, type ChildProcess } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { fingerprint, structureOf } from "../json.ts";
+import { fingerprint, markerMatches } from "../json.ts";
 import { loadSnapshotJs } from "../snapshot-loader.ts";
 import {
   StalePage,
@@ -171,9 +171,6 @@ export class CdpBrowser implements BrowserDriver {
         "--no-default-browser-check",
         "--disable-session-crashed-bubble",
         "--hide-crash-restore-bubble",
-        // Smooth scrolling animates wheel input; CDP acks the wheel event
-        // only when the animation lands, ~750ms per scroll step.
-        "--disable-smooth-scrolling",
       ];
 
       if (!opts.headed) args.push("--headless=new");
@@ -540,15 +537,6 @@ export class CdpBrowser implements BrowserDriver {
       );
     }
 
-    // 'structure' level: same document, field state, title, and offered
-    // controls — text churn (clocks, tickers, counters) is ignored, a
-    // navigation or a content swap that changes the control set is not.
-    if (level === "structure") {
-      const current = await this.evaluate<JsonValue>(MARKER);
-
-      return JSON.stringify(structureOf(current)) === JSON.stringify(structureOf(page.marker));
-    }
-
     // 'page' level: same document and field state, ignoring text churn.
     if (level === "page") {
       const current = await this.evaluate(
@@ -558,7 +546,7 @@ export class CdpBrowser implements BrowserDriver {
       return JSON.stringify(current) === JSON.stringify(page.page_key);
     }
 
-    return JSON.stringify(await this.evaluate(MARKER)) === JSON.stringify(page.marker);
+    return markerMatches(level, await this.evaluate<JsonValue>(MARKER), page.marker);
   }
 
   async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {
@@ -602,8 +590,7 @@ export class CdpBrowser implements BrowserDriver {
           const moved=(n,by)=>{const b=n.scrollTop;n.scrollBy({top:by,behavior:'instant'});return n.scrollTop!==b;};
           for (const fx of [0.5,0.3,0.7,0.15,0.85]) {
             const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.6);
-            let e=document.elementFromPoint(x,y);
-            while (e?.shadowRoot) { const d=e.shadowRoot.elementFromPoint(x,y); if (!d||d===e) break; e=d; }
+            const e=window.__jevFast?.deepHit(document,x,y);
             for (let n=e; n && n!==document.documentElement && n!==document.body; n=n.parentElement||n.getRootNode()?.host) {
               if (n.tagName==='IFRAME') {
                 try { const w=n.contentWindow, b=w.scrollY; w.scrollBy({top:dy,behavior:'instant'}); if (w.scrollY!==b) return 'iframe'; } catch {}
@@ -665,35 +652,24 @@ export class CdpBrowser implements BrowserDriver {
           r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
         }
         if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return {why:'offscreen'};
-        // elementFromPoint stops at the outermost shadow host; descend
-        // through open roots so nested shadow content can be hit directly.
-        const deepHit=()=>{
-          let h=d.elementFromPoint(lx,ly);
-          while (h?.shadowRoot) { const deeper=h.shadowRoot.elementFromPoint(lx,ly); if (!deeper||deeper===h) break; h=deeper; }
-          return h;
-        };
-        const composedContains=(a,n)=>{for(let x=n;x;){if(x===a)return true;const r=x.getRootNode();x=x.parentElement??(r instanceof ShadowRoot?r.host:null);}return false;};
+        const c=window.__jevFast, deepHit=()=>c.deepHit(d,lx,ly);
         let hit=deepHit();
         // A hit on the target's own ancestor is clipping by a scroll
         // container (a long suggestion list, an overflow pane), not cover:
         // bring the target into view once and test again.
-        if (hit && hit!==e && !e.contains(hit) && composedContains(hit,e)) {
+        if (hit && hit!==e && c.composedContains(hit,e)) {
           e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
           r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
           hit=deepHit();
         }
-        // Composed containment: not covered when the hit is the target, is
-        // inside it across shadow boundaries (walk hit's host chain up to e),
-        // or is one of e's own shadow hosts. An unrelated overlay in the
-        // same shadow root still counts as covered.
-        const inside=h=>composedContains(e,h);
-        const hosts=new Set(); for (let r=e.getRootNode();r instanceof ShadowRoot;r=r.host.getRootNode()) hosts.add(r.host);
-        const covered = !(hit===e || e.contains(hit) || inside(hit) || hosts.has(hit));
-        if (covered) return {why:'covered by '+(hit?hit.tagName+(hit.id?'#'+hit.id:'')+'.'+String(hit.className).slice(0,40):'nothing')+
-          ' (target '+e.tagName+' '+[r.x,r.y,r.width,r.height].map(Math.round).join(',')+' hitInTarget='+composedContains(e,hit)+' targetInHit='+composedContains(hit,e)+')'};
+        // Not covered when the hit is the target or inside it across shadow
+        // boundaries, or is one of e's own shadow hosts. An unrelated overlay
+        // in the same shadow root still counts as covered.
+        const hosts=new Set(); for (let sr=e.getRootNode();sr instanceof ShadowRoot;sr=sr.host.getRootNode()) hosts.add(sr.host);
+        if (!c.composedContains(e,hit) && !hosts.has(hit)) return {why:'covered by '+(hit?hit.tagName.toLowerCase():'nothing')};
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
-              !o.disabled && !o.closest('optgroup[disabled]'))) return null;
+              !o.disabled && !o.closest('optgroup[disabled]'))) return {why:'no such option'};
           e.value=action.value;
           e.dispatchEvent(new Event('input',{bubbles:true}));
           e.dispatchEvent(new Event('change',{bubbles:true}));

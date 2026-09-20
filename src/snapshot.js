@@ -9,11 +9,14 @@
  return id;
   };
 
-  for (const [id,e] of cache.nodes) if (!e.isConnected) cache.nodes.delete(id);
-  // Signatures outlive their nodes for one re-resolution; prune with them.
   cache.sig ||= new Map();
 
-  for (const id of cache.sig.keys()) if (!cache.nodes.has(id)) cache.sig.delete(id);
+  for (const [id,e] of cache.nodes) {
+    if (e.isConnected) continue;
+    cache.nodes.delete(id);
+    cache.sig.delete(id);
+  }
+
   const safe = e => e.type !== 'hidden';
 
   const visible = e => !e.closest('[aria-hidden="true"],[inert]') &&
@@ -123,8 +126,8 @@ return s?[s]:[]}).join(' ') ||
     return null;
   };
 
-  // Field state by position and meaning, not node identity: a re-render
-  // that swaps the nodes but keeps the fields is the same page.
+  // No node identity here: a re-render that swaps nodes but keeps the
+  // fields is the same page.
   cache.pageKey=()=>[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
     [...document.querySelectorAll('input,textarea,select')]
       .flatMap(e=>safe(e)?[[e.tagName,e.type||null,name(e),e.value,e.checked,e.selectedIndex,e.disabled,e.readOnly]]:[])];
@@ -151,7 +154,8 @@ return s?[s]:[]}).join(' ') ||
 
   // Hit-test through open shadow roots: document.elementFromPoint stops at
   // the outermost host, so nested shadow content is never "hit" directly.
-  const deepHit=(doc,x,y)=>{
+  // Shared with the drivers' input scripts via window.__jevFast.
+  const deepHit=cache.deepHit=(doc,x,y)=>{
     let hit=doc.elementFromPoint(x,y);
 
     while (hit?.shadowRoot) {
@@ -184,6 +188,11 @@ return s?[s]:[]}).join(' ') ||
 
     for (const e of root.querySelectorAll('*')) {
       if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
+
+      if (e.tagName==='DIALOG' && e.open && e.matches(':modal')) {
+        const doc=e.ownerDocument;
+        modalsByDoc.set(doc,[...(modalsByDoc.get(doc)??[]),e]);
+      }
 
       const dropZone=hasDropProp(e);
 
@@ -251,8 +260,6 @@ return s?[s]:[]}).join(' ') ||
         continue;
       }
 
-      if (behindModal(e)) continue;
-
       const r=e.getBoundingClientRect(), rname=role(e);
 
       if (!rname || r.width<=0 || r.height<=0 ||
@@ -275,10 +282,12 @@ return s?[s]:[]}).join(' ') ||
 
       // Accessible names are short; a cap bounds per-element token cost and
       // contains pathological pages (giant labels once blew the model request).
-      const base={node:identity(e),role:rname,label:(name(e)||rname).slice(0,240),
+      const accessibleName=name(e);
+
+      const base={node:identity(e),role:rname,label:(accessibleName||rname).slice(0,240),
         rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height}};
 
-      cache.sig.set(base.node,[root,rname,name(e)]);
+      cache.sig.set(base.node,[root,rname,accessibleName]);
 
       if (e.getAttribute('draggable')==='true' || e.ondragstart) base.draggable=true;
 
@@ -348,35 +357,10 @@ return s?[s]:[]}).join(' ') ||
     }
   };
 
-  // An open modal dialog makes everything outside it inert without any
-  // attribute to match. Collect the modals per document (through open
-  // shadow roots) so gather can drop controls the user cannot reach.
-  const modalsByDoc=new Map();
-
-  const findModals=(root,doc,depth)=>{
-    if (depth>4) return;
-
-    for (const dlg of root.querySelectorAll('dialog[open]')) {
-      let modal=false;
-
-      try { modal=dlg.matches(':modal'); } catch { modal=false; }
-
-      if (modal) modalsByDoc.set(doc,[...(modalsByDoc.get(doc)??[]),dlg]);
-    }
-
-    for (const e of root.querySelectorAll('*')) if (e.shadowRoot) findModals(e.shadowRoot,doc,depth+1);
-
-    for (const f of root.querySelectorAll('iframe,frame')) {
-      try { if (f.contentDocument?.body) findModals(f.contentDocument,f.contentDocument,depth+1); } catch { /* cross-origin */ }
-    }
-  };
-
-  findModals(document,document,0);
-
   // Ancestor test across shadow boundaries: parents first, then the host
   // once the root is reached — jumping to the host early skips the
-  // ancestors inside the shadow tree.
-  const composedContains=(a,n)=>{
+  // ancestors inside the shadow tree. Shared with the drivers.
+  const composedContains=cache.composedContains=(a,n)=>{
     for (let x=n;x;) {
       if (x===a) return true;
       const r=x.getRootNode();
@@ -386,13 +370,24 @@ return s?[s]:[]}).join(' ') ||
     return false;
   };
 
+  // An open modal dialog makes everything outside it inert without any
+  // attribute to match. gather records them as it walks; offers outside
+  // every modal of the same document are dropped afterwards.
+  const modalsByDoc=new Map();
+
   const behindModal=e=>{
     const modals=modalsByDoc.get(e.ownerDocument);
 
-    return !!modals && !modals.some(m=>composedContains(m,e));
+    return modals!==undefined && !modals.some(m=>composedContains(m,e));
   };
 
   gather(document,0,0,0);
+
+  if (modalsByDoc.size) {
+    for (let i=actions.length-1;i>=0;i--) if (behindModal(cache.nodes.get(actions[i].node))) actions.splice(i,1);
+
+    for (const a of hoverZones.keys()) if (behindModal(a)) hoverZones.delete(a);
+  }
 
   // Node lookup with one re-resolution: a virtual-DOM re-render swaps the
   // element behind an observed node between decision and input. When the
@@ -427,7 +422,6 @@ return s?[s]:[]}).join(' ') ||
 
   // Emit hover offers on the visible ancestors of hidden interactive content.
   for (const [a,off] of hoverZones) {
-    if (behindModal(a)) continue;
     const ar=a.getBoundingClientRect();
 
     const base={node:identity(a),role:'group',

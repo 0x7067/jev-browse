@@ -41,9 +41,8 @@ export function fingerprint(state: PageState): string {
 /**
  * The part of a marker that survives text churn and node re-creation:
  * document identity, URL, title, offered controls by semantics (not node
- * ids), and form state. Used for DONE/BLOCKED
- * claims, where a clock or a virtual-DOM re-render must not read as a
- * changed page but a navigation or content swap must.
+ * ids), and form state. A clock or a virtual-DOM re-render must not read as
+ * a changed page; a navigation or a content swap must.
  */
 export function structureOf(marker: JsonValue): JsonValue {
   if (!Array.isArray(marker)) return null;
@@ -56,4 +55,13 @@ export function structureOf(marker: JsonValue): JsonValue {
   const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
 
   return [marker[0], marker[1], marker[6], controls, marker[9]];
+}
+
+/** Freshness compare shared by the drivers: "full" is the whole marker,
+ *  "structure" ignores text and node ids. ("page" compares the page key and
+ *  never reaches here.) */
+export function markerMatches(level: "full" | "structure", current: JsonValue, observed: JsonValue): boolean {
+  const project = level === "structure" ? structureOf : (m: JsonValue) => m;
+
+  return JSON.stringify(project(current)) === JSON.stringify(project(observed));
 }
