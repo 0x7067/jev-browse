@@ -1185,11 +1185,11 @@ var Agent = class _Agent {
       const fu = this.followUp;
       this.followUp = null;
       if (fu.type === "DONE") {
-        await this.confirmDone(this.page);
         if (this.prematureDone()) {
           this.phase = "decide";
           return;
         }
+        await this.confirmDone(this.page);
         this.phase = "done";
         return;
       }
@@ -1304,10 +1304,12 @@ ${repair}` : this.goal;
       if (selected === "BLOCKED" && this.earlyWaits < 3 && !this.probeConsulted) {
         this.earlyWaits++;
         const entry2 = this.waitEntry("Wait for the page to update", page);
-        const deadline = Date.now() + 1e4;
+        const started = Date.now();
+        let deadline = started + 4e3;
         for (; ; ) {
           await sleep3(800);
           this.page = await this.browser.observe();
+          if ((this.page.pending_requests ?? 0) > 0) deadline = started + 1e4;
           const changed = this.page.fingerprint !== page.fingerprint;
           if (changed || Date.now() >= deadline) {
             entry2.page_changed = changed;
@@ -1329,11 +1331,11 @@ ${repair}` : this.goal;
         }
       }
       if (selected === "DONE") {
-        await this.confirmDone(page);
         if (this.prematureDone()) {
           this.phase = "decide";
           return;
         }
+        await this.confirmDone(page);
       }
       this.phase = selected === "DONE" ? "done" : "blocked";
       return;
@@ -1548,6 +1550,7 @@ ${repair}` : this.goal;
             phase: this.phase,
             elapsed_ms: this.elapsed(),
             operation: this.lastOperation,
+            reason: error.message,
             url: this.page.url
           });
         } else {
@@ -2277,8 +2280,9 @@ var CdpBrowser = class _CdpBrowser {
         // Visibility alone doesn't decide clickability \u2014 opacity:0 custom
         // controls fail checkVisibility yet win their own hit test. The
         // covered check below is the real arbiter.
-        if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return null;
-        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return null;
+        if (!e?.isConnected) return {why:'gone'};
+        if (e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return {why:'disabled'};
+        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return {why:'readonly'};
         const d=e.ownerDocument, w=d.defaultView||window;
         let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
         // Observed targets drift out of the viewport between snapshot and input
@@ -2288,19 +2292,33 @@ var CdpBrowser = class _CdpBrowser {
           e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
           r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
         }
-        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return null;
+        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return {why:'offscreen'};
         // elementFromPoint stops at the outermost shadow host; descend
         // through open roots so nested shadow content can be hit directly.
-        let hit=d.elementFromPoint(lx,ly);
-        while (hit?.shadowRoot) { const deeper=hit.shadowRoot.elementFromPoint(lx,ly); if (!deeper||deeper===hit) break; hit=deeper; }
+        const deepHit=()=>{
+          let h=d.elementFromPoint(lx,ly);
+          while (h?.shadowRoot) { const deeper=h.shadowRoot.elementFromPoint(lx,ly); if (!deeper||deeper===h) break; h=deeper; }
+          return h;
+        };
+        const composedContains=(a,n)=>{for(let x=n;x;){if(x===a)return true;const r=x.getRootNode();x=x.parentElement??(r instanceof ShadowRoot?r.host:null);}return false;};
+        let hit=deepHit();
+        // A hit on the target's own ancestor is clipping by a scroll
+        // container (a long suggestion list, an overflow pane), not cover:
+        // bring the target into view once and test again.
+        if (hit && hit!==e && !e.contains(hit) && composedContains(hit,e)) {
+          e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
+          hit=deepHit();
+        }
         // Composed containment: not covered when the hit is the target, is
         // inside it across shadow boundaries (walk hit's host chain up to e),
         // or is one of e's own shadow hosts. An unrelated overlay in the
         // same shadow root still counts as covered.
-        const inside=h=>{for(let n=h;n;){if(n===e)return true;const r=n.getRootNode();n=r instanceof ShadowRoot?r.host:n.parentElement;}return false;};
+        const inside=h=>composedContains(e,h);
         const hosts=new Set(); for (let r=e.getRootNode();r instanceof ShadowRoot;r=r.host.getRootNode()) hosts.add(r.host);
         const covered = !(hit===e || e.contains(hit) || inside(hit) || hosts.has(hit));
-        if (covered) return null;
+        if (covered) return {why:'covered by '+(hit?hit.tagName+(hit.id?'#'+hit.id:'')+'.'+String(hit.className).slice(0,40):'nothing')+
+          ' (target '+e.tagName+' '+[r.x,r.y,r.width,r.height].map(Math.round).join(',')+' hitInTarget='+composedContains(e,hit)+' targetInHit='+composedContains(hit,e)+')'};
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
               !o.disabled && !o.closest('optgroup[disabled]'))) return null;
@@ -2317,11 +2335,11 @@ var CdpBrowser = class _CdpBrowser {
       }
       throw error;
     }
-    if (target === null || target === void 0) {
+    if (target === null || target === void 0 || target.why !== void 0) {
       if (kind === "select") {
         throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
       }
-      throw new StalePage("Target changed or is covered. Observe again.");
+      throw new StalePage(`Target ${JSON.stringify(action.label.slice(0, 40))} ${target?.why ?? "changed"}. Observe again.`);
     }
     if (kind === "fill" && target.type === "file") {
       const doc = await this.call("DOM.getDocument", { depth: 1 });

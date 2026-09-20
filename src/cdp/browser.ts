@@ -644,7 +644,7 @@ export class CdpBrowser implements BrowserDriver {
     // Code-owned node IDs refer to actual observed elements, never model-generated selectors.
     // Hit-testing is frame/shadow aware: iframe elements use owner-document
     // local coords; shadow elements accept hits on the host or root siblings.
-    let target: { x: number; y: number; type?: string } | null | undefined;
+    let target: { x: number; y: number; type?: string; why?: string } | null | undefined;
 
     try {
       target = await this.evaluate(`(action => {
@@ -652,8 +652,9 @@ export class CdpBrowser implements BrowserDriver {
         // Visibility alone doesn't decide clickability — opacity:0 custom
         // controls fail checkVisibility yet win their own hit test. The
         // covered check below is the real arbiter.
-        if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return null;
-        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return null;
+        if (!e?.isConnected) return {why:'gone'};
+        if (e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return {why:'disabled'};
+        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return {why:'readonly'};
         const d=e.ownerDocument, w=d.defaultView||window;
         let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
         // Observed targets drift out of the viewport between snapshot and input
@@ -663,19 +664,33 @@ export class CdpBrowser implements BrowserDriver {
           e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
           r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
         }
-        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return null;
+        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return {why:'offscreen'};
         // elementFromPoint stops at the outermost shadow host; descend
         // through open roots so nested shadow content can be hit directly.
-        let hit=d.elementFromPoint(lx,ly);
-        while (hit?.shadowRoot) { const deeper=hit.shadowRoot.elementFromPoint(lx,ly); if (!deeper||deeper===hit) break; hit=deeper; }
+        const deepHit=()=>{
+          let h=d.elementFromPoint(lx,ly);
+          while (h?.shadowRoot) { const deeper=h.shadowRoot.elementFromPoint(lx,ly); if (!deeper||deeper===h) break; h=deeper; }
+          return h;
+        };
+        const composedContains=(a,n)=>{for(let x=n;x;){if(x===a)return true;const r=x.getRootNode();x=x.parentElement??(r instanceof ShadowRoot?r.host:null);}return false;};
+        let hit=deepHit();
+        // A hit on the target's own ancestor is clipping by a scroll
+        // container (a long suggestion list, an overflow pane), not cover:
+        // bring the target into view once and test again.
+        if (hit && hit!==e && !e.contains(hit) && composedContains(hit,e)) {
+          e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
+          hit=deepHit();
+        }
         // Composed containment: not covered when the hit is the target, is
         // inside it across shadow boundaries (walk hit's host chain up to e),
         // or is one of e's own shadow hosts. An unrelated overlay in the
         // same shadow root still counts as covered.
-        const inside=h=>{for(let n=h;n;){if(n===e)return true;const r=n.getRootNode();n=r instanceof ShadowRoot?r.host:n.parentElement;}return false;};
+        const inside=h=>composedContains(e,h);
         const hosts=new Set(); for (let r=e.getRootNode();r instanceof ShadowRoot;r=r.host.getRootNode()) hosts.add(r.host);
         const covered = !(hit===e || e.contains(hit) || inside(hit) || hosts.has(hit));
-        if (covered) return null;
+        if (covered) return {why:'covered by '+(hit?hit.tagName+(hit.id?'#'+hit.id:'')+'.'+String(hit.className).slice(0,40):'nothing')+
+          ' (target '+e.tagName+' '+[r.x,r.y,r.width,r.height].map(Math.round).join(',')+' hitInTarget='+composedContains(e,hit)+' targetInHit='+composedContains(hit,e)+')'};
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
               !o.disabled && !o.closest('optgroup[disabled]'))) return null;
@@ -694,12 +709,12 @@ export class CdpBrowser implements BrowserDriver {
       throw error;
     }
 
-    if (target === null || target === undefined) {
+    if (target === null || target === undefined || target.why !== undefined) {
       if (kind === "select") {
         throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
       }
 
-      throw new StalePage("Target changed or is covered. Observe again.");
+      throw new StalePage(`Target ${JSON.stringify(action.label.slice(0, 40))} ${target?.why ?? "changed"}. Observe again.`);
     }
 
     // File inputs: setFileInputFiles — never click (it opens a native dialog).

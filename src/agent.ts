@@ -769,6 +769,7 @@ export class Agent {
             phase: this.phase,
             elapsed_ms: this.elapsed(),
             operation: this.lastOperation,
+            reason: error.message,
             url: this.page.url,
           });
         } else {

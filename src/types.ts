@@ -26,7 +26,7 @@ export type ActionKind =
   | "forward";
 
 export type ObservedAction = {
-  id: string; // "e1".."e250", "scroll_down", "scroll_up", "wait"
+  id: string; // "e1".."e500", "scroll_down", "scroll_up", "wait"
   kind: ActionKind;
   label: string;
   node?: number; // code-owned identity into window.__jevFast.nodes

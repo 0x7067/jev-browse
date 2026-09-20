@@ -143,6 +143,10 @@ return s?[s]:[]}).join(' ') ||
       [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]];
   };
 
+  // Offered-control cap. Labels are capped at 240 chars and choose() shrinks
+  // the state on context overflow, so a larger table costs tokens, not runs.
+  const MAX_ACTIONS=500;
+
   const actions=[];
 
   // Hit-test through open shadow roots: document.elementFromPoint stops at
@@ -247,6 +251,8 @@ return s?[s]:[]}).join(' ') ||
         continue;
       }
 
+      if (behindModal(e)) continue;
+
       const r=e.getBoundingClientRect(), rname=role(e);
 
       if (!rname || r.width<=0 || r.height<=0 ||
@@ -342,6 +348,50 @@ return s?[s]:[]}).join(' ') ||
     }
   };
 
+  // An open modal dialog makes everything outside it inert without any
+  // attribute to match. Collect the modals per document (through open
+  // shadow roots) so gather can drop controls the user cannot reach.
+  const modalsByDoc=new Map();
+
+  const findModals=(root,doc,depth)=>{
+    if (depth>4) return;
+
+    for (const dlg of root.querySelectorAll('dialog[open]')) {
+      let modal=false;
+
+      try { modal=dlg.matches(':modal'); } catch { modal=false; }
+
+      if (modal) modalsByDoc.set(doc,[...(modalsByDoc.get(doc)??[]),dlg]);
+    }
+
+    for (const e of root.querySelectorAll('*')) if (e.shadowRoot) findModals(e.shadowRoot,doc,depth+1);
+
+    for (const f of root.querySelectorAll('iframe,frame')) {
+      try { if (f.contentDocument?.body) findModals(f.contentDocument,f.contentDocument,depth+1); } catch { /* cross-origin */ }
+    }
+  };
+
+  findModals(document,document,0);
+
+  // Ancestor test across shadow boundaries: parents first, then the host
+  // once the root is reached — jumping to the host early skips the
+  // ancestors inside the shadow tree.
+  const composedContains=(a,n)=>{
+    for (let x=n;x;) {
+      if (x===a) return true;
+      const r=x.getRootNode();
+      x=x.parentElement??(r instanceof ShadowRoot?r.host:null);
+    }
+
+    return false;
+  };
+
+  const behindModal=e=>{
+    const modals=modalsByDoc.get(e.ownerDocument);
+
+    return !!modals && !modals.some(m=>composedContains(m,e));
+  };
+
   gather(document,0,0,0);
 
   // Node lookup with one re-resolution: a virtual-DOM re-render swaps the
@@ -377,6 +427,7 @@ return s?[s]:[]}).join(' ') ||
 
   // Emit hover offers on the visible ancestors of hidden interactive content.
   for (const [a,off] of hoverZones) {
+    if (behindModal(a)) continue;
     const ar=a.getBoundingClientRect();
 
     const base={node:identity(a),role:'group',
@@ -422,18 +473,30 @@ return s?[s]:[]}).join(' ') ||
   const walkText=(doc)=>{
     const w=doc.defaultView, vw=w?w.innerWidth:innerWidth, vh=w?w.innerHeight:innerHeight;
     const body=doc.body||doc.documentElement, range=doc.createRange();
-    const walker=doc.createTreeWalker(body,NodeFilter.SHOW_TEXT);
+    // Open shadow roots hold real text (dialogs, custom widgets); walk
+    // them in place, in document order, so the model reads what it sees.
 
-    while ((node=walker.nextNode()) && length<24000) {
-      const value=node.textContent.trim(), parent=node.parentElement;
+    const walkRoot=(root,depth)=>{
+      const walker=doc.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);
 
-      if (!value || !parent || parent.closest('script,style,noscript,template') || !visible(parent)) continue;
-      range.selectNodeContents(node); const r=range.getBoundingClientRect();
+      while ((node=walker.nextNode()) && length<24000) {
+        if (node.nodeType===1) {
+          if (node.shadowRoot && depth<4) walkRoot(node.shadowRoot,depth+1);
+          continue;
+        }
 
-      if (r.width>0 && r.height>0 && r.bottom>0 && r.top<vh && r.right>0 && r.left<vw) {
-        words.push(value); length+=value.length;
+        const value=node.textContent.trim(), parent=node.parentElement;
+
+        if (!value || !parent || parent.closest('script,style,noscript,template') || !visible(parent)) continue;
+        range.selectNodeContents(node); const r=range.getBoundingClientRect();
+
+        if (r.width>0 && r.height>0 && r.bottom>0 && r.top<vh && r.right>0 && r.left<vw) {
+          words.push(value); length+=value.length;
+        }
       }
-    }
+    };
+
+    walkRoot(body,0);
 
     for (const f of doc.querySelectorAll('iframe,frame')) {
       try {
@@ -460,8 +523,8 @@ return s?[s]:[]}).join(' ') ||
   const marker=[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
     document.title,text,semantics,page_key[6]];
 
-  const omitted_actions=Math.max(0,actions.length-250);
-  actions.splice(250);
+  const omitted_actions=Math.max(0,actions.length-MAX_ACTIONS);
+  actions.splice(MAX_ACTIONS);
 
   if (omitted_actions>0)
     text+='\n['+omitted_actions+' more interactive elements not shown — scroll or narrow the page]';
