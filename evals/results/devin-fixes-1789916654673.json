@@ -1,0 +1,830 @@
+{
+  "label": "devin-fixes",
+  "started": "2026-09-20T15:02:55.717Z",
+  "tasks": {
+    "example-link": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2646,
+      "median_decisions": 5,
+      "median_jev_ms": 315,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 2,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Learn more",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 315,
+              "text_ms": 0,
+              "at_ms": 1539
+            }
+          ],
+          "final_text": "Domains\nProtocols\nNumbers\nAbout\nInstructions and Guides\nExample Domains\nAs described in\nRFC 2606\nand\nRFC 6761\n, a\nnumber of domains such as example.com and example.org are maintained\nfor documentation purposes. These domains may be used as illustrative\nexamples in documents without prior coordination with us. They are not\navailable for registration or transfer.\nWe provide a web service on the example domain hosts to provide basic\ninformation on the purpose of the domain. These web services are\nprovided as best effort, but are not designed to support production\napplications. While incidental traffic for incorrectly configured\napplications is expected, please do not design applications that require\nthe example domains to have operating HTTP service.\nFurther Reading\nIANA-managed Reserved Domains\nLast revised\n9 years ago\n.\nDomain Names\nRoot Zone Registry\n.INT Registry\n.ARPA Registry\nIDN Repository\nNumber Resources\nNumber Registries\nRIR Allocation Data\nAbuse Information\nProtocols\nProtocol Registries\nTime Zone Database\nAbout Us\nNews\nPerformance\nThe Organization\nArchive\nContact Us",
+          "elapsed_ms": 2646,
+          "steps": 1,
+          "decisions": 5,
+          "jev_ms": 315,
+          "text_ms": 0,
+          "final_url": "https://www.iana.org/help/example-domains",
+          "ops": [
+            "CLICK:Learn more"
+          ],
+          "events": [
+            "CLICK:Learn more@1195",
+            "DONE:Learn more@2646"
+          ]
+        }
+      ]
+    },
+    "hn-comments": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1977,
+      "median_decisions": 2,
+      "median_jev_ms": 418,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "46 comments",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 418,
+              "text_ms": 0,
+              "at_ms": 1250
+            }
+          ],
+          "final_text": "Hacker News\nnew\n|\npast\n|\ncomments\n|\nask\n|\nshow\n|\njobs\n|\nsubmit\nlogin\nQwen-Image-2.1: Compact, efficient, and unified image creation\n(\nqwen.ai\n)\n131 points\nby\njmillikin\n1 hour ago\n|\nhide\n|\npast\n|\nfavorite\n|\n46 comments\nhelp\njfoster\n45 minutes ago\n|\n[–]\nA lot of the previous Qwen models seem to have used Apache licenses, among others:\nhttps://en.wikipedia.org/wiki/Qwen#List_of_models\nUnfortunately, it looks like this model is using a much more restrictive license:\nhttps://github.com/QwenLM/Qwen-Image-2.1/blob/main/LICENSE\nreply\nunrented7977\n8 minutes ago\n|\n|\n[–]\nI'm willing to bet a nonzero amount of its training material is GPL, so I'll treat it as GPL licensed instead and use it however the fuck I want.\nIf AI labs get to ignore licenses, so do we.\nreply\ngregoriol\n42 minutes ago\n|\n|\n|\n[–]\nWas going to post about this: the last image models with Apache 2.0 license seem to be from 2025, recent Qwen models are \"non-commercial use\".\nreply\nLuker88\n15 minutes ago\n|\n|\n|\n[–]\nCompanies can use llm to license-wash open source code regardless of license.\nHow difficult would it be to use this model to create a second model without licensing issues?\nreply\nZambyte\n11 minutes ago\n|\n|\n|\n[–]\nWhy wou",
+          "elapsed_ms": 1977,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 418,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/item?id=49775499",
+          "ops": [
+            "CLICK:46 comments"
+          ],
+          "events": [
+            "CLICK:46 comments@1055",
+            "DONE:46 comments@1977"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-loading": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 6153,
+      "median_decisions": 6,
+      "median_jev_ms": 736,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Start",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 267,
+              "text_ms": 0,
+              "at_ms": 508
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 144,
+              "text_ms": 0,
+              "at_ms": 2210
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": false,
+              "follow_up": "NONE",
+              "jev_ms": 193,
+              "text_ms": 0,
+              "at_ms": 3965
+            },
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 132,
+              "text_ms": 0,
+              "at_ms": 5349
+            }
+          ],
+          "final_text": "Dynamically Loaded Page Elements\nExample 2: Element rendered after the fact\nHello World!\nPowered by\nElemental Selenium",
+          "elapsed_ms": 6153,
+          "steps": 4,
+          "decisions": 6,
+          "jev_ms": 736,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_loading/2",
+          "ops": [
+            "CLICK:Start",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update",
+            "WAIT:Wait for the page to update"
+          ],
+          "events": [
+            "CLICK:Start@290",
+            "WAIT:Wait for the page to update@2207",
+            "WAIT:Wait for the page to update@3962",
+            "WAIT:Wait for the page to update@5345",
+            "DONE:Wait for the page to update@6153"
+          ]
+        }
+      ]
+    },
+    "fx-modal": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1419,
+      "median_decisions": 2,
+      "median_jev_ms": 528,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Delete draft",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 375,
+              "text_ms": 0,
+              "at_ms": 620
+            },
+            {
+              "op": "CLICK",
+              "action": "Confirm delete",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 153,
+              "text_ms": 0,
+              "at_ms": 1007
+            }
+          ],
+          "final_text": "Interaction coverage fixture\n1. Native select\nRegion\n2. Radio group\nParty size\nSolo\nPair\nCrew\n3. Checkbox\nSubscribe to the tide report\n4. Textarea + submit\nPost note\n5. Autocomplete\n6. Native date input\nArrival\n7. Modal confirm\nDelete draft\nDONE: draft deleted\n8. Tabs\nOverview\nAmenities\n9. Disclosure\nHouse rules\n10. Disabled-until-valid\nRedeem\n11. New-tab link\nOpen the help page in a new tab\n12. Iframe button\n13. Shadow DOM button\nShadow action\n14. Hover-only menu\nDestinations menu (hover)\n15. Range slider\nGuests\n16. Enter-only palette\n17. Contenteditable composer\nSend note\n18. Drag and drop\nPostcard\nDrop zone\n19. Context menu\nInner frame action",
+          "elapsed_ms": 1419,
+          "steps": 2,
+          "decisions": 2,
+          "jev_ms": 528,
+          "text_ms": 0,
+          "final_url": "file:///home/user/jev-browse/fixture-interactions.html",
+          "ops": [
+            "CLICK:Delete draft",
+            "CLICK:Confirm delete"
+          ],
+          "events": [
+            "CLICK:Delete draft@401",
+            "CLICK:Confirm delete@788",
+            "CLICK:Confirm delete@1419"
+          ]
+        }
+      ]
+    },
+    "sauce-checkout": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 16491,
+      "median_decisions": 11,
+      "median_jev_ms": 2164,
+      "median_text_ms": 11017,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Username",
+              "text": "standard_user",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 155,
+              "text_ms": 843,
+              "at_ms": 1092
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Password",
+              "text": "secret_sauce",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 156,
+              "text_ms": 533,
+              "at_ms": 1854
+            },
+            {
+              "op": "CLICK",
+              "action": "Login",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 154,
+              "text_ms": 0,
+              "at_ms": 2249
+            },
+            {
+              "op": "CLICK",
+              "action": "Add to cart — Sauce Labs Backpack",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 286,
+              "text_ms": 0,
+              "at_ms": 2772
+            },
+            {
+              "op": "CLICK",
+              "action": "Cart, 1 items",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 271,
+              "text_ms": 0,
+              "at_ms": 3276
+            },
+            {
+              "op": "CLICK",
+              "action": "Checkout",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 120,
+              "text_ms": 0,
+              "at_ms": 3628
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "First Name",
+              "text": "Ada",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 137,
+              "text_ms": 8183,
+              "at_ms": 12023
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Last Name",
+              "text": "Lovelace",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 332,
+              "text_ms": 599,
+              "at_ms": 13028
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Zip/Postal Code",
+              "text": "12345",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 124,
+              "text_ms": 859,
+              "at_ms": 14084
+            },
+            {
+              "op": "CLICK",
+              "action": "Continue",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 216,
+              "text_ms": 0,
+              "at_ms": 14542
+            },
+            {
+              "op": "CLICK",
+              "action": "Finish",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 213,
+              "text_ms": 0,
+              "at_ms": 14984
+            }
+          ],
+          "final_text": "Swag Labs\nCheckout: Complete!\nThank you for your order!\nYour order has been dispatched, and will arrive just as fast as the pony can get there!\nBack Home\nGenerate PDF order\n©\n2026\nSauce Labs. All Rights Reserved. Terms of Service | Privacy Policy",
+          "elapsed_ms": 16491,
+          "steps": 11,
+          "decisions": 11,
+          "jev_ms": 2164,
+          "text_ms": 11017,
+          "final_url": "https://www.saucedemo.com/checkout-complete.html",
+          "ops": [
+            "TYPE_TEXT:Username",
+            "TYPE_TEXT:Password",
+            "CLICK:Login",
+            "CLICK:Add to cart — Sauce Labs Backp",
+            "CLICK:Cart, 1 items",
+            "CLICK:Checkout",
+            "TYPE_TEXT:First Name",
+            "TYPE_TEXT:Last Name",
+            "TYPE_TEXT:Zip/Postal Code",
+            "CLICK:Continue",
+            "CLICK:Finish"
+          ],
+          "events": [
+            "TYPE_TEXT:Username@1036",
+            "TYPE_TEXT:Password@1797",
+            "CLICK:Login@2026",
+            "CLICK:Add to cart — Sauce Labs Backp@2551",
+            "CLICK:Cart, 1 items@3057",
+            "CLICK:Checkout@3409",
+            "TYPE_TEXT:First Name@11966",
+            "TYPE_TEXT:Last Name@12971",
+            "TYPE_TEXT:Zip/Postal Code@14028",
+            "CLICK:Continue@14322",
+            "CLICK:Finish@14768",
+            "CLICK:Finish@16491"
+          ]
+        }
+      ]
+    },
+    "todomvc-add": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3570,
+      "median_decisions": 4,
+      "median_jev_ms": 776,
+      "median_text_ms": 1315,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "New Todo Input",
+              "text": "buy milk",
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 315,
+              "text_ms": 734,
+              "at_ms": 1129
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 1370
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "New Todo Input",
+              "text": "walk dog",
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 255,
+              "text_ms": 581,
+              "at_ms": 2279
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 2505
+            },
+            {
+              "op": "CLICK",
+              "action": "buy milk",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 206,
+              "text_ms": 0,
+              "at_ms": 2948
+            }
+          ],
+          "final_text": "React\nReact\nSource\nTypeScript + React\nDemo\n,\nSource\nReact is a JavaScript library for building user interfaces. You compose UI from function components and describe state with hooks; React handles the rendering and keeps the UI in sync as state changes. The modern ecosystem (createRoot, Suspense, Server Components) builds on the same component model.\nReact\nOfficial Resources\nQuick Start\nAPI Reference\nPhilosophy\nReact Community\nCommunity\nReactJS on Stack Overflow\nIf you have other helpful links to share, or find any of the links above no longer work, please\nlet us know\n.\ntodos\nbuy milk\nwalk dog\n1 item left!\nAll\nActive\nCompleted\nClear completed\nDouble-click to edit a todo\nCreated by the TodoMVC Team\nPart of\nTodoMVC",
+          "elapsed_ms": 3570,
+          "steps": 5,
+          "decisions": 4,
+          "jev_ms": 776,
+          "text_ms": 1315,
+          "final_url": "https://todomvc.com/examples/react/dist/",
+          "ops": [
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "TYPE_TEXT:New Todo Input",
+            "FOLLOW_UP:Press enter",
+            "CLICK:buy milk"
+          ],
+          "events": [
+            "TYPE_TEXT:New Todo Input@1070",
+            "FOLLOW_UP:Press enter@1150",
+            "TYPE_TEXT:New Todo Input@2223",
+            "FOLLOW_UP:Press enter@2287",
+            "CLICK:buy milk@2729",
+            "DONE:buy milk@3570"
+          ]
+        }
+      ]
+    },
+    "tin-jquery-menu": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 4123,
+      "median_decisions": 5,
+      "median_jev_ms": 993,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "HOVER",
+              "action": "Hover Enabled",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 293,
+              "text_ms": 0,
+              "at_ms": 834
+            },
+            {
+              "op": "HOVER",
+              "action": "Hover Enabled",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 184,
+              "text_ms": 0,
+              "at_ms": 1838
+            },
+            {
+              "op": "HOVER",
+              "action": "Hover Downloads",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 178,
+              "text_ms": 0,
+              "at_ms": 2791
+            },
+            {
+              "op": "CLICK",
+              "action": "Downloads",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 179,
+              "text_ms": 0,
+              "at_ms": 3207
+            },
+            {
+              "op": "CLICK",
+              "action": "PDF",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 159,
+              "text_ms": 0,
+              "at_ms": 3715
+            }
+          ],
+          "final_text": "JQueryUI - Menu\nJQuery UI Menus\nare a nice UI element from a user \n    perspective, but poses an interesting automation challenge since it requires\n    mouse operations and synchronization between them.\nAnother 'fun' aspect is that the visibility of elements is actually not in the\n    html itself, but done magically by JQuery so you cannot trust exactly what the\n    html is telling you. A user cannot fire click events at certain UI elements, but\n    you might -- if you have a big enough hammer to hit it with.\nDisabled\nEnabled\nPowered by\nElemental Selenium",
+          "elapsed_ms": 4123,
+          "steps": 5,
+          "decisions": 5,
+          "jev_ms": 993,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/jqueryui/menu#",
+          "ops": [
+            "HOVER:Hover Enabled",
+            "HOVER:Hover Enabled",
+            "HOVER:Hover Downloads",
+            "CLICK:Downloads",
+            "CLICK:PDF"
+          ],
+          "events": [
+            "HOVER:Hover Enabled@768",
+            "HOVER:Hover Enabled@1781",
+            "HOVER:Hover Downloads@2731",
+            "CLICK:Downloads@2988",
+            "CLICK:PDF@3497",
+            "CLICK:PDF@4123"
+          ]
+        }
+      ]
+    },
+    "tin-notification": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 2503,
+      "median_decisions": 2,
+      "median_jev_ms": 245,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Click here",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 245,
+              "text_ms": 0,
+              "at_ms": 796
+            }
+          ],
+          "final_text": "Action unsuccesful, please try again\n×\nNotification Message\nThe message displayed above the heading is a notification message. It is often used to convey information about an action previously taken by the user.\nSome rudimentary examples include 'Action successful', 'Action unsuccessful, please try again', etc.\nClick here\nto load a new message.\nPowered by\nElemental Selenium",
+          "elapsed_ms": 2503,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 245,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/notification_message_rendered",
+          "ops": [
+            "CLICK:Click here"
+          ],
+          "events": [
+            "CLICK:Click here@578",
+            "DONE:Click here@2503"
+          ]
+        }
+      ]
+    },
+    "tin-dynamic-content": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 2270,
+      "median_decisions": 2,
+      "median_jev_ms": 269,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "click here",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 269,
+              "text_ms": 0,
+              "at_ms": 628
+            }
+          ],
+          "final_text": "Dynamic Content\nThis example demonstrates the ever-evolving nature of content by loading new text and images on each page refresh.\nTo make some of the content static append\n?with_content=static\nor\nclick here\n.\nAccusantium eius ut architecto neque vel voluptatem vel nam eos minus ullam dolores voluptates enim sed voluptatem rerum qui sapiente nesciunt aspernatur et accusamus laboriosam culpa tenetur hic aut placeat error autem qui sunt.\nOmnis fugiat porro vero quas tempora quis eveniet ab officia cupiditate culpa repellat debitis itaque possimus odit dolorum et iste quibusdam quis dicta autem sint vel quo vel consequuntur dolorem nihil neque sunt aperiam blanditiis.\nNihil nulla dolorem voluptatem earum ut nobis maxime voluptatem vel quos qui hic laudantium illo at debitis omnis soluta architecto ea voluptas mollitia repudiandae sunt quo nemo quis aspernatur sit rem sapiente.\nPowered by\nElemental Selenium",
+          "elapsed_ms": 2270,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 269,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/dynamic_content?with_content=static",
+          "ops": [
+            "CLICK:click here"
+          ],
+          "events": [
+            "CLICK:click here@411",
+            "DONE:click here@2270"
+          ]
+        }
+      ]
+    },
+    "crates-search": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 4713,
+      "median_decisions": 4,
+      "median_jev_ms": 354,
+      "median_text_ms": 551,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 1,
+          "trail": [
+            {
+              "op": "WAIT",
+              "action": "Wait for the page to update",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 1055
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Search",
+              "text": "serde",
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 179,
+              "text_ms": 551,
+              "at_ms": 1874
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 2127
+            },
+            {
+              "op": "CLICK",
+              "action": "Search",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 175,
+              "text_ms": 0,
+              "at_ms": 2544
+            }
+          ],
+          "final_text": "crates.io\nSearch\nChange color scheme. Current: system\nLog in with GitHub\nSearch Results\nfor 'serde'\nDisplaying\n1-10\nof\n21993\ntotal results\nSort by\nRelevance\nserde\nv1.0.229\nA generic serialization/deserialization framework\nAll-Time\nDownloads\n:\n1,415,886,944\nRecent\nDownloads\n:\n315,016,569\nUpdated:\n2 months ago\nHomepage\nDocumentation\nRepository\nserde-saphyr\nv1.3.0\nYAML (de)serializer for Serde, emphasizing panic-free parsing, fast builds and good error reporting. Supports properties, include, tag and comment capture\nAll-Time\nDownloads\n:\n7,093,201\nRecent\nDownloads\n:\n5,368,042\nUpdated:\n4 days ago\nDocumentation\nRepository\nclickhouse\nv0.15.2\nOfficial Rust client for ClickHouse DB\nAll-Time\nDownloads\n:\n13,149,764\nRecent\nDownloads\n:\n4,058,370\nUpdated:\n23 days ago\nHomepage\nRepository\nSearch Results for 'serde' - crates.io: Rust Package Registry",
+          "elapsed_ms": 4713,
+          "steps": 4,
+          "decisions": 4,
+          "jev_ms": 354,
+          "text_ms": 551,
+          "final_url": "https://crates.io/search?q=serde",
+          "ops": [
+            "WAIT:Wait for the page to update",
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter",
+            "CLICK:Search"
+          ],
+          "events": [
+            "BLOCKED:Wait for the page to update@1055",
+            "TYPE_TEXT:Search@1809",
+            "FOLLOW_UP:Press enter@1901",
+            "CLICK:Search@2323",
+            "DONE:Search@4713"
+          ]
+        }
+      ]
+    },
+    "mdn-search": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 5063,
+      "median_decisions": 6,
+      "median_jev_ms": 484,
+      "median_text_ms": 614,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 5,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Search the site",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 339,
+              "text_ms": 0,
+              "at_ms": 689
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Search",
+              "text": "fetch api",
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 145,
+              "text_ms": 614,
+              "at_ms": 1701
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": true,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 2095
+            }
+          ],
+          "final_text": "Meet Otari, the open source LLM Control Plane that helps developers control LLM infrastructure.\nDiscover Otari\nAd\nDon't want to see ads?\nHTML\nCSS\nJavaScript\nWeb APIs\nAll\nLearn\nTools\nAbout\nBlog\nLog in\nWeb\nWeb APIs\nFetch API\nTheme\nEnglish (US)\nFetch API\nThe Fetch API provides an interface for fetching resources (including across the network). It is a more powerful and flexible replacement for\nXMLHttpRequest\n.\nIn this article\nConcepts and usage\nInterfaces\nHTTP headers\nSpecifications\nBrowser compatibility\nSee also\nImage & Video API\nReal-time URL transforms, global CDN delivery & easy integration with existing storage.\nStart Free\nAd\nConcepts and usage\nThe Fetch API uses\nRequest\nand\nResponse\nobjects (and other things involved with network requests), as well as related concepts such as CORS and the HTTP Origin header semantics.\nFor making a request and fetching a resource, use the\nfetch()\nmethod. It is a global method in both\nWindow\nand\nWorker\ncontexts. This makes it available in pretty much any context you might want to fetch resources in.\nThe\nfetch()\nmethod takes one mandatory argument, the path to the resource you want to fetch. It returns a\nPromise\nthat resolves to the\nResponse\nto tha",
+          "elapsed_ms": 5063,
+          "steps": 3,
+          "decisions": 6,
+          "jev_ms": 484,
+          "text_ms": 614,
+          "final_url": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API",
+          "ops": [
+            "CLICK:Search the site",
+            "TYPE_TEXT:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "CLICK:Search the site@441",
+            "TYPE_TEXT:Search@1487",
+            "FOLLOW_UP:Press enter@1727",
+            "DONE:Press enter@5063"
+          ]
+        }
+      ]
+    },
+    "books-toscrape": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1213,
+      "median_decisions": 2,
+      "median_jev_ms": 284,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "A Light in the Attic",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 284,
+              "text_ms": 0,
+              "at_ms": 672
+            }
+          ],
+          "final_text": "Books to Scrape\nWe love being scraped!\nHome\nBooks\nPoetry\nA Light in the Attic\nA Light in the Attic\n£51.77\nIn stock (22 available)\nWarning!\nThis is a demo website for web scraping purposes. Prices and ratings here were randomly assigned and have no real meaning.\nProduct Description\nIt's hard to imagine a world without A Light in the Attic. This now-classic collection of poetry and drawings from Shel Silverstein celebrates its 20th anniversary with this special edition. Silverstein's humorous and creative verse can amuse the dowdiest of readers. Lemon-faced adults and fidgety kids sit still and read these rhythmic words and laugh and smile and love th It's hard to imagine a world without A Light in the Attic. This now-classic collection of poetry and drawings from Shel Silverstein celebrates its 20th anniversary with this special edition. Silverstein's humorous and creative verse can amuse the dowdiest of readers. Lemon-faced adults and fidgety kids sit still and read these rhythmic words and laugh and smile and love that Silverstein. Need proof of his genius? RockabyeRockabye baby, in the treetopDon't you know a treetopIs no safe place to rock?And who put you up there,And your cradl",
+          "elapsed_ms": 1213,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 284,
+          "text_ms": 0,
+          "final_url": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html",
+          "ops": [
+            "CLICK:A Light in the Attic"
+          ],
+          "events": [
+            "CLICK:A Light in the Attic@453",
+            "DONE:A Light in the Attic@1213"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 52141
+}

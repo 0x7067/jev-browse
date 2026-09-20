@@ -204,14 +204,15 @@ export class Agent {
       this.followUp = null;
 
       if (fu.type === "DONE") {
-        await this.confirmDone(this.page);
-
+        // The consult is a cheap decision; the stability window is not.
+        // Ask first, so a claim that gets re-decided never pays the window.
         if (this.prematureDone()) {
           this.phase = "decide";
 
           return;
         }
 
+        await this.confirmDone(this.page);
         this.phase = "done";
 
         return;
@@ -398,14 +399,14 @@ export class Agent {
       const deadline = Date.now() + 2500;
 
       while (Date.now() < deadline && this.browser.pendingNav?.()) {
-        if (!(await this.browser.fresh(page))) {
+        if (!(await this.browser.fresh(page, undefined, "structure"))) {
           throw new StalePage("Navigation committed while confirming DONE. Choose again.");
         }
 
         await sleep(120);
       }
 
-      if (!(await this.browser.fresh(page))) {
+      if (!(await this.browser.fresh(page, undefined, "structure"))) {
         throw new StalePage("Page changed while confirming DONE. Choose again.");
       }
     }
@@ -414,7 +415,7 @@ export class Agent {
 
     await sleep(window_);
 
-    if (!(await this.browser.fresh(page))) {
+    if (!(await this.browser.fresh(page, undefined, "structure"))) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }
   }
@@ -429,7 +430,10 @@ export class Agent {
     const selected = decision.choice;
 
     if (selected === "DONE" || selected === "BLOCKED") {
-      if (!(await this.browser.fresh(page))) {
+      // A claim must describe the live page: structure freshness compares
+      // controls, form state, and digit-normalized text — a clock can't
+      // stale-loop DONE, but a "Processing" → "failed" swap can.
+      if (!(await this.browser.fresh(page, undefined, "structure"))) {
         throw new StalePage("Page changed since the decision. Choose again.");
       }
 
@@ -437,14 +441,21 @@ export class Agent {
       // page moves (recovery — re-decide) or the patience a WAIT-loop would
       // buy expires (accept the claim). Bounded by earlyWaits; mutating
       // retries stay forbidden.
-      if (selected === "BLOCKED" && this.earlyWaits < 3) {
+      // One full patience window per stuck episode: a claim repeated after
+      // the repair consult, with nothing having moved, is accepted as is.
+      if (selected === "BLOCKED" && this.earlyWaits < 3 && !this.probeConsulted) {
         this.earlyWaits++;
         const entry = this.waitEntry("Wait for the page to update", page);
-        const deadline = Date.now() + 10_000;
+        const started = Date.now();
+        // Patience scales with evidence of work: a page with requests in
+        // flight earns the full window; an idle page earns a shorter one.
+        let deadline = started + 4_000;
 
         for (;;) {
           await sleep(800);
           this.page = await this.browser.observe();
+
+          if ((this.page.pending_requests ?? 0) > 0) deadline = started + 10_000;
 
           const changed = this.page.fingerprint !== page.fingerprint;
 
@@ -462,12 +473,6 @@ export class Agent {
             // An unchanged page after a full patience window is a real
             // give-up signal — but a single borderline claim still earns one
             // hinted re-decide before the claim is accepted.
-            if (this.probeConsulted) {
-              this.phase = "blocked";
-
-              return;
-            }
-
             this.probeConsulted = true;
             this.repairHint = this.giveUpHint(page);
             this.phase = "decide";
@@ -478,13 +483,13 @@ export class Agent {
       }
 
       if (selected === "DONE") {
-        await this.confirmDone(page);
-
         if (this.prematureDone()) {
           this.phase = "decide";
 
           return;
         }
+
+        await this.confirmDone(page);
       }
 
       this.phase = selected === "DONE" ? "done" : "blocked";
@@ -528,7 +533,9 @@ export class Agent {
     let helper: { model: string; latency_ms: number; usage?: unknown } | null = null;
 
     if (action.kind === "fill") {
-      if (!(await this.browser.fresh(page))) {
+      // Same document and field state is what the helper's context needs;
+      // ambient text churn is not a reason to re-decide.
+      if (!(await this.browser.fresh(page, undefined, "page"))) {
         throw new StalePage("Page changed before text generation. Choose again.");
       }
 
@@ -819,6 +826,7 @@ export class Agent {
             phase: this.phase,
             elapsed_ms: this.elapsed(),
             operation: this.lastOperation,
+            reason: error.message,
             url: this.page.url,
           });
         } else {
@@ -894,7 +902,7 @@ export class Agent {
       decisions: this.decisions.length,
       elapsed_ms: this.elapsed(),
       history: this.history,
-      final_text: this.page.text.slice(0, 2000),
+      final_text: this.page.text,
     };
 
     if (answer !== undefined) result.answer = answer;

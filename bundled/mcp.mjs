@@ -89,6 +89,17 @@ function fingerprint(state) {
   };
   return createHash("sha256").update(JSON.stringify(canonicalize(content))).digest("hex");
 }
+function structureOf(marker) {
+  if (!Array.isArray(marker)) return null;
+  const strip = (a) => isJsonObject(a) ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id")) : a;
+  const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
+  const text = isString(marker[7]) ? marker[7].replace(new RegExp("\\p{N}+", "gu"), "#") : marker[7];
+  return [marker[0], marker[1], marker[6], controls, marker[9], text];
+}
+function markerMatches(level, current, observed) {
+  const project = level === "structure" ? structureOf : (m) => m;
+  return JSON.stringify(project(current)) === JSON.stringify(project(observed));
+}
 
 // src/model/space.ts
 function actionSpace(actions, delegatedContextmenu = false) {
@@ -1233,11 +1244,11 @@ var Agent = class _Agent {
       const fu = this.followUp;
       this.followUp = null;
       if (fu.type === "DONE") {
-        await this.confirmDone(this.page);
         if (this.prematureDone()) {
           this.phase = "decide";
           return;
         }
+        await this.confirmDone(this.page);
         this.phase = "done";
         return;
       }
@@ -1355,18 +1366,18 @@ ${repair}` : this.goal;
     if (page.pending_nav || this.browser.pendingNav?.()) {
       const deadline = Date.now() + 2500;
       while (Date.now() < deadline && this.browser.pendingNav?.()) {
-        if (!await this.browser.fresh(page)) {
+        if (!await this.browser.fresh(page, void 0, "structure")) {
           throw new StalePage("Navigation committed while confirming DONE. Choose again.");
         }
         await sleep3(120);
       }
-      if (!await this.browser.fresh(page)) {
+      if (!await this.browser.fresh(page, void 0, "structure")) {
         throw new StalePage("Page changed while confirming DONE. Choose again.");
       }
     }
     const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
     await sleep3(window_);
-    if (!await this.browser.fresh(page)) {
+    if (!await this.browser.fresh(page, void 0, "structure")) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }
   }
@@ -1377,16 +1388,18 @@ ${repair}` : this.goal;
     this.decision = null;
     const selected = decision.choice;
     if (selected === "DONE" || selected === "BLOCKED") {
-      if (!await this.browser.fresh(page)) {
+      if (!await this.browser.fresh(page, void 0, "structure")) {
         throw new StalePage("Page changed since the decision. Choose again.");
       }
-      if (selected === "BLOCKED" && this.earlyWaits < 3) {
+      if (selected === "BLOCKED" && this.earlyWaits < 3 && !this.probeConsulted) {
         this.earlyWaits++;
         const entry2 = this.waitEntry("Wait for the page to update", page);
-        const deadline = Date.now() + 1e4;
+        const started = Date.now();
+        let deadline = started + 4e3;
         for (; ; ) {
           await sleep3(800);
           this.page = await this.browser.observe();
+          if ((this.page.pending_requests ?? 0) > 0) deadline = started + 1e4;
           const changed = this.page.fingerprint !== page.fingerprint;
           if (changed || Date.now() >= deadline) {
             entry2.page_changed = changed;
@@ -1394,10 +1407,6 @@ ${repair}` : this.goal;
             entry2.elapsed_ms = this.elapsed();
             if (changed) {
               this.phase = "decide";
-              return;
-            }
-            if (this.probeConsulted) {
-              this.phase = "blocked";
               return;
             }
             this.probeConsulted = true;
@@ -1408,11 +1417,11 @@ ${repair}` : this.goal;
         }
       }
       if (selected === "DONE") {
-        await this.confirmDone(page);
         if (this.prematureDone()) {
           this.phase = "decide";
           return;
         }
+        await this.confirmDone(page);
       }
       this.phase = selected === "DONE" ? "done" : "blocked";
       return;
@@ -1437,7 +1446,7 @@ ${repair}` : this.goal;
     let text = null;
     let helper = null;
     if (action.kind === "fill") {
-      if (!await this.browser.fresh(page)) {
+      if (!await this.browser.fresh(page, void 0, "page")) {
         throw new StalePage("Page changed before text generation. Choose again.");
       }
       const context = fieldContext(this.goal, action, page, this.history);
@@ -1627,6 +1636,7 @@ ${repair}` : this.goal;
             phase: this.phase,
             elapsed_ms: this.elapsed(),
             operation: this.lastOperation,
+            reason: error.message,
             url: this.page.url
           });
         } else {
@@ -1677,7 +1687,7 @@ ${repair}` : this.goal;
       decisions: this.decisions.length,
       elapsed_ms: this.elapsed(),
       history: this.history,
-      final_text: this.page.text.slice(0, 2e3)
+      final_text: this.page.text
     };
     if (answer !== void 0) result.answer = answer;
     if (this.page.downloads?.length) result.downloads = this.page.downloads;
@@ -1996,7 +2006,37 @@ var PENDING_GRACE_MS = 1e4;
 var VIEWPORT_W = 1120;
 var VIEWPORT_H = 780;
 var SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
+var WAIT_BUDGET_MS = 1500;
+var WAIT_POLL_MS = 100;
 var DRAG_STEPS = 8;
+function splitShellWords(input) {
+  const out = [];
+  let cur = "", quote = null, started = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (quote !== null) {
+      if (ch === quote) quote = null;
+      else cur += ch;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+      started = true;
+    } else if (ch === "\\" && i + 1 < input.length) {
+      cur += input[++i];
+      started = true;
+    } else if (/\s/.test(ch)) {
+      if (started || cur) {
+        out.push(cur);
+        cur = "";
+        started = false;
+      }
+    } else {
+      cur += ch;
+      started = true;
+    }
+  }
+  if (started || cur) out.push(cur);
+  return out;
+}
 function reapProfileChrome(profileDir) {
   try {
     const escaped = profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -2061,6 +2101,15 @@ var CdpBrowser = class _CdpBrowser {
       if (!opts.headed) args.push("--headless=new");
       else
         args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
+      if (process.getuid?.() === 0) {
+        args.push("--no-sandbox");
+        process.stderr.write(
+          "jev-browse: running as root \u2014 Chrome launched with --no-sandbox, renderer containment is off. Attach to a non-root Chrome via JEV_CDP_URL to keep it.\n"
+        );
+      }
+      for (const extra of splitShellWords(process.env.JEV_CHROME_ARGS ?? "")) {
+        args.push(extra);
+      }
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
       browser.proc.on("error", () => {
       });
@@ -2289,7 +2338,7 @@ var CdpBrowser = class _CdpBrowser {
       this.afterInput = null;
       try {
         await this.evaluate(`(action => new Promise(resolve => {
-            const field=window.__jevFast?.nodes.get(action.node);
+            const field=window.__jevFast?.node(action.node);
             const autocomplete=action.kind==='fill' && field?.getAttribute('role')==='combobox';
             let frames=0, stopped=false;
             const finish=()=>{stopped=true;resolve()};
@@ -2371,7 +2420,7 @@ var CdpBrowser = class _CdpBrowser {
       const node = action.node;
       if (node === void 0) return false;
       const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`
+        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`
       );
       return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
     }
@@ -2381,7 +2430,7 @@ var CdpBrowser = class _CdpBrowser {
       );
       return JSON.stringify(current) === JSON.stringify(page.page_key);
     }
-    return JSON.stringify(await this.evaluate(MARKER)) === JSON.stringify(page.marker);
+    return markerMatches(level, await this.evaluate(MARKER), page.marker);
   }
   async act(action, page, text) {
     if (!await this.fresh(page, action, "page")) {
@@ -2389,68 +2438,51 @@ var CdpBrowser = class _CdpBrowser {
     }
     const kind = action.kind;
     if (kind === "wait") {
-      const deadline = Date.now() + 1600;
+      const deadline = Date.now() + WAIT_BUDGET_MS;
+      const hadRequests = this.pendingCount(this.session) > 0;
       while (Date.now() < deadline) {
-        await sleep4(160);
-        if (!await this.fresh(page)) {
-          throw new StalePage("Page updated during WAIT. Observe again.");
-        }
+        await sleep4(WAIT_POLL_MS);
+        if (!await this.fresh(page)) break;
+        if (hadRequests && this.pendingCount(this.session) === 0) break;
       }
       return { executed: action.id };
     }
     if (kind === "scroll" && action.node !== void 0) {
-      const point = await this.evaluate(
+      const moved = await this.evaluate(
         `(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${JSON.stringify(action.node)});
           if (!e?.isConnected) return null;
-          const r=e.getBoundingClientRect();
-          if (!r.width || !r.height) return null;
-          const sign=Math.sign(${action.delta ?? 0})||1;
-          return {x:r.x+r.width/2,y:r.y+r.height/2,delta:Math.round(sign*e.clientHeight*0.8)};
+          const b=e.scrollTop;
+          e.scrollBy({top:${JSON.stringify(action.delta ?? SCROLL_DELTA)},behavior:'instant'});
+          return e.scrollTop!==b;
         })()`
-      );
-      if (!point) throw new StalePage("Scroll region is gone. Observe again.");
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mouseWheel",
-        x: point.x,
-        y: point.y,
-        deltaX: 0,
-        deltaY: point.delta
-      });
+      ).catch(() => null);
+      if (moved === null) throw new StalePage("Scroll region is gone. Observe again.");
       this.afterInput = action;
       return { executed: action.id };
     }
     if (kind === "scroll") {
-      const point = await this.evaluate(
+      await this.evaluate(
         `(delta => {
           const sign=Math.sign(delta)||1;
-          const fixed=e=>{
-            for (let n=e;n && n!==document.documentElement;n=n.parentElement) {
-              const p=getComputedStyle(n).position;
-              if (p==='fixed'||p==='sticky') return true;
-            }
-            return false;
-          };
+          const dy=Math.round(sign*innerHeight*0.8);
+          const moved=(n,by)=>{const b=n.scrollTop;n.scrollBy({top:by,behavior:'instant'});return n.scrollTop!==b;};
           for (const fx of [0.5,0.3,0.7,0.15,0.85]) {
-            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.8);
-            const hit=document.elementFromPoint(x,y);
-            if (hit && !fixed(hit)) return {x,y,delta:Math.round(sign*innerHeight*0.8)};
+            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.6);
+            const e=window.__jevFast?.deepHit(document,x,y);
+            for (let n=e; n && n!==document.documentElement && n!==document.body; n=n.parentElement||n.getRootNode()?.host) {
+              if (n.tagName==='IFRAME') {
+                try { const w=n.contentWindow, b=w.scrollY; w.scrollBy({top:dy,behavior:'instant'}); if (w.scrollY!==b) return 'iframe'; } catch {}
+                continue;
+              }
+              const cs=getComputedStyle(n);
+              if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight>n.clientHeight+1 && moved(n,dy)) return 'element';
+            }
           }
-          return null;
+          const b=scrollY; scrollBy({top:dy,behavior:'instant'});
+          return scrollY!==b ? 'window' : 'none';
         })(${JSON.stringify(action.delta ?? SCROLL_DELTA)})`
       ).catch(() => null);
-      const wheel = point ?? {
-        x: Math.round(VIEWPORT_W / 2),
-        y: Math.round(VIEWPORT_H * 0.8),
-        delta: action.delta ?? SCROLL_DELTA
-      };
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mouseWheel",
-        x: wheel.x,
-        y: wheel.y,
-        deltaX: 0,
-        deltaY: wheel.delta
-      });
       this.afterInput = action;
       return { executed: action.id };
     }
@@ -2480,12 +2512,13 @@ var CdpBrowser = class _CdpBrowser {
     let target;
     try {
       target = await this.evaluate(`(action => {
-        const e=window.__jevFast?.nodes.get(action.node);
+        const e=window.__jevFast?.node(action.node);
         // Visibility alone doesn't decide clickability \u2014 opacity:0 custom
         // controls fail checkVisibility yet win their own hit test. The
         // covered check below is the real arbiter.
-        if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return null;
-        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return null;
+        if (!e?.isConnected) return {why:'gone'};
+        if (e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return {why:'disabled'};
+        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return {why:'readonly'};
         const d=e.ownerDocument, w=d.defaultView||window;
         let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
         // Observed targets drift out of the viewport between snapshot and input
@@ -2495,19 +2528,25 @@ var CdpBrowser = class _CdpBrowser {
           e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
           r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
         }
-        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return null;
-        const hit=d.elementFromPoint(lx,ly), root=e.getRootNode();
-        // Composed containment: not covered when the hit is the target, is
-        // inside it across shadow boundaries (walk hit's host chain up to e),
-        // or is e's own shadow host. An unrelated overlay in the same shadow
-        // root still counts as covered.
-        const inside=h=>{for(let n=h;n;){if(n===e)return true;const r=n.getRootNode();n=r instanceof ShadowRoot?r.host:n.parentElement;}return false;};
-        const covered = !(hit===e || e.contains(hit) || inside(hit) ||
-          (root instanceof ShadowRoot && hit===root.host));
-        if (covered) return null;
+        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return {why:'offscreen'};
+        const c=window.__jevFast, deepHit=()=>c.deepHit(d,lx,ly);
+        let hit=deepHit();
+        // A hit on the target's own ancestor is clipping by a scroll
+        // container (a long suggestion list, an overflow pane), not cover:
+        // bring the target into view once and test again.
+        if (hit && hit!==e && c.composedContains(hit,e)) {
+          e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
+          hit=deepHit();
+        }
+        // Not covered when the hit is the target or inside it across shadow
+        // boundaries, or is one of e's own shadow hosts. An unrelated overlay
+        // in the same shadow root still counts as covered.
+        const hosts=new Set(); for (let sr=e.getRootNode();sr instanceof ShadowRoot;sr=sr.host.getRootNode()) hosts.add(sr.host);
+        if (!c.composedContains(e,hit) && !hosts.has(hit)) return {why:'covered by '+(hit?hit.tagName.toLowerCase():'nothing')};
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
-              !o.disabled && !o.closest('optgroup[disabled]'))) return null;
+              !o.disabled && !o.closest('optgroup[disabled]'))) return {why:'no such option'};
           e.value=action.value;
           e.dispatchEvent(new Event('input',{bubbles:true}));
           e.dispatchEvent(new Event('change',{bubbles:true}));
@@ -2521,11 +2560,11 @@ var CdpBrowser = class _CdpBrowser {
       }
       throw error;
     }
-    if (target === null || target === void 0) {
+    if (target === null || target === void 0 || target.why !== void 0) {
       if (kind === "select") {
         throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
       }
-      throw new StalePage("Target changed or is covered. Observe again.");
+      throw new StalePage(`Target ${JSON.stringify(action.label.slice(0, 40))} ${target?.why ?? "changed"}. Observe again.`);
     }
     if (kind === "fill" && target.type === "file") {
       const doc = await this.call("DOM.getDocument", { depth: 1 });
@@ -2545,7 +2584,7 @@ var CdpBrowser = class _CdpBrowser {
     }
     if (kind === "drag" && action.dragTo !== void 0) {
       const dest = await this.evaluate(`(() => {
-        const e=window.__jevFast?.nodes.get(${action.dragTo});
+        const e=window.__jevFast?.node(${action.dragTo});
         if (!e?.isConnected) return null;
         const r=e.getBoundingClientRect();
         return {x:r.x+r.width/2,y:r.y+r.height/2};
@@ -2589,7 +2628,7 @@ var CdpBrowser = class _CdpBrowser {
       }
       if (kind === "click" || kind === "context" || kind === "fill") {
         await this.evaluate(`(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${action.node});
           if (!e?.isConnected) return;
           const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView||window;
           if (r.top<0 || r.left<0 || r.bottom>w.innerHeight || r.right>w.innerWidth)
@@ -2640,7 +2679,7 @@ var CdpBrowser = class _CdpBrowser {
     if (action.kind === "fill") {
       await this.evaluate(
         `(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${action.node});
           if (!e?.isConnected) return "stale";
           if (e.isContentEditable) {
             e.innerText=${JSON.stringify(text ?? "")};
@@ -2660,7 +2699,7 @@ var CdpBrowser = class _CdpBrowser {
       await this.evaluate(
         `(() => {
           const c=window.__jevFast;
-          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
           if (!src || !dst) return "stale";
           const dt=new DataTransfer();
           const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
@@ -2675,7 +2714,7 @@ var CdpBrowser = class _CdpBrowser {
     const types = action.kind === "hover" ? ["mouseover", "mousemove"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
     await this.evaluate(
       `(() => {
-        const e=window.__jevFast?.nodes.get(${action.node});
+        const e=window.__jevFast?.node(${action.node});
         if (!e) return "stale";
         const r=e.getBoundingClientRect();
         const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};
@@ -2845,7 +2884,7 @@ var AgentBrowser = class _AgentBrowser {
       this.afterInput = null;
       try {
         await this.evaluate(`(action => new Promise(resolve => {
-          const field=window.__jevFast?.nodes.get(action.node);
+          const field=window.__jevFast?.node(action.node);
           const autocomplete=action.kind==='fill' && field?.getAttribute('role')==='combobox';
           let frames=0, stopped=false;
           const finish=()=>{stopped=true;resolve()};
@@ -2887,7 +2926,7 @@ var AgentBrowser = class _AgentBrowser {
       const node = action.node;
       if (node === void 0) return false;
       const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`
+        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`
       );
       return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
     }
@@ -2897,7 +2936,7 @@ var AgentBrowser = class _AgentBrowser {
       );
       return JSON.stringify(current) === JSON.stringify(page.page_key);
     }
-    return JSON.stringify(await this.evaluate(MARKER2)) === JSON.stringify(page.marker);
+    return markerMatches(level, await this.evaluate(MARKER2), page.marker);
   }
   async act(action, page, text) {
     if (!await this.fresh(page, action, "page")) {
@@ -2927,7 +2966,7 @@ var AgentBrowser = class _AgentBrowser {
     }
     if (action.node === void 0) throw new Error("Invalid observed node");
     const tagged = await this.evaluate(`(() => {
-      const e=window.__jevFast?.nodes.get(${action.node});
+      const e=window.__jevFast?.node(${action.node});
       // Visibility alone doesn't decide clickability \u2014 the covered check
       // below arbitrates; opacity:0 controls win their own hit test.
       if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return false;
@@ -2952,7 +2991,7 @@ var AgentBrowser = class _AgentBrowser {
       if (kind === "drag" && action.dragTo !== void 0) {
         await this.evaluate(`(() => {
           const c=window.__jevFast;
-          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
           if (!src || !dst) return "stale";
           const dt=new DataTransfer();
           const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
@@ -3011,7 +3050,7 @@ var AgentBrowser = class _AgentBrowser {
     }
     if (action.kind === "fill") {
       await this.evaluate(`(() => {
-        const e=window.__jevFast?.nodes.get(${action.node});
+        const e=window.__jevFast?.node(${action.node});
         if (!e?.isConnected) return "stale";
         if (e.isContentEditable) {
           e.innerText=${JSON.stringify(text ?? "")};
@@ -3028,7 +3067,7 @@ var AgentBrowser = class _AgentBrowser {
     }
     const types = action.kind === "hover" ? ["mouseover", "mousemove"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
     await this.evaluate(`(() => {
-      const e=window.__jevFast?.nodes.get(${action.node});
+      const e=window.__jevFast?.node(${action.node});
       if (!e) return "stale";
       const r=e.getBoundingClientRect();
       const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};

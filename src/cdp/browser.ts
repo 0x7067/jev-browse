@@ -9,13 +9,14 @@ import { mkdtempSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { fingerprint } from "../json.ts";
+import { fingerprint, markerMatches } from "../json.ts";
 import { loadSnapshotJs } from "../snapshot-loader.ts";
 import {
   StalePage,
   type ActResult,
   type BrowserDriver,
   type JsonObject,
+  type JsonValue,
   type ObservedAction,
   type PageState,
 } from "../types.ts";
@@ -86,8 +87,51 @@ const VIEWPORT_H = 780;
 /** Fallback wheel delta: roughly a pane's worth of the forced viewport. */
 const SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
 
+/** WAIT polls the page for this long before handing control back. */
+const WAIT_BUDGET_MS = 1500;
+
+const WAIT_POLL_MS = 100;
+
 /** Interpolated mouseMoved events between drag press and release. */
 const DRAG_STEPS = 8;
+
+/** Whitespace-split with shell quoting: ".."/'..' group (even mid-word, so
+ *  --user-agent="Foo Bar" stays one argument), \ escapes the next char. */
+function splitShellWords(input: string): string[] {
+  const out: string[] = [];
+
+  let cur = "",
+    quote: string | null = null,
+    started = false;
+
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+
+    if (quote !== null) {
+      if (ch === quote) quote = null;
+      else cur += ch;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+      started = true;
+    } else if (ch === "\\" && i + 1 < input.length) {
+      cur += input[++i];
+      started = true;
+    } else if (/\s/.test(ch)) {
+      if (started || cur) {
+        out.push(cur);
+        cur = "";
+        started = false;
+      }
+    } else {
+      cur += ch;
+      started = true;
+    }
+  }
+
+  if (started || cur) out.push(cur);
+
+  return out;
+}
 
 /** Kill Chrome instances still bound to our profile dir. True when any were reaped. */
 function reapProfileChrome(profileDir: string): boolean {
@@ -177,6 +221,24 @@ export class CdpBrowser implements BrowserDriver {
       if (!opts.headed) args.push("--headless=new");
       else
         args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
+
+      // Chrome refuses to start as root without --no-sandbox (containers,
+      // CI) — but the flag switches off renderer containment, so say so
+      // instead of doing it silently. Attaching via --cdp/JEV_CDP_URL to a
+      // Chrome launched as a normal user keeps the sandbox.
+      if (process.getuid?.() === 0) {
+        args.push("--no-sandbox");
+        process.stderr.write(
+          "jev-browse: running as root — Chrome launched with --no-sandbox, " +
+            "renderer containment is off. Attach to a non-root Chrome via JEV_CDP_URL to keep it.\n",
+        );
+      }
+
+      // JEV_CHROME_ARGS appends operator flags, shell-style words.
+      for (const extra of splitShellWords(process.env.JEV_CHROME_ARGS ?? "")) {
+        args.push(extra);
+      }
+
       browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
       browser.proc.on("error", () => {});
       browser.launchProfileDir = profileDir;
@@ -503,7 +565,7 @@ export class CdpBrowser implements BrowserDriver {
         // evaluate() checks exceptionDetails — a field disconnecting
         // mid-wait throws there instead of inside the page script.
         await this.evaluate(`(action => new Promise(resolve => {
-            const field=window.__jevFast?.nodes.get(action.node);
+            const field=window.__jevFast?.node(action.node);
             const autocomplete=action.kind==='fill' && field?.getAttribute('role')==='combobox';
             let frames=0, stopped=false;
             const finish=()=>{stopped=true;resolve()};
@@ -605,7 +667,7 @@ export class CdpBrowser implements BrowserDriver {
   async fresh(
     page: PageState,
     action?: ObservedAction,
-    level: "full" | "page" = "full",
+    level: "full" | "page" | "structure" = "full",
   ): Promise<boolean> {
     if (action && (action.kind === "click" || action.kind === "select")) {
       const node = action.node;
@@ -613,7 +675,7 @@ export class CdpBrowser implements BrowserDriver {
       if (node === undefined) return false;
 
       const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.nodes.get(${node}))] : null; })()`,
+        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`,
       );
 
       return (
@@ -630,7 +692,7 @@ export class CdpBrowser implements BrowserDriver {
       return JSON.stringify(current) === JSON.stringify(page.page_key);
     }
 
-    return JSON.stringify(await this.evaluate(MARKER)) === JSON.stringify(page.marker);
+    return markerMatches(level, await this.evaluate<JsonValue>(MARKER), page.marker);
   }
 
   async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {
@@ -643,87 +705,74 @@ export class CdpBrowser implements BrowserDriver {
     const kind = action.kind;
 
     if (kind === "wait") {
-      // WAIT asks the page to update, not a fixed nap: hold for the marker
-      // to move (delayed fetches, timed renders) and surface the change as
-      // stale so the run re-observes. The cap bounds a truly static page.
-      const deadline = Date.now() + 1600;
+      // A wait is a bet that the page is working. Poll for the outcome
+      // instead of sleeping a fixed slice: return as soon as the document
+      // key or text/marker moves, or the network goes idle after activity,
+      // or the patience budget runs out. Each early return saves a decision.
+      const deadline = Date.now() + WAIT_BUDGET_MS;
+      const hadRequests = this.pendingCount(this.session) > 0;
 
       while (Date.now() < deadline) {
-        await sleep(160);
+        await sleep(WAIT_POLL_MS);
 
-        if (!(await this.fresh(page))) {
-          throw new StalePage("Page updated during WAIT. Observe again.");
-        }
+        if (!(await this.fresh(page))) break;
+
+        if (hadRequests && this.pendingCount(this.session) === 0) break;
       }
 
       return { executed: action.id };
     }
 
     if (kind === "scroll" && action.node !== undefined) {
-      // Region scroll: wheel at the pane's center so its own scroll handler
-      // (lazy lists, feeds) sees real input. Delta scales to the pane, not
-      // the viewport.
-      const point = await this.evaluate<{ x: number; y: number; delta: number } | null>(
+      // Region scroll: move the pane itself — a programmatic scrollBy still
+      // fires its scroll handler (lazy lists, feeds), and unlike a wheel
+      // event it can't be dropped by headless Chrome's input pipeline.
+      // Delta scales to the pane, not the viewport.
+      const moved = await this.evaluate(
         `(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${JSON.stringify(action.node)});
           if (!e?.isConnected) return null;
-          const r=e.getBoundingClientRect();
-          if (!r.width || !r.height) return null;
-          const sign=Math.sign(${action.delta ?? 0})||1;
-          return {x:r.x+r.width/2,y:r.y+r.height/2,delta:Math.round(sign*e.clientHeight*0.8)};
+          const b=e.scrollTop;
+          e.scrollBy({top:${JSON.stringify(action.delta ?? SCROLL_DELTA)},behavior:'instant'});
+          return e.scrollTop!==b;
         })()`,
-      );
+      ).catch(() => null);
 
-      if (!point) throw new StalePage("Scroll region is gone. Observe again.");
+      if (moved === null) throw new StalePage("Scroll region is gone. Observe again.");
 
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mouseWheel",
-        x: point.x,
-        y: point.y,
-        deltaX: 0,
-        deltaY: point.delta,
-      });
       this.afterInput = action;
 
       return { executed: action.id };
     }
 
     if (kind === "scroll") {
-      // A fixed/sticky pane (cookie bar, nav drawer) at the wheel point
-      // swallows the scroll. Probe a few columns for a hit in the document
-      // flow, and send ~80% of the live viewport height.
-      const point = await this.evaluate<{ x: number; y: number; delta: number } | null>(
+      // Programmatic scroll, not a wheel event: headless Chrome drops the
+      // first wheel after launch and acks every later one only after ~1s.
+      // scrollBy is instant and still fires scroll events (infinite feeds
+      // listen to those). Prefer an inner scroller under the probe points
+      // (overflow panes, same-origin iframes); fall back to the window.
+      await this.evaluate(
         `(delta => {
           const sign=Math.sign(delta)||1;
-          const fixed=e=>{
-            for (let n=e;n && n!==document.documentElement;n=n.parentElement) {
-              const p=getComputedStyle(n).position;
-              if (p==='fixed'||p==='sticky') return true;
-            }
-            return false;
-          };
+          const dy=Math.round(sign*innerHeight*0.8);
+          const moved=(n,by)=>{const b=n.scrollTop;n.scrollBy({top:by,behavior:'instant'});return n.scrollTop!==b;};
           for (const fx of [0.5,0.3,0.7,0.15,0.85]) {
-            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.8);
-            const hit=document.elementFromPoint(x,y);
-            if (hit && !fixed(hit)) return {x,y,delta:Math.round(sign*innerHeight*0.8)};
+            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.6);
+            const e=window.__jevFast?.deepHit(document,x,y);
+            for (let n=e; n && n!==document.documentElement && n!==document.body; n=n.parentElement||n.getRootNode()?.host) {
+              if (n.tagName==='IFRAME') {
+                try { const w=n.contentWindow, b=w.scrollY; w.scrollBy({top:dy,behavior:'instant'}); if (w.scrollY!==b) return 'iframe'; } catch {}
+                continue;
+              }
+              const cs=getComputedStyle(n);
+              if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight>n.clientHeight+1 && moved(n,dy)) return 'element';
+            }
           }
-          return null;
+          const b=scrollY; scrollBy({top:dy,behavior:'instant'});
+          return scrollY!==b ? 'window' : 'none';
         })(${JSON.stringify(action.delta ?? SCROLL_DELTA)})`,
       ).catch(() => null);
 
-      const wheel = point ?? {
-        x: Math.round(VIEWPORT_W / 2),
-        y: Math.round(VIEWPORT_H * 0.8),
-        delta: action.delta ?? SCROLL_DELTA,
-      };
-
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mouseWheel",
-        x: wheel.x,
-        y: wheel.y,
-        deltaX: 0,
-        deltaY: wheel.delta,
-      });
       this.afterInput = action;
 
       return { executed: action.id };
@@ -765,16 +814,17 @@ export class CdpBrowser implements BrowserDriver {
     // Code-owned node IDs refer to actual observed elements, never model-generated selectors.
     // Hit-testing is frame/shadow aware: iframe elements use owner-document
     // local coords; shadow elements accept hits on the host or root siblings.
-    let target: { x: number; y: number; type?: string } | null | undefined;
+    let target: { x: number; y: number; type?: string; why?: string } | null | undefined;
 
     try {
       target = await this.evaluate(`(action => {
-        const e=window.__jevFast?.nodes.get(action.node);
+        const e=window.__jevFast?.node(action.node);
         // Visibility alone doesn't decide clickability — opacity:0 custom
         // controls fail checkVisibility yet win their own hit test. The
         // covered check below is the real arbiter.
-        if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return null;
-        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return null;
+        if (!e?.isConnected) return {why:'gone'};
+        if (e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return {why:'disabled'};
+        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return {why:'readonly'};
         const d=e.ownerDocument, w=d.defaultView||window;
         let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
         // Observed targets drift out of the viewport between snapshot and input
@@ -784,19 +834,25 @@ export class CdpBrowser implements BrowserDriver {
           e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
           r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
         }
-        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return null;
-        const hit=d.elementFromPoint(lx,ly), root=e.getRootNode();
-        // Composed containment: not covered when the hit is the target, is
-        // inside it across shadow boundaries (walk hit's host chain up to e),
-        // or is e's own shadow host. An unrelated overlay in the same shadow
-        // root still counts as covered.
-        const inside=h=>{for(let n=h;n;){if(n===e)return true;const r=n.getRootNode();n=r instanceof ShadowRoot?r.host:n.parentElement;}return false;};
-        const covered = !(hit===e || e.contains(hit) || inside(hit) ||
-          (root instanceof ShadowRoot && hit===root.host));
-        if (covered) return null;
+        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return {why:'offscreen'};
+        const c=window.__jevFast, deepHit=()=>c.deepHit(d,lx,ly);
+        let hit=deepHit();
+        // A hit on the target's own ancestor is clipping by a scroll
+        // container (a long suggestion list, an overflow pane), not cover:
+        // bring the target into view once and test again.
+        if (hit && hit!==e && c.composedContains(hit,e)) {
+          e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
+          hit=deepHit();
+        }
+        // Not covered when the hit is the target or inside it across shadow
+        // boundaries, or is one of e's own shadow hosts. An unrelated overlay
+        // in the same shadow root still counts as covered.
+        const hosts=new Set(); for (let sr=e.getRootNode();sr instanceof ShadowRoot;sr=sr.host.getRootNode()) hosts.add(sr.host);
+        if (!c.composedContains(e,hit) && !hosts.has(hit)) return {why:'covered by '+(hit?hit.tagName.toLowerCase():'nothing')};
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
-              !o.disabled && !o.closest('optgroup[disabled]'))) return null;
+              !o.disabled && !o.closest('optgroup[disabled]'))) return {why:'no such option'};
           e.value=action.value;
           e.dispatchEvent(new Event('input',{bubbles:true}));
           e.dispatchEvent(new Event('change',{bubbles:true}));
@@ -812,12 +868,12 @@ export class CdpBrowser implements BrowserDriver {
       throw error;
     }
 
-    if (target === null || target === undefined) {
+    if (target === null || target === undefined || target.why !== undefined) {
       if (kind === "select") {
         throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
       }
 
-      throw new StalePage("Target changed or is covered. Observe again.");
+      throw new StalePage(`Target ${JSON.stringify(action.label.slice(0, 40))} ${target?.why ?? "changed"}. Observe again.`);
     }
 
     // File inputs: setFileInputFiles — never click (it opens a native dialog).
@@ -845,7 +901,7 @@ export class CdpBrowser implements BrowserDriver {
 
     if (kind === "drag" && action.dragTo !== undefined) {
       const dest = await this.evaluate<{ x: number; y: number } | null>(`(() => {
-        const e=window.__jevFast?.nodes.get(${action.dragTo});
+        const e=window.__jevFast?.node(${action.dragTo});
         if (!e?.isConnected) return null;
         const r=e.getBoundingClientRect();
         return {x:r.x+r.width/2,y:r.y+r.height/2};
@@ -901,7 +957,7 @@ export class CdpBrowser implements BrowserDriver {
       // sees what the input caused.
       if (kind === "click" || kind === "context" || kind === "fill") {
         await this.evaluate(`(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${action.node});
           if (!e?.isConnected) return;
           const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView||window;
           if (r.top<0 || r.left<0 || r.bottom>w.innerHeight || r.right>w.innerWidth)
@@ -964,7 +1020,7 @@ export class CdpBrowser implements BrowserDriver {
       // e.value= is invisible to React-style frameworks.
       await this.evaluate(
         `(() => {
-          const e=window.__jevFast?.nodes.get(${action.node});
+          const e=window.__jevFast?.node(${action.node});
           if (!e?.isConnected) return "stale";
           if (e.isContentEditable) {
             e.innerText=${JSON.stringify(text ?? "")};
@@ -987,7 +1043,7 @@ export class CdpBrowser implements BrowserDriver {
       await this.evaluate(
         `(() => {
           const c=window.__jevFast;
-          const src=c?.nodes.get(${action.node}), dst=c?.nodes.get(${action.dragTo});
+          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
           if (!src || !dst) return "stale";
           const dt=new DataTransfer();
           const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
@@ -1008,7 +1064,7 @@ export class CdpBrowser implements BrowserDriver {
 
     await this.evaluate(
       `(() => {
-        const e=window.__jevFast?.nodes.get(${action.node});
+        const e=window.__jevFast?.node(${action.node});
         if (!e) return "stale";
         const r=e.getBoundingClientRect();
         const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};

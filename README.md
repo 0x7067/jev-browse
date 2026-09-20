@@ -143,6 +143,15 @@ with `--allow-file-urls` or `JEV_ALLOW_FILE_URLS=1`.
   calls, and three consecutive no-change non-wait actions ends in `blocked`.
 - **Runs serialize on a pid lock.** `~/.jev-browse/run.lock` fails fast
   instead of fighting over Chrome's SingletonLock.
+- **Churn-tolerant guards.** A clock, a counter, or a virtual-DOM re-render
+  that recreates every node is not a changed page: claims compare document
+  identity, URL, title, digit-normalized text, controls, and form state,
+  and a swapped node is re-resolved once by root, role, and name.
+- **Root launch warns.** Chrome refuses uid 0 without `--no-sandbox`; the
+  flag is added automatically but printed on stderr — renderer containment
+  is off. Attach to a non-root Chrome via `--cdp`/`JEV_CDP_URL` to keep it.
+  `JEV_CHROME_ARGS` appends operator flags, split shell-style (quotes
+  group, `\` escapes).
 
 ## Engines
 
@@ -223,7 +232,9 @@ npm run run -- --url ... --goal ...   # tsx src/cli.ts, no build step
 ```
 
 Rebuild `bundled/` with `npm run build` before committing changes to `src/`;
-the bundles are what installed copies execute.
+the bundles are what installed copies execute. `npm run check:bundle`
+rebuilds and fails if the committed bundles drifted from `src/` (safe to
+run as a pre-commit gate).
 
 `node scripts/record_demo.mjs --url URL --goal "..."` records a run through
 the fixed-port `--cdp` attach path and renders `docs/demo.mp4` and

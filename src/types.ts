@@ -27,7 +27,7 @@ export type ActionKind =
   | "focus_tab";
 
 export type ObservedAction = {
-  id: string; // "e1".."e250", "scroll_down", "scroll_up", "wait"
+  id: string; // "e1".."e500", "scroll_down", "scroll_up", "wait"
   kind: ActionKind;
   label: string;
   node?: number; // code-owned identity into window.__jevFast.nodes
@@ -104,8 +104,14 @@ export interface BrowserDriver {
   observe(): Promise<PageState>;
   /** Is `page` still the live document? With an action, compare only its guard.
    *  level "page" compares just the document key (for actions that don't care
-   *  about text churn); "full" (default) includes text and scroll. */
-  fresh(page: PageState, action?: ObservedAction, level?: "full" | "page"): Promise<boolean>;
+   *  about text churn); "structure" adds title, the offered-control set, and
+   *  digit-normalized text but ignores scroll and node ids; "full" (default)
+   *  is the whole marker. */
+  fresh(
+    page: PageState,
+    action?: ObservedAction,
+    level?: "full" | "page" | "structure",
+  ): Promise<boolean>;
   /** Execute an observed action. Must re-check freshness before input. */
   act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
   /** In-page event synthesis, used when trusted input delivers nothing. */
