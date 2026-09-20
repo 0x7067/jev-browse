@@ -56,11 +56,19 @@ function systemCandidates(): readonly string[] {
 }
 
 /** Versioned driver caches — the binary sits a few directories deep. */
-const CACHE_ROOTS = [
-  join(homedir(), "Library", "Caches", "ms-playwright"),
-  join(homedir(), ".cache", "ms-playwright"),
-  join(homedir(), ".cache", "puppeteer"),
-];
+function cacheRoots(): string[] {
+  const roots: string[] = [];
+
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH) roots.push(process.env.PLAYWRIGHT_BROWSERS_PATH);
+
+  roots.push(
+    join(homedir(), "Library", "Caches", "ms-playwright"),
+    join(homedir(), ".cache", "ms-playwright"),
+    join(homedir(), ".cache", "puppeteer"),
+  );
+
+  return roots;
+}
 
 /** Executable basenames inside those caches (macOS .app names included). */
 const CACHE_BINARY = new Set([
@@ -94,7 +102,7 @@ function cacheCandidates(): string[] {
     }
   };
 
-  for (const root of CACHE_ROOTS) walk(root, 0);
+  for (const root of cacheRoots()) walk(root, 0);
 
   return found.sort();
 }

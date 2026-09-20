@@ -1783,11 +1783,16 @@ function systemCandidates() {
       return [];
   }
 }
-var CACHE_ROOTS = [
-  join2(homedir(), "Library", "Caches", "ms-playwright"),
-  join2(homedir(), ".cache", "ms-playwright"),
-  join2(homedir(), ".cache", "puppeteer")
-];
+function cacheRoots() {
+  const roots = [];
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH) roots.push(process.env.PLAYWRIGHT_BROWSERS_PATH);
+  roots.push(
+    join2(homedir(), "Library", "Caches", "ms-playwright"),
+    join2(homedir(), ".cache", "ms-playwright"),
+    join2(homedir(), ".cache", "puppeteer")
+  );
+  return roots;
+}
 var CACHE_BINARY = /* @__PURE__ */ new Set([
   "chrome",
   "chrome.exe",
@@ -1812,7 +1817,7 @@ function cacheCandidates() {
       else if (CACHE_BINARY.has(entry.name)) found.push(path);
     }
   };
-  for (const root of CACHE_ROOTS) walk(root, 0);
+  for (const root of cacheRoots()) walk(root, 0);
   return found.sort();
 }
 function findChrome() {
