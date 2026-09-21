@@ -1,0 +1,20 @@
+docs/INSTRUMENTATION-2026-09-21.md
+  s_72883222a46969::t_ed5456b37d7669 346-442,473,476-486
+  s_72883222a46969::t_42a0015fc5563e 7-10,443-472
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bf5643fde0857460d90a6e078d88584811956ad8",
+  "prompts": {},
+  "sessions": {
+    "s_72883222a46969": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5a19d482-af77-4f64-bf90-434a579e1de0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
