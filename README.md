@@ -1,12 +1,16 @@
 ![jev-browse · a browser agent driven by TypeSafe Jev](docs/banner.svg)
 
-# jev-browse ⚡
+# jev-browse
 
 **A browser agent with a dynamic, indexed action space, written in TypeScript.**
 
-Give it one goal. [TypeSafe's Jev](https://docs.typesafe.ai) picks an operation and an element. A small LLM writes text only when the operation is `TYPE_TEXT`. It ships with two interchangeable browser engines and installs on Pi, Claude Code, Codex, and any MCP-capable harness.
+Give it one goal. [TypeSafe's Jev](https://docs.typesafe.ai) picks an operation
+and an element. A small LLM writes text only when the operation is
+`TYPE_TEXT`. Two interchangeable browser engines ship with it, and it installs
+on Pi, Claude Code, Codex, and any MCP-capable harness.
 
-**Zürich to London on Google Flights in 10.2 seconds.** One natural-language goal, generated city names, calendar clicks, and loading waits included.
+**Zürich to London on Google Flights in 10.2 seconds.** One natural-language
+goal, generated city names, calendar clicks, and loading waits included.
 
 [![A real Google Flights search at 1× speed: typed cities, clicked calendar, verified results page](docs/demo.gif)](docs/demo.mp4)
 
@@ -118,40 +122,45 @@ with `--allow-file-urls` or `JEV_ALLOW_FILE_URLS=1`.
 
 ## Why it moves
 
-- **One request per decision cycle.** Operation and target heads share the
-  same observed state.
-- **Speculative follow-ups.** Each decision also predicts its conventional
-  continuation — autocomplete pick after typing, Enter to submit, or "this
-  completes the goal". When the post-action page matches the prediction,
-  the follow-up executes without a second decision round-trip.
-- **No screenshots in the agent loop.** Jev consumes structured state; the
-  demo video uses a separate CDP screencast.
-- **One browser call per snapshot.** `snapshot.js` reads visible controls,
-  names, values, and text atomically, keeping references to real DOM nodes.
-- **Freshness guards before every action.** A full marker compare runs for
-  fill, wait, scroll, and DONE. Click and select get a scoped guard covering
-  the document, URL, form values, and target context. Select evaluation
-  failures are fatal, not stale.
-- **Mutations never retry.** Execution is logged before the post-action
-  observation. `TYPE_TEXT` values are cached only while the helper input is
-  identical and discarded after a successful mutation.
-- **Fallback input.** When trusted `Input.dispatch*` events deliver
-  nothing (a canceled provisional navigation can kill the renderer's input
-  pipeline), an executed click or hover retries once via in-page event
-  synthesis before counting a strike.
-- **Bounded runs.** `MAX_STEPS` actions (default 60), twice that many model
-  calls, and three consecutive no-change non-wait actions ends in `blocked`.
-- **Runs serialize on a pid lock.** `~/.jev-browse/run.lock` fails fast
-  instead of fighting over Chrome's SingletonLock.
-- **Churn-tolerant guards.** A clock, a counter, or a virtual-DOM re-render
-  that recreates every node is not a changed page: claims compare document
-  identity, URL, title, digit-normalized text, controls, and form state,
-  and a swapped node is re-resolved once by root, role, and name.
-- **Root launch warns.** Chrome refuses uid 0 without `--no-sandbox`; the
-  flag is added automatically but printed on stderr — renderer containment
-  is off. Attach to a non-root Chrome via `--cdp`/`JEV_CDP_URL` to keep it.
-  `JEV_CHROME_ARGS` appends operator flags, split shell-style (quotes
-  group, `\` escapes).
+One request per decision cycle. The operation head and the target heads see
+the same observed state, and each decision also predicts its conventional
+continuation — the autocomplete pick after typing, Enter to submit, or "this
+completes the goal". When the post-action page matches that prediction, the
+follow-up executes without a second round trip. Nothing in the loop looks at
+screenshots; Jev consumes structured state, and the demo video comes from a
+separate CDP screencast.
+
+The page is read once per step. `snapshot.js` pulls visible controls, names,
+values, and text in a single browser call, atomically, keeping references to
+real DOM nodes.
+
+Then it checks the page hasn't moved under it. Fill, wait, scroll, and `DONE`
+get a full marker compare. Click and select get a scoped guard covering the
+document, the URL, form values, and the target's context. A select whose
+evaluation fails is fatal, not stale. These guards tolerate churn, because a
+clock, a counter, or a virtual-DOM re-render that recreates every node is not
+a changed page: claims compare document identity, URL, title,
+digit-normalized text, controls, and form state, and a swapped node is
+re-resolved once by root, role, and name.
+
+Mutations never retry. Execution is logged before the post-action
+observation, and `TYPE_TEXT` values are cached only while the helper input is
+identical, then discarded after a successful mutation. The one exception is
+input that never landed at all: when trusted `Input.dispatch*` events deliver
+nothing — a canceled provisional navigation can kill the renderer's input
+pipeline — an executed click or hover retries once through in-page event
+synthesis before it counts as a strike.
+
+Runs are bounded and serialized. `MAX_STEPS` actions (default 60), twice that
+many model calls, or three consecutive no-change non-wait actions ends the run
+in `blocked`. A pid lock at `~/.jev-browse/run.lock` fails fast instead of
+fighting over Chrome's SingletonLock.
+
+Launching as root is the one place the defaults get weaker. Chrome refuses uid
+0 without `--no-sandbox`, so the flag is added for you and printed on stderr:
+renderer containment is off. Attach to a non-root Chrome through
+`--cdp`/`JEV_CDP_URL` to keep it. `JEV_CHROME_ARGS` appends operator flags,
+split shell-style — quotes group, `\` escapes.
 
 ## Engines
 
@@ -195,29 +204,29 @@ table rather than offer dead targets.
 
 ## Evidence and limits
 
-The current video is a **10,209 ms** Google Flights run. Timing starts
-after initial page observation and includes model calls, generated text,
-browser work, and loading waits. The final frame is a verified results page:
-one-way Zürich to London on September 20, 2026, with real fares. The video
-plays at 1× from CDP frame timestamps, with a ~0.8 s final hold.
+The current video is a **10,209 ms** Google Flights run. Timing starts after
+initial page observation and includes model calls, generated text, browser
+work, and loading waits. The final frame is a verified results page: one-way
+Zürich to London on September 20, 2026, with real fares. The video plays at 1×
+from CDP frame timestamps, with a ~0.8 s final hold.
 
-Verified coverage: [`fixture-interactions.html`](fixture-interactions.html)
-plus a [real-world task suite](evals/) spanning
-form flows, autocomplete, iframes and framesets, shadow roots, hover-reveal
-menus, native selects, date pickers, file upload, dynamic loading, modals,
-multi-tab flows, infinite scroll, drag-and-drop, context menus, invisible
-(opacity:0) custom controls, and multi-step authenticated flows like
-ParaBank transfers and full saucedemo checkouts. Range sliders work through
-the focus-then-arrows idiom. Suite runs are verified by URL, page text, or
-executed actions; tasks with no checkable expectation are reported
-separately — the suite's verification details live in [evals/](evals/).
+Verified coverage is [`fixture-interactions.html`](fixture-interactions.html)
+plus a [real-world task suite](evals/) spanning form flows, autocomplete,
+iframes and framesets, shadow roots, hover-reveal menus, native selects, date
+pickers, file upload, dynamic loading, modals, multi-tab flows, infinite
+scroll, drag-and-drop, context menus, invisible (`opacity:0`) custom controls,
+and multi-step authenticated flows like ParaBank transfers and full saucedemo
+checkouts. Range sliders work through the focus-then-arrows idiom. Suite runs
+are verified by URL, page text, or executed actions; tasks with no checkable
+expectation are reported separately. The verification details live in
+[evals/](evals/).
 
-A `DONE` choice is a claim, not proof; the model can assert a goal it didn't
-reach (measured on Enter-only palettes). Verify outcomes independently.
-Cross-origin iframes and closed shadow roots stay opaque; that's the DOM,
-not us. There's no in-page address bar, so start on the right site (Google
-Flights, not google.com). No purchase or credential guardrail exists in
-code; the instruction text asks the model to behave and nothing enforces it.
+A `DONE` choice is a claim, not proof. The model can assert a goal it didn't
+reach — measured on Enter-only palettes — so verify outcomes independently.
+Cross-origin iframes and closed shadow roots stay opaque; that's the DOM, not
+us. There's no in-page address bar, so start on the right site: Google
+Flights, not google.com. And no purchase or credential guardrail exists in
+code. The instruction text asks the model to behave, and nothing enforces it.
 Scope goals accordingly.
 
 ## Development
