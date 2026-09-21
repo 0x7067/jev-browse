@@ -677,12 +677,26 @@ return s?[s]:[]}).join(' ') ||
 
   if (scrollY>0) actions.push({id:'scroll_up',kind:'scroll',label:'Scroll up',delta:-560});
   actions.push({id:'wait',kind:'wait',label:'Wait for the page to update'});
-  actions.push({id:'go_back',kind:'back',label:'Go back to the previous page'});
+
+  if (history.length>1) actions.push({id:'go_back',kind:'back',label:'Go back to the previous page'});
   actions.push({id:'go_forward',kind:'forward',label:'Go forward in history'});
 
-  for (const k of ['enter','tab','escape','backspace','delete','arrowup','arrowdown',
-                   'arrowleft','arrowright','home','end','pageup','pagedown','space'])
-    actions.push({id:'press_'+k,kind:'press',key:k,label:'Press '+k});
+  // PRESS_* goes to whatever holds focus, so with nothing focused the key is
+  // lost. Offering all fourteen on every page is fourteen choices that cannot
+  // act; each key is gated on the thing that could answer it. Tab and Escape
+  // stay — Tab is how focus is acquired, Escape closes native pickers that
+  // expose no element of their own.
+  const editing=ae && (ae.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(ae.tagName));
+  const scrollable=height>innerHeight+2;
+  const keys=new Set(['tab','escape']);
+
+  if (focused) for (const k of ['enter','space','arrowup','arrowdown','arrowleft','arrowright']) keys.add(k);
+
+  if (editing) for (const k of ['backspace','delete','home','end']) keys.add(k);
+
+  if (scrollable) for (const k of ['pageup','pagedown','home','end']) keys.add(k);
+
+  for (const k of keys) actions.push({id:'press_'+k,kind:'press',key:k,label:'Press '+k});
 
   // A contextmenu listener bound on a root container or document means a
   // framework delegates right-clicks — every element can respond, so the

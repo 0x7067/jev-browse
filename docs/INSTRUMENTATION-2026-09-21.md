@@ -184,16 +184,18 @@ credits`. No further eval evidence can be gathered until the account is
 topped up. Findings 4 to 7 are unstarted for that reason, not because they
 were judged not worth doing.
 
-## Finding 4: PRESS_ESCAPE is the reflex for modals that ignore it
+## Finding 4: PRESS_ESCAPE is the reflex for modals that ignore it — FIXED
 
-`tin-entry-ad` and `tin-entry-ad-close` both press Escape once and stop.
-The modal is still open in the final text — `This is a modal window` and
-its `Close` control are both present. This one is a real agent failure,
-not a bad expectation.
+`tin-entry-ad` and `tin-entry-ad-close` both pressed Escape once and stopped.
+The modal was still open in the final text.
 
-**Proposed tooling change.** Escape is a speculation like any other. When
-a modal is still detected after it, the modal's own dismiss control
-should win the next decision rather than the run ending.
+No dismiss fallback was needed. The fix was Finding 6: Escape was offered on
+every page whether or not anything could receive it, so it read as the
+generic "close this" move. Once the key list is gated, the modal's own
+`Close` control is the obvious choice.
+
+Both tasks now pass, with ops `["CLICK:Close"]` — `gate-base-1790010803974.json`
+and `gate-hardest-1790011384574.json`.
 
 ## Finding 5: the drag executes and changes nothing
 
@@ -206,25 +208,51 @@ synthesised sequence.
 should report as a no-op to the loop, the way a dead click does, instead
 of being recorded as a completed action.
 
-## Finding 6: the action space is mostly fixed overhead
+## Finding 6: the action space is mostly fixed overhead — FIXED
 
-Measured across 50 instrumented runs:
+Measured across 50 instrumented runs before the change:
 
 | | min | median | max |
 |---|---|---|---|
 | fixed controls offered | 17 | 18 | 19 |
 | real page elements | 2 | 14 | 96 |
 
-Every decision carries 17–19 controls regardless of the page. On
-`tin-slow`, 17 controls accompany 2 real elements — 89% of the offered
-space cannot do anything useful there. The handoff flagged this
-qualitatively; it is now a number that can be tracked.
+Scroll was already gated on scroll position. The overhead was the other 17:
+`wait`, `go_back`, `go_forward`, and all fourteen `PRESS_*` keys, offered on
+every page unconditionally.
 
-**Proposed tooling change.** Gate controls on observable preconditions.
-Offer scroll operations only when the page scrolls, `back` only with
-history, `PRESS_ENTER` only with focus in a text field. This is a change
-to `actionSpace` in `src/model/space.ts`, and the `space` metric now in
-every result file measures whether it worked.
+**What was done** (`src/snapshot.js`). PRESS_* sends a key to whatever holds
+focus, so with nothing focused the key is lost — the prompt already says so.
+The key list now matches that:
+
+- `tab` and `escape` always. Tab is how focus is acquired; Escape closes
+  native pickers that expose no element of their own.
+- `enter`, `space`, and the four arrows only when something is focused.
+- `backspace`, `delete`, `home`, `end` only when focus is in a text entry.
+- `pageup`, `pagedown`, `home`, `end` only when the document scrolls.
+- `go_back` only when `history.length > 1`.
+
+**Result**, across all four tiers (n=121 runs), min / median / max:
+
+| | controls | elements |
+|---|---|---|
+| before (base tier, n=55) | 17 / 18 / 19 | 0 / 22 / 158 |
+| after (all tiers, n=121) | 5 / 11 / 19 | 0 / 24 / 158 |
+
+Median fixed overhead fell from 18 to 11, and the floor from 17 to 5.
+
+It also raised the pass rate rather than merely trimming tokens. Base tier
+went 49/55 to 52/55: `tin-entry-ad`, `mdn-search` and `flights-zurich-london`
+all started passing, and `tin-entry-ad-close` went 0/3 to passing in the
+hardest tier. A smaller space is a more answerable question.
+
+Two hardest-tier tasks showed 0/1 on the sweep and passed 3/3 on recheck
+(`gate-recheck-1790011460492.json`): `demoqa-right-click` and
+`todomvc-count-answer`. No task regressed.
+
+Evidence: `gate-base-1790010803974.json` (52/55),
+`gate-hard-1790011007622.json` (19/20), `gate-harder-1790011231635.json`
+(26/26), `gate-hardest-1790011384574.json` (16/20), plus the recheck.
 
 ## Finding 7: blocked is mostly stalemate, not budget
 
@@ -250,9 +278,9 @@ read-only.
    was the extractor's input, not a skipped call.
 3. ~~Destructive-newcomer exclusion in `CLICK_MATCH_TYPED` (Finding 3).~~
    Done.
-4. Precondition-gated action space (Finding 6). The instrumentation to
-   judge it is already in place.
-5. Modal dismiss fallback (Finding 4) and drag no-op detection (Finding 5).
+4. ~~Precondition-gated action space (Finding 6).~~ Done.
+5. ~~Modal dismiss fallback (Finding 4)~~ — fell out of Finding 6, no
+   fallback needed. Drag no-op detection (Finding 5) is still open.
 6. Investigate the `no_progress` cluster (Finding 7) with the
    `decision` event trail.
 
