@@ -245,9 +245,22 @@ the bundles are what installed copies execute. `npm run check:bundle`
 rebuilds and fails if the committed bundles drifted from `src/` (safe to
 run as a pre-commit gate).
 
-`node scripts/record_demo.mjs --url URL --goal "..."` records a run through
-the fixed-port `--cdp` attach path and renders `docs/demo.mp4` and
-`docs/demo.gif` at 1×. Live runs make paid API calls.
+The demo is recorded with:
+
+```bash
+node scripts/record_demo.mjs --url "https://www.google.com/travel/flights?hl=en" \
+  --goal "Find one-way flights from Zurich to London on {{DATE+90d}}, \
+for one adult in economy. Stop when matching flight options are visible."
+```
+
+It records through the fixed-port `--cdp` attach path and renders
+`docs/demo.mp4` and `docs/demo.gif` at 1×. Live runs make paid API calls.
+
+`{{DATE+Nd}}` in a goal resolves to N days after the recording date, and the
+resolved goals are echoed in the summary JSON. A literal departure date
+expires: once it is in the past, Google Flights greys it out, the task becomes
+unsatisfiable, and the run ends in a false `DONE` on the calendar instead of a
+results page. That is how the previous demo goal rotted.
 
 ## License
 

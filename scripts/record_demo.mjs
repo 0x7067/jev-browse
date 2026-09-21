@@ -9,6 +9,10 @@
  *
  *   node scripts/record_demo.mjs --url URL --goal "..." [--out docs] [--name demo]
  *
+ * A goal may carry {{DATE+Nd}}, which resolves to a date N days after the
+ * recording: a literal departure date expires, and a past one makes the task
+ * unsatisfiable, because Google Flights greys out past departures.
+ *
  * Env: repo .env, merged over the current environment — the CLI child gets
  * the merged result without touching the user's shell env.
  */
@@ -31,6 +35,21 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const DATE_TOKEN = /\{\{DATE\+(\d+)d\}\}/g;
+
+function expandDates(text, now) {
+  return text.replace(DATE_TOKEN, (_, days) => {
+    const date = new Date(now);
+    date.setDate(date.getDate() + Number(days));
+
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  });
+}
+
 function parseArgs(argv) {
   const args = { goals: [], out: join(ROOT, "docs"), name: "demo", maxSteps: 60 };
 
@@ -51,6 +70,9 @@ function parseArgs(argv) {
   if (!args.url || !args.goals.length) {
     throw new Error("Usage: record_demo.mjs --url URL --goal GOAL [--goal ...] [--out dir] [--name demo]");
   }
+
+  const now = new Date();
+  args.goals = args.goals.map((goal) => expandDates(goal, now));
 
   return args;
 }
@@ -330,6 +352,7 @@ async function main() {
       exitCode,
       frames: frameIndex,
       video_seconds: Number(durationS.toFixed(2)),
+      goals: args.goals,
       mp4,
       gif,
       result: result
