@@ -4,9 +4,10 @@ First full eval run on this branch: 121 tasks, 363 runs, 316 verified,
 47 failed, 0 unverifiable. 21 tasks account for every failure.
 
 **Where it stands now.** Five of the seven findings are closed. The latest
-full sweep, one run per task, is 113/121 verified — base 52/55, hard 19/20,
-harder 26/26, hardest 16/20. Two of the seven were misdiagnosed on the
-first pass and are corrected below.
+full sweep, one run per task, is 112/121 verified — base 53/55, hard 18/20,
+harder 24/26, hardest 17/20. Two of the seven were misdiagnosed on the
+first pass and are corrected below, and a third was corrected in the
+second pass (see "Follow-ups").
 
 The run exposed a gap in the harness itself. A rejected run printed
 `verified:NO` and nothing else, so a wrong expectation and a real agent
@@ -342,14 +343,147 @@ runs short. It is a decision-loop change and needs a full-tier run.
 6. ~~Investigate the `no_progress` cluster (Finding 7).~~ Done — two causes
    identified, neither fixed yet.
 
+## Follow-ups, second pass
+
+All three open items were taken. Two landed as designed. The third was wrong
+about its stated target and earned its place anyway, by exposing a false pass.
+
+### 1. A dead click now leaves the CLICK space — DONE
+
+`src/agent.ts`. A click that changed nothing, with the in-page `domClick`
+retry already spent, counts a strike against its node. The second strike
+withdraws CLICK on that node for the rest of the document. The strike map
+resets with `domRetried` when the document changes, since node ids restart
+at 1 in every document.
+
+Only CLICK is withdrawn. An element that does nothing on click may still
+hover, drag, or accept text.
+
+This is the same move as Finding 6. The prompt already forbids repeating a
+dead click, and the model did it anyway until the space stopped offering it.
+
+### 2. Finding 7's listbox fix had the wrong premise — DONE
+
+The previous pass proposed: stop offering a listbox that contains offered
+option rows. Three model-free probes against live github.com showed every
+part of that sentence was wrong.
+
+**The listbox was never offered as a listbox.** `listbox` is already absent
+from the `roles` list in `src/snapshot.js`, with a comment saying why. It
+reached the space through the no-role rescue at the end of `role()`, which
+promotes anything carrying a delegated listener to `button`. Event
+delegation on the container is exactly how a suggestion list is built, so
+the rescue re-admitted the one element the roles list set out to exclude.
+
+**It contained no option rows.** Before typing, the listbox holds four
+default suggestions. Typing `jev-browse` empties it, and for a signed-out
+user it never repopulates — still zero options after ten seconds, with the
+input holding the right value and keeping focus. The agent was clicking an
+empty container.
+
+**Clicking it withdrew the key that would have worked.** Focus goes from
+`INPUT[Search or jump to]` to `BODY`. Enter is then not offered at all,
+because Finding 6 gates Enter on something being focused. Two runs of the
+same script differing only in whether the listbox is clicked:
+
+| listbox clicked | focus after | ENTER offered | final url |
+|---|---|---|---|
+| yes | `BODY` | no | `github.com/` — dead end |
+| no | `INPUT[Search or jump to]` | yes | `github.com/search?q=jev-browse&type=repositories` |
+
+So Finding 6 is what made this failure fatal. Before the key gating, Enter
+was offered unconditionally and the agent could still recover from the
+focus theft.
+
+**The fix.** `role()` refuses the no-role rescue for an explicit container
+role — `listbox`, `menu`, `menubar`, `tablist`, `tree`, `treegrid`,
+`radiogroup`, `grid`, `table`, `rowgroup`. A container's children are the
+acts. Native tag semantics above the rescue still win, so an `<a>` or
+`<button>` is unaffected. The condition is not "has offered children": an
+empty container is exactly the case that hurt here.
+
+**Evidence.** `Search suggestions` no longer appears in the offered space
+(48 actions → 47). All three `github-repo-search` runs now reach
+`github.com/search?q=jev-browse&type=repositories`, which no run had ever
+done. Both tasks still fail, for a new and honest reason: the repo is
+public but does not appear in the visible results, so the agent scrolls,
+finds nothing, and claims BLOCKED. `blocked_cause` moved from `no_progress`
+to `model_claim`. Finding those results needs pagination.
+
+To reproduce without the model: open `https://github.com/` through
+`CdpBrowser`, click `Search or jump to`, fill it with `jev-browse`, observe,
+and look for a click action labelled `Search suggestions`.
+
+### 3. Drag position: wrong target, right instrument
+
+`position` ("2 of 5") now rides on every drag source, through
+`ObservedAction` into `ElementChoice` and into `final_state`. Order is to a
+drag what `checked` is to a checkbox.
+
+**It does not fix `tin-drag-drop`.** That page's handler swaps the boxes'
+`innerHTML`, not their DOM order. After a landed drag, element 2 is labelled
+`B` and element 3 is labelled `A`, and both keep `position=1 of 2` and
+`2 of 2`. The landed drag was already legible there — in the labels. The
+model simply does not read it as done. Finding 5 stays open, and position is
+not its answer.
+
+**It exposed a false pass instead.** `jqueryui-sortable-drag` asserted
+`action_match: "DRAG"` and verified 1/1 on the gate sweep while its ops were
+`["DRAG:Item 7", "DRAG:Item 7", "DRAG:Item 7"]`. With position rendered, the
+run reads plainly: three drags, `changed=false` on every one, and Item 7
+ends at `position=7 of 7`. The drag never lands on jQuery UI's sortable at
+all.
+
+The expectation is now `state_match: "Item 7 \\S+ position=1 of 7"` alongside
+the existing `action_match`, and the task fails. That is a corrected false
+pass, not a regression — the same call Finding 1 made for `apg-tabs`. The
+underlying bug, that DRAG does not drive a mouse-event-based sortable, is
+real and untouched here.
+
+### Full sweep after all three
+
+121 tasks, one run per task: **112 verified, 9 failed, 0 unverifiable.**
+Base 53/55, hard 18/20, harder 24/26, hardest 17/20. Files:
+`pr-tasks-1790023787021.json`, `pr-tasks-hard-1790023963682.json`,
+`pr-tasks-harder-1790024164912.json`, `pr-tasks-hardest-1790024366668.json`.
+
+Against the previous gate (113/121 — 52/55, 19/20, 26/26, 16/20):
+
+| tier | was | now | why |
+|---|---|---|---|
+| base | 52/55 | 53/55 | one fewer failure; only `tin-iframe` and `tin-slow` remain |
+| hard | 19/20 | 18/20 | `jqueryui-sortable-drag` — the corrected false pass |
+| harder | 26/26 | 24/26 | both flake; see the recheck below |
+| hardest | 16/20 | 17/20 | one fewer failure |
+
+The two harder-tier drops were rechecked at 3 runs each
+(`recheck-harder-1790024423727.json`):
+
+- `tin-checkboxes-v2` — 3/3. Sweep flake.
+- `tin-context-click` — 2/3. All three runs have the identical op sequence,
+  `CONTEXT_CLICK:Hover button` repeated; two stop at three and claim done,
+  the third takes a fourth and blocks. This is the model's DONE timing, not
+  the diff: the two-strike rule fires on `kind === "click"` only, and
+  CONTEXT_CLICK is `kind === "context"`. Its expectation is `status: done`
+  alone, which asserts nothing about the alert being dismissed — a Finding 1
+  candidate that was not taken here.
+
+So the only verdict this change moved down is the one moved on purpose.
+
+
 ## Open, in priority order
 
-1. Drop an element from the CLICK space after two no-change results in the
-   same document (Finding 7). Cuts all three `no_progress` runs short.
-2. Stop offering a listbox that contains offered option rows as a CLICK
-   target (Finding 7). Fixes both GitHub search tasks directly.
-3. Make drag outcome legible in the offered space rather than the prompt
-   (Finding 5).
+1. DRAG does not land on jQuery UI's sortable (`jqueryui-sortable-drag`,
+   0/2). Mouse-event sortables need incremental `mousemove` between
+   press and release; the current DRAG appears not to deliver it.
+2. Make a landed drag legible on a page that swaps content rather than
+   order (Finding 5, `tin-drag-drop`). Position is not the signal there.
+3. Both GitHub search tasks now search correctly and need result
+   pagination to finish. Consider whether that is the capability the
+   tasks are meant to test, or retarget them.
+4. Consider extending the two-strike rule from CLICK to DRAG. All three
+   `jqueryui-sortable-drag` drags reported `changed=false` and the run
+   kept going.
 
 ## Reproducing
 
