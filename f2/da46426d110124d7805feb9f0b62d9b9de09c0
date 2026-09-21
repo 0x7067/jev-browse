@@ -1,0 +1,21 @@
+AGENTS.md
+  s_1c29da0b06fbd4::t_2fdaf95b70a728 5-34,38-41
+README.md
+  s_1c29da0b06fbd4::t_0b0be1025c9d2a 3,7-10,12-13,125-163,207-229
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f2da46426d110124d7805feb9f0b62d9b9de09c0",
+  "prompts": {},
+  "sessions": {
+    "s_1c29da0b06fbd4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5dcd01d9-b90b-431a-bf3d-a4609407d115",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
