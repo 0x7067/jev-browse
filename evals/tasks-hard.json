@@ -94,7 +94,8 @@
     "url": "https://jqueryui.com/sortable/",
     "goal": "In the sortable demo, drag \"Item 7\" to the top of the list and stop.",
     "expect": {
-      "action_match": "DRAG"
+      "action_match": "DRAG",
+      "state_match": "Item 7 \\S+ position=1 of 7"
     }
   },
   {

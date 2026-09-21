@@ -41,6 +41,9 @@ export type ObservedAction = {
   dragTo?: number; // drag: destination node id into window.__jevFast.nodes
   /** Element matched [draggable="true"] — a DRAG source candidate. */
   draggable?: boolean;
+  /** "2 of 5" — a drag source's rank among its fellow sources, so a landed
+   *  drag is distinguishable from one that never moved. */
+  position?: string;
   /** Element matched [oncontextmenu] — a CONTEXT_CLICK candidate. */
   contextMenu?: boolean;
   /** Element carries a drop handler — a DRAG destination candidate. */

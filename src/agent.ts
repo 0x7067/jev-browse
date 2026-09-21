@@ -150,7 +150,7 @@ function stateSummary(page: PageState): string {
   const lines: string[] = [];
 
   for (const element of actionSpace(page.actions).elements) {
-    const state = (["checked", "selected", "expanded", "value"] as const).flatMap((k) =>
+    const state = (["checked", "selected", "expanded", "value", "position"] as const).flatMap((k) =>
       element[k] === undefined || element[k] === "" ? [] : [`${k}=${element[k]}`],
     );
 
@@ -174,6 +174,8 @@ export class Agent {
   private earlyWaits = 0;
   private fingerprints: string[] = [];
   private domRetried = new Set<number>();
+  /** node id → clicks that changed nothing, counted after the in-page retry. */
+  private domDead = new Map<number, number>();
   private domDoc: string | undefined;
   private followUp: { type: string; text: string | null; prevNodes: Set<number> } | null = null;
   private textCalls: any[] = [];
@@ -332,16 +334,33 @@ export class Agent {
     // A toggle loop is structural, not just a wording problem — the same
     // control keeps winning the decide. Present this one consult without it:
     // the next observation puts it back if it was really needed.
+    // Two dead clicks on one node is enough: withdraw CLICK on it for the
+    // rest of this document. Other operations stand — an element that does
+    // nothing on click may still hover, drag, or accept text.
+    const dead = new Set(
+      [...this.domDead].flatMap(([node, n]) => (n >= 2 ? [node] : [])),
+    );
+
+    const live =
+      dead.size === 0
+        ? this.page
+        : {
+            ...this.page,
+            actions: this.page.actions.filter(
+              (a) => !(a.kind === "click" && a.node !== undefined && dead.has(a.node)),
+            ),
+          };
+
     const page = toggle
       ? {
-          ...this.page,
-          actions: this.page.actions.filter(
+          ...live,
+          actions: live.actions.filter(
             (a) =>
               a.label !==
               this.history[this.history.length - 1]?.action.replace(/ \(dom\)$/, ""),
           ),
         }
-      : this.page;
+      : live;
 
     this.decision = await choose(this.client, page, goal, this.history);
     this.decisions.push(this.decision);
@@ -751,6 +770,7 @@ export class Agent {
     if (this.domDoc !== doc) {
       this.domDoc = doc;
       this.domRetried.clear();
+      this.domDead.clear();
     }
 
     // Trusted input can silently deliver nothing — seen after a canceled
@@ -780,6 +800,19 @@ export class Agent {
       } catch {
         // StalePage or a dead element — the no-change path below stands.
       }
+    }
+
+    // A click that changed nothing, with the in-page retry already spent, is
+    // a dead target. Count it; the second strike takes it out of the CLICK
+    // space in decide(). The prompt already says not to repeat a dead click
+    // and the model does it anyway — as with the key gating, the space is
+    // what it follows, not the advice.
+    if (
+      entry.page_changed === false &&
+      action.kind === "click" &&
+      action.node !== undefined
+    ) {
+      this.domDead.set(action.node, (this.domDead.get(action.node) ?? 0) + 1);
     }
 
     // DONE_AFTER is only honored on actions that can complete a goal —

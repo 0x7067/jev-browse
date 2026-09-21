@@ -55,6 +55,13 @@ return s?[s]:[]}).join(' ') ||
     'menuitemcheckbox','option','treeitem','gridcell','cell','columnheader',
     'rowheader','combobox','textbox','searchbox','spinbutton','slider','scrollbar'];
 
+  // The containers those acts live in, named so the no-role rescue in role()
+  // cannot re-admit them. They are wired by delegated listeners, which is
+  // exactly what the rescue looks for — leaving them unnamed put the
+  // suggestion listbox back in the space as a button.
+  const CONTAINER_ROLES=['listbox','menu','menubar','tablist','tree','treegrid',
+    'radiogroup','grid','table','rowgroup'];
+
   // Popup/hover handlers mark elements that reveal content — indexed so they
   // can be offered as hover actions even without an interactive role. Class
   // substrings (menu/dropdown/tooltip) are NOT candidates: Tailwind-style
@@ -149,6 +156,14 @@ return s?[s]:[]}).join(' ') ||
       if (['text','email','url','tel','password','date','time','datetime-local',
            'month','week'].includes(e.type)) return 'textbox';
     }
+
+    // A container's children are the acts, never the container. Clicking one
+    // steals focus from whatever held it: on GitHub's search that drops focus
+    // to BODY, which withdraws the Enter key that would have submitted the
+    // query. Native tag semantics above still win — this blocks only the
+    // rescue below, which would otherwise re-admit it on its delegated
+    // listeners alone.
+    if (CONTAINER_ROLES.includes(explicit)) return null;
 
     // No-role interactivity: click/hover handlers, focusable widgets, drag
     // sources. They matched the candidacy test for a reason — call them
@@ -332,7 +347,19 @@ return s?[s]:[]}).join(' ') ||
 
       cache.sig.set(base.node,[root,rname,accessibleName]);
 
-      if (e.getAttribute('draggable')==='true' || e.ondragstart || e.matches(dragHandleSel)) base.draggable=true;
+      if (e.getAttribute('draggable')==='true' || e.ondragstart || e.matches(dragHandleSel)) {
+        base.draggable=true;
+        // Order is to a drag what `checked` is to a checkbox. Without it a
+        // landed drag and an unlanded one read identically, so the model
+        // drags again and undoes the move it just made.
+
+        const sibs=[...(e.parentElement?.children||[])].filter(s=>
+          s.getAttribute('draggable')==='true' || s.ondragstart || s.matches(dragHandleSel));
+
+        const at=sibs.indexOf(e);
+
+        if (at>=0 && sibs.length>1) base.position=(at+1)+' of '+sibs.length;
+      }
 
       if (e.hasAttribute('oncontextmenu') || e.oncontextmenu) base.contextMenu=true;
 

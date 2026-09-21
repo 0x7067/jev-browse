@@ -135,7 +135,7 @@ function actionSpace(actions, delegatedContextmenu = false) {
         label: action.label.split(" \u2192 ")[0],
         operations: []
       };
-      for (const k of ["role", "value", "checked", "selected", "expanded"]) {
+      for (const k of ["role", "value", "checked", "selected", "expanded", "position"]) {
         const v = action[k];
         if (v !== void 0) element2[k] = v;
       }
@@ -1197,7 +1197,7 @@ function atWordBoundary(haystack, needle) {
 function stateSummary(page) {
   const lines = [];
   for (const element of actionSpace(page.actions).elements) {
-    const state = ["checked", "selected", "expanded", "value"].flatMap(
+    const state = ["checked", "selected", "expanded", "value", "position"].flatMap(
       (k) => element[k] === void 0 || element[k] === "" ? [] : [`${k}=${element[k]}`]
     );
     if (state.length) lines.push(`${String(element.label).slice(0, 60)} ${state.join(" ")}`);
@@ -1214,6 +1214,8 @@ var Agent = class _Agent {
   earlyWaits = 0;
   fingerprints = [];
   domRetried = /* @__PURE__ */ new Set();
+  /** node id → clicks that changed nothing, counted after the in-page retry. */
+  domDead = /* @__PURE__ */ new Map();
   domDoc;
   followUp = null;
   textCalls = [];
@@ -1327,12 +1329,21 @@ var Agent = class _Agent {
     const goal = repair ? `${this.goal}
 
 ${repair}` : this.goal;
-    const page = toggle ? {
+    const dead = new Set(
+      [...this.domDead].flatMap(([node, n]) => n >= 2 ? [node] : [])
+    );
+    const live = dead.size === 0 ? this.page : {
       ...this.page,
       actions: this.page.actions.filter(
+        (a) => !(a.kind === "click" && a.node !== void 0 && dead.has(a.node))
+      )
+    };
+    const page = toggle ? {
+      ...live,
+      actions: live.actions.filter(
         (a) => a.label !== this.history[this.history.length - 1]?.action.replace(/ \(dom\)$/, "")
       )
-    } : this.page;
+    } : live;
     this.decision = await choose(this.client, page, goal, this.history);
     this.decisions.push(this.decision);
     this.reportDecision(page, Boolean(repair));
@@ -1596,6 +1607,7 @@ ${repair}` : this.goal;
     if (this.domDoc !== doc) {
       this.domDoc = doc;
       this.domRetried.clear();
+      this.domDead.clear();
     }
     if (entry.page_changed === false && (action.kind === "click" || action.kind === "hover" || action.kind === "drag" || action.kind === "fill") && action.node !== void 0 && !this.domRetried.has(action.node)) {
       this.domRetried.add(action.node);
@@ -1609,6 +1621,9 @@ ${repair}` : this.goal;
         }
       } catch {
       }
+    }
+    if (entry.page_changed === false && action.kind === "click" && action.node !== void 0) {
+      this.domDead.set(action.node, (this.domDead.get(action.node) ?? 0) + 1);
     }
     const REVEAL_KINDS = /* @__PURE__ */ new Set(["scroll", "wait", "hover", "back", "forward"]);
     if (decision.follow_up && decision.follow_up !== "NONE" && !(decision.follow_up === "DONE_AFTER" && REVEAL_KINDS.has(action.kind))) {

@@ -16,6 +16,7 @@ export type ElementChoice = {
   checked?: string;
   selected?: string;
   expanded?: string;
+  position?: string;
   options?: { index: string; label: string; value: JsonValue }[];
 };
 
@@ -54,7 +55,7 @@ export function actionSpace(actions: ObservedAction[], delegatedContextmenu = fa
         operations: [],
       };
 
-      for (const k of ["role", "value", "checked", "selected", "expanded"] as const) {
+      for (const k of ["role", "value", "checked", "selected", "expanded", "position"] as const) {
         const v = action[k];
 
         if (v !== undefined) element[k] = v;
