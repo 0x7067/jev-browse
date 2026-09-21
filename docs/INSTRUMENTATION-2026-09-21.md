@@ -84,41 +84,105 @@ boxes `checked=true`; `tin-infinite-scroll` two PageDowns),
 (3/3 each, ops end `CLICK:Ida da Fonseca`, state flips to
 `Ida da Fonseca selected=true`).
 
-## Finding 2: the answer channel returns nothing on compound goals
+## Finding 2: the answer channel returns nothing on compound goals — FIXED
 
-`todomvc-count-answer` and `sauce-cart-count` both finish `done`, both
-reach the correct page state, and both return `answer: undefined`.
+The original reading was wrong on the cause. Extraction was not skipped for
+compound goals; `goalAsksForAnswer` matches both `todomvc-count-answer` and
+`sauce-cart-count`. The helper ran, read the page, and declined — and the
+harness recorded that as an empty string, identical to never having asked.
 
-TodoMVC ends showing `1 item left` in the page text — exactly what
-`answer_match` asks for. The verifier compares against `result.answer ?? ""`,
-so an absent answer can never match, however correct the page is.
+`sauce-cart-count` shows why it declined. The agent logs in, adds two
+products, and ends on the right page. The goal asks for "the number shown on
+the cart badge". The badge is a control labeled `2`; the text walk flattens
+it into `Swag Labs 2 Products`, where it is indistinguishable from the
+product count. The extractor only ever saw that text.
 
-These are do-then-report goals: act, then state a value. Answer extraction
-appears to run for interrogative goals only. This is a real capability
-gap, and it is worth more than the two tasks it costs here — a browsing
-agent that cannot report what it just did is much less useful.
+**What was done.**
 
-**Proposed tooling change.** Extract an answer whenever the goal contains
-a reportable clause, not only when the whole goal is a question. Failing
-that, record in the result why extraction was skipped, so the next run
-does not have to guess.
+- `RunResult.answer_note` records why an answer is absent — the run never
+  reached done, the goal asked for nothing, the helper declined, or the
+  helper failed and how. The eval runner prints it in place of the empty
+  string on an `answer_match` failure.
+- `extractAnswer` now also receives the indexed element list — labels with
+  their values, checked and selected state — so a named control keeps its
+  own value instead of dissolving into prose.
+- `ANSWER_VALUE` makes the split explicit: text is authoritative for wording
+  and for reading order, elements resolve a named control, and `first` /
+  `last` never resolve against elements.
+- `extractAnswer` retries once on a malformed helper reply, the allowance
+  `fieldText` already had.
 
-## Finding 3: a follow-up can undo the action it follows
+That last one came straight from the new note. A `todomvc-count-answer` run
+failed with `helper failed: SyntaxError: Unexpected non-whitespace character
+after JSON` — a provider hiccup that had previously been invisible.
 
-`demoqa-autocomplete` types `re`, clicks `Red`, and then fires a
-`CLICK_MATCH_TYPED` follow-up that lands on `Remove Red`. Final page text:
+**Measured in stages**, because the first attempt was a wash. Adding the
+element list alone fixed `sauce-cart-count` but broke two text-reading
+tasks: `sortable-resort-extract` answered `Smith` instead of `Bach`, and
+`todomvc-count-answer` answered `1` instead of `1 item left`. Net zero,
+16/21. The element list had introduced a second ordering that competed with
+reading order. Making text authoritative in the prompt resolved it — 19/20
+at `--repeat 5`, the single failure being the JSON hiccup above.
+
+| | before | after |
+|---|---|---|
+| all 9 answer tasks, 3 runs each | 22/27 | 24/27 |
+| `sauce-cart-count` | 1/3 | 3/3 |
+| `sortable-resort-extract` | 3/3 | 3/3 |
+| `todomvc-count-answer` | 3/3 | 3/3 |
+
+Every `answer_match` clause now passes. The 3 remaining failures are all
+`books-page3-price`, which blocks on `no_progress` before it can answer —
+Finding 7, not this one.
+
+Evidence: `ansbase-hardest-1790008031800.json` (before),
+`ansfix-hardest-1790008254222.json` (element list only, the wash),
+`ansfix2-1790008475727.json` (`--repeat 5`),
+`ansfinal-hardest-1790008660393.json`, `ansfinal-hard-1790008683000.json`,
+`ansfinal-harder-1790008708784.json` (after).
+
+## Finding 3: a follow-up can undo the action it follows — FIXED
+
+`demoqa-autocomplete` typed `re`, clicked `Red`, then fired a
+`CLICK_MATCH_TYPED` follow-up that landed on `Remove Red`. Final page text:
 `option Red, deselected`.
 
-The resolver picks the element that appeared in response to typing. After
-a successful selection the thing that appears is the chip's *remove*
-affordance. The heuristic is correctly implemented and structurally wrong:
-it cannot distinguish a suggestion from an undo.
+The resolver picks the element that appeared in response to typing. After a
+successful pick, the thing that appears is the chip's remove affordance —
+and it matches the typed token `re` at least as well as the suggestion did.
 
-**Proposed tooling change.** Exclude newcomers whose label or role marks
-them as destructive (`Remove`, `Delete`, `Clear`, `aria-label` beginning
-with a removal verb) from `CLICK_MATCH_TYPED` resolution. Better: only
-resolve a newcomer that sits inside the listbox/menu the combobox owns,
-which the snapshot can see via `aria-controls` and `aria-owns`.
+**What was done.** `CLICK_MATCH_TYPED` no longer considers a newcomer whose
+label opens with a removal verb: `remove`, `delete`, `clear`, `deselect`,
+`unselect`, `undo`, or a close glyph. Anchored at the start, so `Red` is
+untouched and `Remove Red` is excluded.
+
+**Evidence.** `undofix-1790008734848.json`, 3/3. Ops are now
+`["TYPE_TEXT:combobox \"re\"", "CLICK:Red"]` with no follow-up, and the page
+reads `option Red, selected` every run.
+
+## Base-tier regression check
+
+`regress-base-1790009208994.json` — 55 tasks, 1 run each, 49 verified.
+Against the baseline `tasks-1790003125238.json` (3 runs each), three tasks
+moved from 0/3 to passing — `tin-checkboxes`, `tin-infinite-scroll`,
+`demoqa-autocomplete` — and nothing regressed.
+
+Two tasks needed a recheck before that could be claimed
+(`recheck-1790009396135.json`, 3 runs each):
+
+- `mdn-search` errored once with `Cannot read properties of null (reading
+  'text')` at 0 ms, before any decision. It passes 3/3 on recheck. Not
+  caused by these changes — the crash is in the first-observation settle
+  path, and it is worth tracking separately.
+- `flights-zurich-london` blocked once on `no_progress`. It passed on
+  recheck. Its baseline was 2/3; the historical record has it at 28/39.
+
+## Blocked: TypeSafe credits exhausted
+
+The recheck ended on `402 Your organization has no available TypeSafe API
+credits`. No further eval evidence can be gathered until the account is
+topped up. Findings 4 to 7 are unstarted for that reason, not because they
+were judged not worth doing.
 
 ## Finding 4: PRESS_ESCAPE is the reflex for modals that ignore it
 
@@ -182,10 +246,10 @@ read-only.
 
 1. ~~Fix the three mechanism-asserting expectations (Finding 1).~~ Done —
    see Finding 1. Also added the `state_match` clause they needed.
-2. Answer extraction on compound goals (Finding 2). Largest capability
-   gain per unit of work.
-3. Destructive-newcomer exclusion in `CLICK_MATCH_TYPED` (Finding 3).
-   Narrow, well understood, has a reproducible task.
+2. ~~Answer extraction on compound goals (Finding 2).~~ Done — the cause
+   was the extractor's input, not a skipped call.
+3. ~~Destructive-newcomer exclusion in `CLICK_MATCH_TYPED` (Finding 3).~~
+   Done.
 4. Precondition-gated action space (Finding 6). The instrumentation to
    judge it is already in place.
 5. Modal dismiss fallback (Finding 4) and drag no-op detection (Finding 5).

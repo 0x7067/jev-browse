@@ -54,6 +54,11 @@ export const ANSWER_VALUE = `Return a JSON object with exactly one key, answer: 
 Be terse — a value, a name, a number, a short phrase. Quote page text exactly; never infer.
 Respect the goal's scope: 'first', 'last', 'N-th', 'in table X' refer to reading order/position
 in the text below — a page may contain several similar lists; answer from the scoped one only.
+Answer from text: it is the visible reading order and the authoritative wording. The separate
+elements list holds labeled controls and their values — consult it only when the goal names a
+control whose value the text flattens into its surroundings, such as a badge count or a field
+entry. Elements have no reading order; never resolve 'first'/'last' against them.
+Give the whole phrase the goal asks for, not a fragment of it.
 If the page does not contain the answer, return {"answer": null}. No commentary.`;
 
 export const MAX_STEPS = 60;

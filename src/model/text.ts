@@ -5,6 +5,7 @@
 
 import { isString } from "../json.ts";
 import { ANSWER_VALUE, TEXT_VALUE } from "../questions.ts";
+import { actionSpace } from "./space.ts";
 import type { JsonObject, JsonValue, ObservedAction, PageState } from "../types.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -136,16 +137,32 @@ export async function fieldText(
  */
 export async function extractAnswer(
   goal: string,
-  page: { title: string; url: string; text: string },
+  page: PageState,
 ): Promise<{ answer: string | null; helper: { model: string; latency_ms: number } }> {
-  const { output, helper } = await helperJson(
-    ANSWER_VALUE,
-    {
-      goal,
-      page: { title: page.title, url: page.url, text: page.text.slice(0, 6000) },
-    },
-    false,
-  );
+  // The text walk flattens a labeled control into its surroundings: a cart
+  // badge reads as "Swag Labs 2 Products", indistinguishable from the "2"
+  // in a product count. The indexed labels keep the control's own value.
+  const elements = actionSpace(page.actions)
+    .elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = "))
+    .join("\n")
+    .slice(0, 2000);
+
+  const context = {
+    goal,
+    page: { title: page.title, url: page.url, text: page.text.slice(0, 6000), elements },
+  };
+
+  // A malformed helper reply is a provider hiccup, not a missing answer —
+  // one retry, the same allowance TYPE_TEXT already gets.
+  let output: JsonObject;
+  let helper: { model: string; latency_ms: number };
+
+  try {
+    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
+  } catch (error) {
+    if (String(error).includes("not configured")) throw error;
+    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
+  }
 
   const value: JsonValue = output.answer;
   const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2000) : "";

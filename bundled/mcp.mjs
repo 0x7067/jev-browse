@@ -65,6 +65,11 @@ var ANSWER_VALUE = `Return a JSON object with exactly one key, answer: the direc
 Be terse \u2014 a value, a name, a number, a short phrase. Quote page text exactly; never infer.
 Respect the goal's scope: 'first', 'last', 'N-th', 'in table X' refer to reading order/position
 in the text below \u2014 a page may contain several similar lists; answer from the scoped one only.
+Answer from text: it is the visible reading order and the authoritative wording. The separate
+elements list holds labeled controls and their values \u2014 consult it only when the goal names a
+control whose value the text flattens into its surroundings, such as a badge count or a field
+entry. Elements have no reading order; never resolve 'first'/'last' against them.
+Give the whole phrase the goal asks for, not a fragment of it.
 If the page does not contain the answer, return {"answer": null}. No commentary.`;
 var MAX_STEPS = 60;
 
@@ -497,14 +502,19 @@ async function fieldText(context) {
   return { text: value, helper };
 }
 async function extractAnswer(goal, page) {
-  const { output, helper } = await helperJson(
-    ANSWER_VALUE,
-    {
-      goal,
-      page: { title: page.title, url: page.url, text: page.text.slice(0, 6e3) }
-    },
-    false
-  );
+  const elements = actionSpace(page.actions).elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = ")).join("\n").slice(0, 2e3);
+  const context = {
+    goal,
+    page: { title: page.title, url: page.url, text: page.text.slice(0, 6e3), elements }
+  };
+  let output;
+  let helper;
+  try {
+    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
+  } catch (error) {
+    if (String(error).includes("not configured")) throw error;
+    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
+  }
   const value = output.answer;
   const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2e3) : "";
   return { answer: text || null, helper };
@@ -1175,6 +1185,7 @@ async function settleFirstObservation(browser, page) {
   }
   return latest;
 }
+var UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
 function atWordBoundary(haystack, needle) {
   let i = haystack.indexOf(needle);
   while (i !== -1) {
@@ -1404,7 +1415,7 @@ ${repair}` : this.goal;
     }
     if (fu.type === "CLICK_MATCH_TYPED") {
       const appeared = this.page.actions.filter(
-        (a) => a.kind === "click" && a.node !== void 0 && !fu.prevNodes.has(a.node)
+        (a) => a.kind === "click" && a.node !== void 0 && !fu.prevNodes.has(a.node) && !UNDO_LABEL.test(a.label)
       );
       if (fu.text && fu.text.length >= 3) {
         const tokens = fu.text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 3);
@@ -1769,11 +1780,18 @@ ${repair}` : this.goal;
       }
     }
     let answer;
-    if (this.status === "done" && _Agent.goalAsksForAnswer(this.goal)) {
+    let answerNote;
+    if (this.status !== "done") {
+      answerNote = "run did not reach done";
+    } else if (!_Agent.goalAsksForAnswer(this.goal)) {
+      answerNote = "goal does not ask for an answer";
+    } else {
       try {
         const extracted = await extractAnswer(this.goal, this.page);
         answer = extracted.answer ?? void 0;
-      } catch {
+        if (answer === void 0) answerNote = "helper read the page and returned no answer";
+      } catch (error) {
+        answerNote = `helper failed: ${String(error).slice(0, 160)}`;
       }
     }
     const result = {
@@ -1788,6 +1806,7 @@ ${repair}` : this.goal;
       final_text: this.page.text
     };
     if (answer !== void 0) result.answer = answer;
+    else if (answerNote) result.answer_note = answerNote;
     if (this.terminalError) result.error = this.terminalError;
     if (this.blockedCause) result.blocked_cause = this.blockedCause;
     const state = stateSummary(this.page);

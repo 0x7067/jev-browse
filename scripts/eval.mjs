@@ -106,7 +106,7 @@ function verify(task, result, opsText) {
   // The agent's final answer (question goals) and downloaded filenames are
   // verifiable signals, like url/text — a DONE claim is not proof.
   if (exp.answer_match !== undefined && !new RegExp(exp.answer_match).test(result.answer ?? "")) {
-    return fail("answer_match", exp.answer_match, result.answer);
+    return fail("answer_match", exp.answer_match, result.answer ?? `(no answer — ${result.answer_note ?? "reason unrecorded"})`);
   }
 
   if (exp.download_match !== undefined && !(result.downloads ?? []).some((f) => new RegExp(exp.download_match).test(f))) {
@@ -228,6 +228,7 @@ function runOnce(task, env, engine) {
         trail,
         final_text: (result.final_text ?? "").slice(0, 1200),
         final_state: (result.final_state ?? "").slice(0, 1200),
+        answer_note: result.answer_note,
         elapsed_ms: result.elapsed_ms,
         steps: result.steps,
         decisions: result.decisions,

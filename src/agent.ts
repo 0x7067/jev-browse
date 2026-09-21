@@ -66,6 +66,9 @@ async function settleFirstObservation(
 
 /** True when `needle` occurs in `haystack` starting at a word boundary —
  *  "pari" matches "Paris, France" but "art" does not match "Start". */
+/** Labels that undo a selection rather than offer one. */
+const UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
+
 function atWordBoundary(haystack: string, needle: string): boolean {
   let i = haystack.indexOf(needle);
 
@@ -137,6 +140,9 @@ export interface RunResult {
    *  field values. Page text cannot show these, so without it a checkbox
    *  task can only be verified by the clicks it made, not by how it ended. */
   final_state?: string;
+  /** Why `answer` is absent. An unset answer used to be indistinguishable
+   *  from an unasked one, so a missed extraction looked like a wrong page. */
+  answer_note?: string;
 }
 
 /** One line per element that carries state, for `expect.state_match`. */
@@ -462,8 +468,15 @@ export class Agent {
       // diff by node identity. Without a label match, resolve only an
       // unambiguous single newcomer — page chrome appearing mid-typing is
       // not the suggestion.
+      // A pick of its own makes a newcomer appear: the chip's remove control.
+      // It matches the typed text as well as the suggestion did, so without
+      // this the follow-up undoes the selection it was meant to confirm.
       const appeared = this.page.actions.filter(
-        (a) => a.kind === "click" && a.node !== undefined && !fu.prevNodes.has(a.node),
+        (a) =>
+          a.kind === "click" &&
+          a.node !== undefined &&
+          !fu.prevNodes.has(a.node) &&
+          !UNDO_LABEL.test(a.label),
       );
 
       if (fu.text && fu.text.length >= 3) {
@@ -1025,14 +1038,22 @@ export class Agent {
     // Interrogative goals earn a direct answer, not just a done claim —
     // extraction is best-effort and never fails an otherwise-good run.
     let answer: string | undefined;
+    let answerNote: string | undefined;
 
-    if (this.status === "done" && Agent.goalAsksForAnswer(this.goal)) {
+    if (this.status !== "done") {
+      answerNote = "run did not reach done";
+    } else if (!Agent.goalAsksForAnswer(this.goal)) {
+      answerNote = "goal does not ask for an answer";
+    } else {
       try {
         const extracted = await extractAnswer(this.goal, this.page);
 
         answer = extracted.answer ?? undefined;
-      } catch {
+
+        if (answer === undefined) answerNote = "helper read the page and returned no answer";
+      } catch (error) {
         // no configured helper or an unusable answer — report without it
+        answerNote = `helper failed: ${String(error).slice(0, 160)}`;
       }
     }
 
@@ -1049,6 +1070,7 @@ export class Agent {
     };
 
     if (answer !== undefined) result.answer = answer;
+    else if (answerNote) result.answer_note = answerNote;
 
     if (this.terminalError) result.error = this.terminalError;
 
