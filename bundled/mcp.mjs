@@ -1202,6 +1202,13 @@ var Agent = class _Agent {
   probeConsulted = false;
   fuseConsulted = false;
   doneConsults = 0;
+  /** Set for the lifetime of run(); lets the decide path report the action
+   *  space it actually offered, which the step events cannot show. */
+  onEvent;
+  /** Why the loop stopped short. A bare "blocked" cannot distinguish a model
+   *  give-up from an exhausted budget or a stale storm, and the three call
+   *  for different fixes. */
+  blockedCause = null;
   repairHint = null;
   staleStreak = 0;
   lastOperation = null;
@@ -1252,6 +1259,7 @@ var Agent = class _Agent {
   async decideStep() {
     if (!this.startedAt) this.startedAt = performance.now();
     if (this.decisions.length >= this.maxSteps * 2) {
+      this.blockedCause = "decision_budget";
       this.phase = "blocked";
       return;
     }
@@ -1306,8 +1314,30 @@ ${repair}` : this.goal;
     } : this.page;
     this.decision = await choose(this.client, page, goal, this.history);
     this.decisions.push(this.decision);
+    this.reportDecision(page, Boolean(repair));
     this.lastOperation = this.decision.operation;
     this.phase = "act";
+  }
+  /** What the model was given and what it picked. The offered counts expose
+   *  fixed action-space overhead — controls that are listed on every page
+   *  whether or not they can do anything — which step events never show. */
+  reportDecision(page, repaired) {
+    if (!this.onEvent) return;
+    const space = actionSpace(page.actions);
+    const decision = this.decision;
+    this.onEvent({
+      type: "decision",
+      elapsed_ms: this.elapsed(),
+      choice: decision.choice,
+      operation: decision.operation,
+      confidence: decision.confidence,
+      follow_up: decision.follow_up ?? null,
+      offered_elements: space.elements.length,
+      offered_controls: Object.keys(space.controls).length,
+      offered_operations: Object.keys(space.targets).length,
+      repaired,
+      url: page.url
+    });
   }
   /**
    * A done claim behind an imperative goal is a claim without evidence when
@@ -1326,6 +1356,13 @@ ${repair}` : this.goal;
       return false;
     }
     this.doneConsults++;
+    this.onEvent?.({
+      type: "done_consult",
+      elapsed_ms: this.elapsed(),
+      consult: this.doneConsults,
+      acted: acted.length,
+      url: this.page.url
+    });
     this.repairHint = this.doneConsults === 1 ? "If the goal asks you to interact with the page, do it \u2014 a done claim without evidence is premature. Claim DONE again only if the goal state is already visibly satisfied." : "Final check \u2014 the goal's action still has no effect on the page. If it is already satisfied, claim DONE; otherwise act on the element now.";
     return true;
   }
@@ -1442,6 +1479,7 @@ ${repair}` : this.goal;
         }
         await this.confirmDone(page);
       }
+      if (selected === "BLOCKED") this.blockedCause = "model_claim";
       this.phase = selected === "DONE" ? "done" : "blocked";
       return;
     }
@@ -1459,6 +1497,7 @@ ${repair}` : this.goal;
       action = { ...action, kind: "drag", dragTo: dest.node };
     }
     if (this.history.length >= this.maxSteps) {
+      this.blockedCause = "step_budget";
       this.phase = "blocked";
       return;
     }
@@ -1583,6 +1622,7 @@ ${repair}` : this.goal;
       this.repairHint = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
       this.phase = "decide";
     } else {
+      this.blockedCause = "no_progress";
       this.phase = "blocked";
     }
   }
@@ -1629,9 +1669,11 @@ ${repair}` : this.goal;
   }
   async run(onEvent) {
     let emitted = 0;
+    this.onEvent = onEvent;
     if (!this.startedAt) this.startedAt = performance.now();
     const dead = this.deadPageReason(this.page);
     if (dead) {
+      this.blockedCause = "dead_page";
       this.phase = "blocked";
       this.terminalError = dead;
       onEvent?.({
@@ -1666,6 +1708,7 @@ ${repair}` : this.goal;
           this.staleStreak++;
           if (this.staleStreak >= 8) {
             if (this.fuseConsulted) {
+              this.blockedCause = "stale_storm";
               this.phase = "blocked";
             } else {
               this.fuseConsulted = true;
@@ -1736,6 +1779,7 @@ ${repair}` : this.goal;
     };
     if (answer !== void 0) result.answer = answer;
     if (this.terminalError) result.error = this.terminalError;
+    if (this.blockedCause) result.blocked_cause = this.blockedCause;
     if (this.page.downloads?.length) result.downloads = this.page.downloads;
     return result;
   }

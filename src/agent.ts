@@ -130,6 +130,9 @@ export interface RunResult {
   /** Filenames downloaded during the run. */
   downloads?: string[];
   error?: string;
+  /** Which exit ended a blocked run — a model give-up, an exhausted budget,
+   *  a stale storm and a dead page each call for a different fix. */
+  blocked_cause?: string;
 }
 
 /** Non-terminal phases; terminal status is reported as done/blocked/error. */
@@ -159,6 +162,15 @@ export class Agent {
   private probeConsulted = false;
   private fuseConsulted = false;
   private doneConsults = 0;
+
+  /** Set for the lifetime of run(); lets the decide path report the action
+   *  space it actually offered, which the step events cannot show. */
+  private onEvent?: (event: { type: string; [k: string]: JsonValue }) => void;
+
+  /** Why the loop stopped short. A bare "blocked" cannot distinguish a model
+   *  give-up from an exhausted budget or a stale storm, and the three call
+   *  for different fixes. */
+  private blockedCause: string | null = null;
   private repairHint: string | null = null;
   private staleStreak = 0;
   private lastOperation: string | null = null;
@@ -223,6 +235,7 @@ export class Agent {
     if (!this.startedAt) this.startedAt = performance.now();
 
     if (this.decisions.length >= this.maxSteps * 2) {
+      this.blockedCause = "decision_budget";
       this.phase = "blocked";
 
       return;
@@ -306,8 +319,33 @@ export class Agent {
 
     this.decision = await choose(this.client, page, goal, this.history);
     this.decisions.push(this.decision);
+    this.reportDecision(page, Boolean(repair));
     this.lastOperation = this.decision.operation;
     this.phase = "act";
+  }
+
+  /** What the model was given and what it picked. The offered counts expose
+   *  fixed action-space overhead — controls that are listed on every page
+   *  whether or not they can do anything — which step events never show. */
+  private reportDecision(page: PageState, repaired: boolean): void {
+    if (!this.onEvent) return;
+
+    const space = actionSpace(page.actions);
+    const decision = this.decision!;
+
+    this.onEvent({
+      type: "decision",
+      elapsed_ms: this.elapsed(),
+      choice: decision.choice,
+      operation: decision.operation,
+      confidence: decision.confidence,
+      follow_up: decision.follow_up ?? null,
+      offered_elements: space.elements.length,
+      offered_controls: Object.keys(space.controls).length,
+      offered_operations: Object.keys(space.targets).length,
+      repaired,
+      url: page.url,
+    });
   }
 
   /**
@@ -334,6 +372,13 @@ export class Agent {
     }
 
     this.doneConsults++;
+    this.onEvent?.({
+      type: "done_consult",
+      elapsed_ms: this.elapsed(),
+      consult: this.doneConsults,
+      acted: acted.length,
+      url: this.page.url,
+    });
     this.repairHint =
       this.doneConsults === 1
         ? "If the goal asks you to interact with the page, do it — a done claim without evidence is premature. Claim DONE again only if the goal state is already visibly satisfied."
@@ -530,6 +575,8 @@ export class Agent {
         await this.confirmDone(page);
       }
 
+      if (selected === "BLOCKED") this.blockedCause = "model_claim";
+
       this.phase = selected === "DONE" ? "done" : "blocked";
 
       return;
@@ -562,6 +609,7 @@ export class Agent {
     }
 
     if (this.history.length >= this.maxSteps) {
+      this.blockedCause = "step_budget";
       this.phase = "blocked";
 
       return;
@@ -769,6 +817,7 @@ export class Agent {
         "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";
       this.phase = "decide";
     } else {
+      this.blockedCause = "no_progress";
       this.phase = "blocked";
     }
   }
@@ -831,12 +880,14 @@ export class Agent {
 
   async run(onEvent?: (event: { type: string; [k: string]: JsonValue }) => void): Promise<RunResult> {
     let emitted = 0;
+    this.onEvent = onEvent;
 
     if (!this.startedAt) this.startedAt = performance.now();
     // Nothing to read and nothing to click — spend no decisions on it.
     const dead = this.deadPageReason(this.page);
 
     if (dead) {
+      this.blockedCause = "dead_page";
       this.phase = "blocked";
       this.terminalError = dead;
       onEvent?.({
@@ -881,6 +932,7 @@ export class Agent {
 
           if (this.staleStreak >= 8) {
             if (this.fuseConsulted) {
+              this.blockedCause = "stale_storm";
               this.phase = "blocked";
             } else {
               this.fuseConsulted = true;
@@ -979,6 +1031,8 @@ export class Agent {
     if (answer !== undefined) result.answer = answer;
 
     if (this.terminalError) result.error = this.terminalError;
+
+    if (this.blockedCause) result.blocked_cause = this.blockedCause;
 
     if (this.page.downloads?.length) result.downloads = this.page.downloads;
 

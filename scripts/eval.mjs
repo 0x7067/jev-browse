@@ -69,35 +69,57 @@ const VERIFIABLE_KEYS = ["status", "url_match", "url_not_match", "text_match", "
 // "unverifiable", not silently counted as a pass.
 const isVerifiable = (task) => VERIFIABLE_KEYS.some((k) => task.expect?.[k] !== undefined);
 
+// A rejected run reports which clause rejected it, the pattern, and what the
+// page actually offered — without it a failure is indistinguishable from a
+// wrong expectation, and both look like "verified:NO".
+const clip = (v, n = 160) => String(v ?? "").replace(/\s+/g, " ").slice(0, n);
+
 function verify(task, result, opsText) {
   const url = result.final_url ?? "";
   const exp = task.expect ?? {};
+  const fail = (clause, pattern, actual) => ({ ok: false, clause, pattern: String(pattern), actual: clip(actual) });
 
   if (exp.status) {
     // Expected non-done outcome — e.g. "blocked" is the honest answer when a
     // page binds interactivity with no DOM signal to offer.
-    if (result.status !== exp.status) return false;
+    if (result.status !== exp.status) return fail("status", exp.status, result.status);
   } else if (result.status !== "done") {
-    return false;
+    return fail("status", "done", `${result.status}${result.blocked_cause ? `/${result.blocked_cause}` : ""}${result.error ? `: ${result.error}` : ""}`);
   }
 
-  if (exp.url_match && !new RegExp(exp.url_match).test(url)) return false;
+  if (exp.url_match && !new RegExp(exp.url_match).test(url)) return fail("url_match", exp.url_match, url);
 
-  if (exp.url_not_match && new RegExp(exp.url_not_match).test(url)) return false;
+  if (exp.url_not_match && new RegExp(exp.url_not_match).test(url)) return fail("url_not_match", exp.url_not_match, url);
 
   // Page text keeps element-level newlines; match on the collapsed form so
   // "items left" still matches when the DOM splits it across lines.
-  if (exp.text_match && !new RegExp(exp.text_match).test((result.final_text ?? "").replace(/\s+/g, " "))) return false;
+  const text = (result.final_text ?? "").replace(/\s+/g, " ");
 
-  if (exp.action_match && !new RegExp(exp.action_match).test(opsText)) return false;
+  if (exp.text_match && !new RegExp(exp.text_match).test(text)) return fail("text_match", exp.text_match, text);
+
+  if (exp.action_match && !new RegExp(exp.action_match).test(opsText)) return fail("action_match", exp.action_match, opsText);
 
   // The agent's final answer (question goals) and downloaded filenames are
   // verifiable signals, like url/text — a DONE claim is not proof.
-  if (exp.answer_match !== undefined && !new RegExp(exp.answer_match).test(result.answer ?? "")) return false;
+  if (exp.answer_match !== undefined && !new RegExp(exp.answer_match).test(result.answer ?? "")) {
+    return fail("answer_match", exp.answer_match, result.answer);
+  }
 
-  if (exp.download_match !== undefined && !(result.downloads ?? []).some((f) => new RegExp(exp.download_match).test(f))) return false;
+  if (exp.download_match !== undefined && !(result.downloads ?? []).some((f) => new RegExp(exp.download_match).test(f))) {
+    return fail("download_match", exp.download_match, (result.downloads ?? []).join(", "));
+  }
 
-  return true;
+  return { ok: true };
+}
+
+/** Split the verdict into the recorded shape: the boolean the counts use,
+ *  plus the rejecting clause when there is one. */
+function verdictFields(task, result, ops) {
+  if (!isVerifiable(task)) return { verified: "unverifiable" };
+
+  const v = verify(task, result, ops.join(" "));
+
+  return v.ok ? { verified: true } : { verified: false, why: { clause: v.clause, pattern: v.pattern, actual: v.actual } };
 }
 
 function runOnce(task, env, engine) {
@@ -177,9 +199,27 @@ function runOnce(task, env, engine) {
 
       const stale = stderr.split('"type":"stale"').length - 1;
 
+      // Decision events carry the action space the model was offered. The
+      // spread between offered elements and the handful a task actually
+      // needs is the overhead number, measurable per run.
+      const decisionEvents = stderr
+        .split("\n")
+        .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+        .filter((e) => e?.type === "decision" || e?.type === "done_consult");
+
+      const offered = decisionEvents.filter((e) => e.type === "decision");
+
+      const space = offered.length
+        ? {
+            max_elements: Math.max(...offered.map((e) => e.offered_elements)),
+            max_controls: Math.max(...offered.map((e) => e.offered_controls)),
+            repaired: offered.filter((e) => e.repaired).length,
+          }
+        : null;
+
       resolvePromise({
         status: result.status,
-        verified: isVerifiable(task) ? verify(task, result, ops.join(" ")) : "unverifiable",
+        ...verdictFields(task, result, ops),
         stale,
         trail,
         final_text: (result.final_text ?? "").slice(0, 1200),
@@ -192,8 +232,11 @@ function runOnce(task, env, engine) {
         answer: result.answer,
         downloads: result.downloads,
         error: result.error,
+        blocked_cause: result.blocked_cause,
         ops,
         events,
+        space,
+        done_consults: decisionEvents.filter((e) => e.type === "done_consult").length,
       });
     });
   });
@@ -247,7 +290,7 @@ async function main() {
       runs.push(r);
       const verdict = r.verified === "unverifiable" ? "unverifiable" : r.verified ? "yes" : "NO";
       console.log(
-        `${task.id.padEnd(24)} run ${i + 1}/${args.repeat}  ${String(r.status).padEnd(8)} verified:${verdict.padEnd(12)} ${String(r.elapsed_ms).padStart(6)}ms  steps:${r.steps} decisions:${r.decisions} jev:${r.jev_ms}ms txt:${r.text_ms}ms${r.error ? `  err:${r.error.slice(0, 80)}` : ""}`,
+        `${task.id.padEnd(24)} run ${i + 1}/${args.repeat}  ${String(r.status).padEnd(8)} verified:${verdict.padEnd(12)} ${String(r.elapsed_ms).padStart(6)}ms  steps:${r.steps} decisions:${r.decisions} jev:${r.jev_ms}ms txt:${r.text_ms}ms${r.error ? `  err:${r.error.slice(0, 80)}` : ""}${r.why ? `\n${" ".repeat(26)}↳ ${r.why.clause} want:${JSON.stringify(r.why.pattern)} got:${JSON.stringify(r.why.actual.slice(0, 90))}` : ""}`,
       );
       await sleep(500);
     }
@@ -260,6 +303,7 @@ async function main() {
       median_decisions: median(runs.map((r) => r.decisions)),
       median_jev_ms: median(runs.map((r) => r.jev_ms)),
       median_text_ms: median(runs.map((r) => r.text_ms)),
+      why: runs.find((r) => r.why)?.why ?? null,
       detail: runs,
     };
   }
@@ -280,6 +324,26 @@ async function main() {
   console.log(
     `\nwrote evals/results/${name}  median total: ${report.median_total_ms}ms  verified:${totals.verified} unverifiable:${totals.unverifiable} failed:${totals.failed}`,
   );
+
+  // Failures grouped by rejecting clause: which contract the suite is losing
+  // on, rather than a flat list of task ids.
+  const byClause = new Map();
+
+  for (const [id, t] of Object.entries(report.tasks)) {
+    if (!t.why) continue;
+
+    const runsFailed = t.runs - t.verified - t.unverifiable;
+    (byClause.get(t.why.clause) ?? byClause.set(t.why.clause, []).get(t.why.clause))
+      .push(`${id} (${runsFailed}/${t.runs})`);
+  }
+
+  if (byClause.size) {
+    console.log("\nfailures by clause:");
+
+    for (const [clause, ids] of [...byClause].sort((a, b) => b[1].length - a[1].length)) {
+      console.log(`  ${clause.padEnd(14)} ${ids.length}  ${ids.join(", ")}`);
+    }
+  }
 }
 
 main().catch((e) => {
