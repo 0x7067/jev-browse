@@ -9,7 +9,7 @@ and an element. A small LLM writes text only when the operation is
 `TYPE_TEXT`. Two interchangeable browser engines ship with it, and it installs
 on Pi, Claude Code, Codex, and any MCP-capable harness.
 
-**Zürich to London on Google Flights in 10.2 seconds.** One natural-language
+**Zürich to London on Google Flights in 17.6 seconds.** One natural-language
 goal, generated city names, calendar clicks, and loading waits included.
 
 [![A real Google Flights search at 1× speed: typed cities, clicked calendar, verified results page](docs/demo.gif)](docs/demo.mp4)
@@ -103,7 +103,7 @@ shell.
 
 ```bash
 jev-browse --url https://www.google.com/travel/flights?hl=en \
-  --goal "Find one-way flights from Zurich to London on September 20, 2026, \
+  --goal "Find one-way flights from Zurich to London on December 20, 2026, \
 for one adult in economy. Stop when matching flight options are visible." \
   [--engine cdp|agent-browser] [--headed] [--cdp http://localhost:9222] \
   [--max-steps 60] [--allow-file-urls]
@@ -204,11 +204,11 @@ table rather than offer dead targets.
 
 ## Evidence and limits
 
-The current video is a **10,209 ms** Google Flights run. Timing starts after
+The current video is a **17,620 ms** Google Flights run. Timing starts after
 initial page observation and includes model calls, generated text, browser
 work, and loading waits. The final frame is a verified results page: one-way
-Zürich to London on September 20, 2026, with real fares. The video plays at 1×
-from CDP frame timestamps, with a ~0.8 s final hold.
+Zürich to London on Sunday, December 20, 2026, with real fares. The video
+plays at 1× from CDP frame timestamps, with a ~0.8 s final hold.
 
 Verified coverage is [`fixture-interactions.html`](fixture-interactions.html)
 plus a [real-world task suite](evals/) spanning form flows, autocomplete,
