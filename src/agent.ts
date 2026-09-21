@@ -548,7 +548,9 @@ export class Agent {
 
     const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
 
-    await sleep(window_);
+    // The window exists to let a late swap land before the second compare.
+    // Stillness is the real signal; the window is only its ceiling.
+    await (this.browser.settle?.(window_) ?? sleep(window_));
 
     if (!(await this.browser.fresh(page, undefined, "structure"))) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
@@ -1061,7 +1063,9 @@ export class Agent {
 
           if (settled) break;
 
-          await sleep(350);
+          // url/title have not agreed yet, so wait for the page to stop
+          // moving rather than for a fixed slice of it.
+          await (this.browser.settle?.(350, 120) ?? sleep(350));
         }
       } catch {
         // keep the last good page

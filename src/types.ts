@@ -122,5 +122,8 @@ export interface BrowserDriver {
 
   /** A main-frame navigation has started but not committed (CDP only). */
   pendingNav?(): boolean;
+  /** Hold until the page is still for quietMs, capped at budgetMs (CDP only).
+   *  Callers without it sleep the budget instead. */
+  settle?(budgetMs: number, quietMs?: number): Promise<void>;
   close(): Promise<void>;
 }

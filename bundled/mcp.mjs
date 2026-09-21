@@ -1464,7 +1464,7 @@ ${repair}` : this.goal;
       }
     }
     const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
-    await sleep3(window_);
+    await (this.browser.settle?.(window_) ?? sleep3(window_));
     if (!await this.browser.fresh(page, void 0, "structure")) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }
@@ -1789,7 +1789,7 @@ ${repair}` : this.goal;
           const settled = latest.url === this.page.url && latest.title === this.page.title && Boolean(latest.text);
           this.page = latest;
           if (settled) break;
-          await sleep3(350);
+          await (this.browser.settle?.(350, 120) ?? sleep3(350));
         }
       } catch {
       }
@@ -2148,6 +2148,7 @@ var VIEWPORT_W = 1120;
 var VIEWPORT_H = 780;
 var SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
 var WAIT_BUDGET_MS = 1500;
+var QUIET_MS = 250;
 var WAIT_POLL_MS = 100;
 var DRAG_STEPS = 8;
 function splitShellWords(input) {
@@ -2552,6 +2553,18 @@ var CdpBrowser = class _CdpBrowser {
       else count++;
     }
     return count;
+  }
+  /** Hold until the page has been still for QUIET_MS, capped at budgetMs. A
+   *  caller about to re-compare needs stillness, not the first mutation. */
+  async settle(budgetMs, quietMs = QUIET_MS) {
+    const quiet = await this.evaluate(
+      `(() => {const w = window.__jevFast && window.__jevFast.wake;
+        if (!w || !w.quiet) return false;
+
+        return w.quiet(${Math.min(quietMs, budgetMs)}, ${budgetMs}).then(() => true);})()`,
+      true
+    ).catch(() => false);
+    if (quiet !== true) await sleep4(budgetMs);
   }
   pendingNav() {
     return (this.navPending.get(this.session) ?? 0) > 0;

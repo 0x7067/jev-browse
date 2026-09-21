@@ -90,6 +90,9 @@ const SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
 /** WAIT polls the page for this long before handing control back. */
 const WAIT_BUDGET_MS = 1500;
 
+/** Stillness that reads as settled when a caller is about to re-read a page. */
+const QUIET_MS = 250;
+
 const WAIT_POLL_MS = 100;
 
 /** Interpolated mouseMoved events between drag press and release. */
@@ -660,6 +663,22 @@ export class CdpBrowser implements BrowserDriver {
     return count;
   }
 
+  /** Hold until the page has been still for QUIET_MS, capped at budgetMs. A
+   *  caller about to re-compare needs stillness, not the first mutation. */
+  async settle(budgetMs: number, quietMs: number = QUIET_MS): Promise<void> {
+    const quiet = await this.evaluate<boolean>(
+      `(() => {const w = window.__jevFast && window.__jevFast.wake;
+        if (!w || !w.quiet) return false;
+
+        return w.quiet(${Math.min(quietMs, budgetMs)}, ${budgetMs}).then(() => true);})()`,
+      true,
+    ).catch(() => false);
+
+    // No observer means the document was replaced since the last snapshot;
+    // the caller's next freshness compare is what handles that.
+    if (quiet !== true) await sleep(budgetMs);
+  }
+
   pendingNav(): boolean {
     return (this.navPending.get(this.session) ?? 0) > 0;
   }
@@ -705,10 +724,12 @@ export class CdpBrowser implements BrowserDriver {
     const kind = action.kind;
 
     if (kind === "wait") {
-      // A wait is a bet that the page is working. Poll for the outcome
-      // instead of sleeping a fixed slice: return as soon as the document
-      // key or text/marker moves, or the network goes idle after activity,
-      // or the patience budget runs out. Each early return saves a decision.
+      // A wait is a bet that the page is working, so it ends on the outcome
+      // rather than a fixed slice: as soon as the document key or text/marker
+      // moves, or the network goes idle after activity, or the budget runs
+      // out. Each early return saves a decision. The compare is the exit
+      // condition because a mutation is not yet a change: a clock or a
+      // re-render moves the DOM without moving the page.
       const deadline = Date.now() + WAIT_BUDGET_MS;
       const hadRequests = this.pendingCount(this.session) > 0;
 

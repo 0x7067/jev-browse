@@ -2,6 +2,45 @@
   if (!document.body) return null;
   const cache = window.__jevFast ||= {ids:new WeakMap(), nodes:new Map(), next:1};
 
+  // A caller about to re-read the page should wait for it to stop moving,
+  // not for a timer to expire. The observer only bumps a counter and wakes
+  // its listeners; whether a move is a real change stays the freshness
+  // compare's call, so a clock tick or a re-render that recreates every node
+  // is still a non-change.
+  const wake = cache.wake ||= {rev:0, listeners:new Set()};
+
+  if (!wake.observer) {
+    // Resolve once the DOM has held still for quietMs, capped by budgetMs. A
+    // caller that re-reads the page needs stillness, not the first mutation:
+    // comparing mid-render reads an unfinished page as a changed one.
+    wake.quiet = (quietMs, budgetMs) => new Promise(resolve => {
+      const deadline = Date.now() + budgetMs;
+      let timer;
+
+      const off = () => {wake.listeners.delete(bump); clearTimeout(timer);};
+
+      const done = () => {off(); resolve(wake.rev);};
+
+      const arm = () => {timer = setTimeout(done, Math.max(0, Math.min(quietMs, deadline - Date.now())));};
+
+      const bump = () => {clearTimeout(timer); arm();};
+
+      wake.listeners.add(bump);
+      arm();
+    });
+
+    wake.observer = new MutationObserver(records => {
+      // Our own node tagging is not page movement.
+      if (records.every(r => r.type === 'attributes' && r.attributeName === 'data-jev-node')) return;
+      wake.rev++;
+
+      for (const listener of wake.listeners) listener();
+    });
+
+    wake.observer.observe(document.documentElement,
+      {subtree:true, childList:true, attributes:true, characterData:true});
+  }
+
   const identity = e => {
     if (!cache.ids.has(e)) cache.ids.set(e,cache.next++);
     const id=cache.ids.get(e); cache.nodes.set(id,e);
