@@ -1,0 +1,41 @@
+scripts/eval.mjs
+  s_ee722e87686ae7::t_d021dbafd2cb82 109,231
+bundled/cli.mjs
+  s_ee722e87686ae7::t_c9ebeaf7199509 500-511
+  s_ee722e87686ae7::t_0e35fa3e427593 1777-1782,1786-1788,1803
+  s_ee722e87686ae7::t_71b749c56ebf59 62-66,1182,1412
+  s_ee722e87686ae7::t_bc7cfd99406bd2 499
+bundled/mcp.mjs
+  s_ee722e87686ae7::t_71b749c56ebf59 68-72,1188,1418
+  s_ee722e87686ae7::t_c9ebeaf7199509 506-517
+  s_ee722e87686ae7::t_0e35fa3e427593 1783-1788,1792-1794,1809
+  s_ee722e87686ae7::t_471ac7bb1e5a2d 505
+src/model/text.ts
+  s_ee722e87686ae7::t_38c20fc2e86366 8,140,142-149
+  s_ee722e87686ae7::t_c9ebeaf7199509 150-165
+src/agent.ts
+  s_ee722e87686ae7::t_22fa4be3ec954e 69-71,471-473,475-479
+  s_ee722e87686ae7::t_f737ae3175bc3c 143-145,1041,1043-1047,1052-1054,1056,1073
+src/questions.ts
+  s_ee722e87686ae7::t_71b749c56ebf59 57-61
+docs/INSTRUMENTATION-2026-09-21.md
+  s_ee722e87686ae7::t_91b1520b9d4cd5 87-136,138-142,144,146-148,150-152,154-157,159-161,249-252
+  s_ee722e87686ae7::t_fc71aae866e731 163-178,180,182-185
+  s_ee722e87686ae7::t_5bbd3307741159 162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1ffffb0006f7dd24e2ec4130c18858362a2237aa",
+  "prompts": {},
+  "sessions": {
+    "s_ee722e87686ae7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "63d7ade7-7aaf-4f31-97fb-d972a26a6bad",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
