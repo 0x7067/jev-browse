@@ -1,0 +1,45 @@
+src/agent.ts
+  s_1c29da0b06fbd4::t_4996438fbdad25 551-553
+  s_1c29da0b06fbd4::t_e2a2a1e70af0bf 1066-1068
+src/cdp/browser.ts
+  s_1c29da0b06fbd4::t_6d98986106eb78 666-669,671,673,677-679,730-732
+  s_1c29da0b06fbd4::t_971beed7c6486f 93-94,670,672,674-676,680-681,727-729
+  s_1c29da0b06fbd4::t_5d8f56503233dd 95
+bundled/cli.mjs
+  s_1c29da0b06fbd4::t_f66870614fbcc8 2554-2556,2558-2561
+  s_1c29da0b06fbd4::t_e2a2a1e70af0bf 1786,2145,2551-2553,2557,2562
+  s_1c29da0b06fbd4::t_3929eadea0983e 1461
+src/types.ts
+  s_1c29da0b06fbd4::t_7c390ae0147f87 125-127
+bundled/snapshot.js
+  s_1c29da0b06fbd4::t_24c2129f57eac1 11-43
+  s_1c29da0b06fbd4::t_f66870614fbcc8 10
+  s_1c29da0b06fbd4::t_134a54fdfa58bf 5-9
+bundled/mcp.mjs
+  s_1c29da0b06fbd4::t_d46dbe00bb0d56 1467
+  s_1c29da0b06fbd4::t_e2a2a1e70af0bf 1792,2151,2557-2559,2563,2568
+  s_1c29da0b06fbd4::t_f66870614fbcc8 2560-2562,2564-2567
+src/snapshot.js
+  s_1c29da0b06fbd4::t_53a6991c631be3 37
+  s_1c29da0b06fbd4::t_6d98986106eb78 10
+  s_1c29da0b06fbd4::t_134a54fdfa58bf 5-9
+  s_1c29da0b06fbd4::t_c8903404d824d4 11-12,32-36,38-43
+  s_1c29da0b06fbd4::t_5d8f56503233dd 19,21,23,25
+  s_1c29da0b06fbd4::t_358e490475303c 13-18,20,22,24,26-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3cfd8c62ada0cd1cb3859fd6e13446cbfe6f19c3",
+  "prompts": {},
+  "sessions": {
+    "s_1c29da0b06fbd4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5dcd01d9-b90b-431a-bf3d-a4609407d115",
+        "model": "claude-opus-5"
+      },
+      "human_author": null
+    }
+  }
+}
