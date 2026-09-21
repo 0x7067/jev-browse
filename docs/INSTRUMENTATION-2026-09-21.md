@@ -3,6 +3,11 @@
 First full eval run on this branch: 121 tasks, 363 runs, 316 verified,
 47 failed, 0 unverifiable. 21 tasks account for every failure.
 
+**Where it stands now.** Five of the seven findings are closed. The latest
+full sweep, one run per task, is 113/121 verified — base 52/55, hard 19/20,
+harder 26/26, hardest 16/20. Two of the seven were misdiagnosed on the
+first pass and are corrected below.
+
 The run exposed a gap in the harness itself. A rejected run printed
 `verified:NO` and nothing else, so a wrong expectation and a real agent
 bug were indistinguishable. This document covers the instrumentation
@@ -197,16 +202,46 @@ generic "close this" move. Once the key list is gated, the modal's own
 Both tasks now pass, with ops `["CLICK:Close"]` — `gate-base-1790010803974.json`
 and `gate-hardest-1790011384574.json`.
 
-## Finding 5: the drag executes and changes nothing
+## Finding 5: the drag executes and changes nothing — WRONG DIAGNOSIS
 
-`tin-drag-drop` issues `DRAG:A` twice. The list order never changes —
-final text stays `Drag and Drop A B`. The driver reports success; the page
-disagrees. HTML5 drag-and-drop on that page is not responding to the
-synthesised sequence.
+The original reading was that `DRAG:A` ran twice and moved nothing. The
+trail says otherwise. The drag works. The agent runs it twice, and the
+second one swaps the columns back.
 
-**Proposed tooling change.** A drag that leaves the fingerprint unchanged
-should report as a no-op to the loop, the way a dead click does, instead
-of being recorded as a completed action.
+the-internet's handler is plain HTML5 DnD: `handleDrop` assigns
+`dragSrcEl.innerHTML = this.innerHTML` and vice versa. It is an unconditional
+swap, so an even number of drags returns the page to `A B` and an odd number
+leaves `B A`. The runs bear that out exactly — two drags fail, three pass.
+
+So the bug is not a dead drag. It is that the agent cannot tell a landed drag
+from an unlanded one, and its retry is destructive. That is the same class as
+Finding 3: an action that undoes itself.
+
+**What was tried, and reverted.** One line in `NEXT_ACTION`:
+
+```
+A DRAG that already changed the page has landed; dragging the same element
+again reverses it. Read the current order before dragging a second time.
+```
+
+It worked on the target — `tin-drag-drop` went 0/3 to 3/5 — and broke an
+unrelated task. `demoqa-menu-hover` went 3/3 to 0/3, cycling three hovers
+until `no_progress`. Removing the line alone restored it to 3/3
+(`noline-1790012753176.json`), so the line was the cause, not variance.
+
+The line is reverted. The trade was net negative, and it is worth recording
+why: `NEXT_ACTION` is one prompt shared by every decision on every task, so
+advice aimed at one operation is paid for by all of them.
+
+**What to try instead.** A structural guard, not advice. The blunt version —
+never re-offer DRAG on a source that already moved — is wrong, because
+sortable lists legitimately drag one item several times. The shape that
+would work is making the drag's outcome legible: the action space already
+carries `checked` and `selected` so the model will not re-toggle a checkbox,
+and order is the drag equivalent. `final_state` now renders element state;
+extending that idea into the offered space is the next thing to try.
+
+`tin-drag-drop` remains failing, 0/1 on the latest sweep.
 
 ## Finding 6: the action space is mostly fixed overhead — FIXED
 
@@ -256,19 +291,41 @@ Evidence: `gate-base-1790010803974.json` (52/55),
 
 ## Finding 7: blocked is mostly stalemate, not budget
 
-Blocked causes across the failing tasks:
+Still true, and the cluster is smaller. Across all four tiers after the
+Finding 6 change, every blocked run and its cause:
 
-- `no_progress` — `flights-zurich-london`, `books-page3-price`,
-  `github-search-repo`, `github-repo-search`
-- `model_claim` — `tin-iframe`, `tin-slow`
+| cause | tasks |
+|---|---|
+| `model_claim` | `tin-iframe`, `tin-nested-frames`, `tin-slow`, `pypi-search`, `ddg-lite-search`, `demoqa-right-click` |
+| `no_progress` | `github-repo-search`, `github-search-repo`, `books-page3-price` |
 
-No run hit `decision_budget` or `step_budget`. The loop is giving up on
-its own stalemate detector, not running out of room. `github-search-repo`
-gets as far as typing the query and clicking a suggestion before stalling,
-which points at the search-suggestion interaction rather than the site.
+Nothing hit `decision_budget` or `step_budget`. Four of the `model_claim`
+runs are blocked-expected and verify as such.
 
-`tin-iframe` is expected — the handoff records the TinyMCE demo as
-read-only.
+The three `no_progress` runs have two distinct causes, both now readable
+from the trail.
+
+**The two GitHub tasks click the suggestion container.** The trail is
+`CLICK:Search or jump to` → `TYPE_TEXT "jev-browse"` → then
+`CLICK:Search suggestions` four times, the last three with `changed=false`.
+`Search suggestions` is the listbox wrapping the option rows. `NEXT_ACTION`
+already says "clicking the list container does nothing" and the model clicks
+it anyway — the same shape as Finding 6, where a rule stated in the prompt
+was ignored until the space stopped offering the move. The fix is to stop
+offering a listbox that has offered option rows inside it as a CLICK target.
+
+**`books-page3-price` wanders.** Three scrolls, `CLICK:next` once, then
+`Add to cart` and `Home` clicked four times each with `changed=false`. It
+needs `next` twice and clicks it once. This is not a dead-target problem;
+it is the model losing the goal.
+
+Both point at the same missing guard: a click that produced no change is
+retried three more times. The loop retries a dead click once through
+`domClick` and then counts a strike, but the element stays in the offered
+space and the model keeps picking it. Dropping an element from the CLICK
+space after it has produced no change twice in the same document is bounded,
+mirrors the existing `domRetried` budget, and would cut every one of these
+runs short. It is a decision-loop change and needs a full-tier run.
 
 ## Suggested order
 
@@ -280,9 +337,19 @@ read-only.
    Done.
 4. ~~Precondition-gated action space (Finding 6).~~ Done.
 5. ~~Modal dismiss fallback (Finding 4)~~ — fell out of Finding 6, no
-   fallback needed. Drag no-op detection (Finding 5) is still open.
-6. Investigate the `no_progress` cluster (Finding 7) with the
-   `decision` event trail.
+   fallback needed. Drag no-op detection (Finding 5) turned out to be the
+   wrong target; the drag works and the repeat undoes it. Still open.
+6. ~~Investigate the `no_progress` cluster (Finding 7).~~ Done — two causes
+   identified, neither fixed yet.
+
+## Open, in priority order
+
+1. Drop an element from the CLICK space after two no-change results in the
+   same document (Finding 7). Cuts all three `no_progress` runs short.
+2. Stop offering a listbox that contains offered option rows as a CLICK
+   target (Finding 7). Fixes both GitHub search tasks directly.
+3. Make drag outcome legible in the offered space rather than the prompt
+   (Finding 5).
 
 ## Reproducing
 
