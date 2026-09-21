@@ -1,0 +1,40 @@
+src/agent.ts
+  s_1c29da0b06fbd4::t_4996438fbdad25 551-553
+  s_1c29da0b06fbd4::t_e2a2a1e70af0bf 1066-1068
+src/cdp/browser.ts
+  s_1c29da0b06fbd4::t_971beed7c6486f 93-94,96-98,669-671,673-687,689-700,702-706,708-716,762-769,771-773
+  s_1c29da0b06fbd4::t_b76cfe16b7d17e 672
+  s_1c29da0b06fbd4::t_5d8f56503233dd 95,688
+  s_1c29da0b06fbd4::t_7c390ae0147f87 701,707,770
+src/snapshot.js
+  s_1c29da0b06fbd4::t_53a6991c631be3 17,19,21,51
+  s_1c29da0b06fbd4::t_5d8f56503233dd 33,35,37,39
+  s_1c29da0b06fbd4::t_358e490475303c 6-11,14,18,20,22,24,27-32,34,36,38,40-45
+  s_1c29da0b06fbd4::t_c8903404d824d4 5,12-13,15-16,23,25-26,46-50,52-57,794
+src/types.ts
+  s_1c29da0b06fbd4::t_7c390ae0147f87 125-127
+bundled/cli.mjs
+  s_1c29da0b06fbd4::t_e2a2a1e70af0bf 1786,2145-2146,2552-2588,2615
+  s_1c29da0b06fbd4::t_3929eadea0983e 1461,2616-2617
+bundled/mcp.mjs
+  s_1c29da0b06fbd4::t_e2a2a1e70af0bf 1792,2151-2152,2558-2594,2621
+  s_1c29da0b06fbd4::t_d46dbe00bb0d56 1467,2622-2623
+bundled/snapshot.js
+  s_1c29da0b06fbd4::t_24c2129f57eac1 5-57,794
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2755c4ac71d61423143cc52a76e3eb285f5ddd06",
+  "prompts": {},
+  "sessions": {
+    "s_1c29da0b06fbd4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5dcd01d9-b90b-431a-bf3d-a4609407d115",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
