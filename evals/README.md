@@ -7,6 +7,10 @@ outcome is checkable:
 
 - `expect.url_match` / `expect.url_not_match` — regexes on the final URL
 - `expect.text_match` — regex on `RunResult.final_text` (terminal page text)
+- `expect.state_match` — regex on `RunResult.final_state`, one line per
+  element carrying `checked` / `selected` / `expanded` / `value` at the
+  terminal page. Use it when the outcome is element state the page text
+  cannot show — a checked box, an active tab, a chosen option.
 - `expect.action_match` — regex on the run's executed ops, joined with spaces
 - `expect.status` — an expected non-done outcome (e.g. `"blocked"`)
 

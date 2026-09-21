@@ -133,6 +133,26 @@ export interface RunResult {
   /** Which exit ended a blocked run — a model give-up, an exhausted budget,
    *  a stale storm and a dead page each call for a different fix. */
   blocked_cause?: string;
+  /** Element state at the terminal page — checked boxes, chosen options,
+   *  field values. Page text cannot show these, so without it a checkbox
+   *  task can only be verified by the clicks it made, not by how it ended. */
+  final_state?: string;
+}
+
+/** One line per element that carries state, for `expect.state_match`. */
+function stateSummary(page: PageState): string {
+  const lines: string[] = [];
+
+  for (const element of actionSpace(page.actions).elements) {
+    const state = (["checked", "selected", "expanded", "value"] as const).flatMap((k) =>
+      element[k] === undefined || element[k] === "" ? [] : [`${k}=${element[k]}`],
+    );
+
+    // Labels can carry a whole page's text; the state is the point here.
+    if (state.length) lines.push(`${String(element.label).slice(0, 60)} ${state.join(" ")}`);
+  }
+
+  return lines.join("\n");
 }
 
 /** Non-terminal phases; terminal status is reported as done/blocked/error. */
@@ -1033,6 +1053,10 @@ export class Agent {
     if (this.terminalError) result.error = this.terminalError;
 
     if (this.blockedCause) result.blocked_cause = this.blockedCause;
+
+    const state = stateSummary(this.page);
+
+    if (state) result.final_state = state;
 
     if (this.page.downloads?.length) result.downloads = this.page.downloads;
 

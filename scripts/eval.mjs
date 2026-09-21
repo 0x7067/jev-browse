@@ -63,7 +63,7 @@ function parseArgs(argv) {
   return args;
 }
 
-const VERIFIABLE_KEYS = ["status", "url_match", "url_not_match", "text_match", "action_match", "answer_match", "download_match"];
+const VERIFIABLE_KEYS = ["status", "url_match", "url_not_match", "text_match", "state_match", "action_match", "answer_match", "download_match"];
 
 // A task with no runnable expectation can't be verified — reported
 // "unverifiable", not silently counted as a pass.
@@ -96,6 +96,10 @@ function verify(task, result, opsText) {
   const text = (result.final_text ?? "").replace(/\s+/g, " ");
 
   if (exp.text_match && !new RegExp(exp.text_match).test(text)) return fail("text_match", exp.text_match, text);
+
+  const state = (result.final_state ?? "").replace(/\s+/g, " ");
+
+  if (exp.state_match && !new RegExp(exp.state_match).test(state)) return fail("state_match", exp.state_match, state);
 
   if (exp.action_match && !new RegExp(exp.action_match).test(opsText)) return fail("action_match", exp.action_match, opsText);
 
@@ -223,6 +227,7 @@ function runOnce(task, env, engine) {
         stale,
         trail,
         final_text: (result.final_text ?? "").slice(0, 1200),
+        final_state: (result.final_state ?? "").slice(0, 1200),
         elapsed_ms: result.elapsed_ms,
         steps: result.steps,
         decisions: result.decisions,

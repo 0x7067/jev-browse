@@ -114,11 +114,11 @@
     }
   },
   {
-    "id": "apg-tabs",
+    "id": "apg-tabs-auto",
     "url": "https://www.w3.org/WAI/ARIA/apg/patterns/tabs/examples/tabs-automatic/",
-    "goal": "Activate the \"Maria Ahlefeldt\" tab and stop when its panel shows.",
+    "goal": "Activate the \"Ida da Fonseca\" tab and stop when its panel shows.",
     "expect": {
-      "action_match": "Ahlefeldt"
+      "state_match": "Ida da Fonseca selected=true"
     }
   },
   {

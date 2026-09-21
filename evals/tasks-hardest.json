@@ -97,11 +97,11 @@
     }
   },
   {
-    "id": "apg-tabs",
+    "id": "apg-tabs-manual",
     "url": "https://www.w3.org/WAI/ARIA/apg/patterns/tabs/examples/tabs-manual/",
-    "goal": "Open the 'Maria Ahlefeldt' tab in the example.",
+    "goal": "Open the 'Ida da Fonseca' tab in the example.",
     "expect": {
-      "text_match": "Maria|Ahlefeldt"
+      "state_match": "Ida da Fonseca selected=true"
     }
   },
   {

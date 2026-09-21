@@ -1183,6 +1183,16 @@ function atWordBoundary(haystack, needle) {
   }
   return false;
 }
+function stateSummary(page) {
+  const lines = [];
+  for (const element of actionSpace(page.actions).elements) {
+    const state = ["checked", "selected", "expanded", "value"].flatMap(
+      (k) => element[k] === void 0 || element[k] === "" ? [] : [`${k}=${element[k]}`]
+    );
+    if (state.length) lines.push(`${String(element.label).slice(0, 60)} ${state.join(" ")}`);
+  }
+  return lines.join("\n");
+}
 var Agent = class _Agent {
   goal;
   browser;
@@ -1780,6 +1790,8 @@ ${repair}` : this.goal;
     if (answer !== void 0) result.answer = answer;
     if (this.terminalError) result.error = this.terminalError;
     if (this.blockedCause) result.blocked_cause = this.blockedCause;
+    const state = stateSummary(this.page);
+    if (state) result.final_state = state;
     if (this.page.downloads?.length) result.downloads = this.page.downloads;
     return result;
   }

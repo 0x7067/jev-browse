@@ -175,7 +175,7 @@
     "url": "https://the-internet.herokuapp.com/checkboxes",
     "goal": "Check both checkboxes and stop.",
     "expect": {
-      "action_match": "CLICK:checkbox[\\s\\S]*CLICK:checkbox"
+      "state_match": "checked=true[\\s\\S]*checked=true"
     }
   },
   {
@@ -224,7 +224,7 @@
     "url": "https://the-internet.herokuapp.com/infinite_scroll",
     "goal": "Scroll down twice to load more content and stop.",
     "expect": {
-      "action_match": "SCROLL_DOWN[\\s\\S]*SCROLL_DOWN"
+      "action_match": "(SCROLL_DOWN|PRESS_PAGEDOWN|PRESS_END)[\\s\\S]*(SCROLL_DOWN|PRESS_PAGEDOWN|PRESS_END)"
     }
   },
   {

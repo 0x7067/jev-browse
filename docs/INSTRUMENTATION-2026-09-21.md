@@ -32,29 +32,57 @@ whether a repair hint was attached. A `done_consult` event fires when the
 premature-done guard challenges a claim. The eval runner aggregates both
 per run as `space` and `done_consults`.
 
-## Finding 1: the suite tests mechanism, not outcome
+**Element state at the terminal page** (`src/agent.ts`, `scripts/eval.mjs`).
+`RunResult` carried `final_text` but nothing about element state, so a
+checkbox or tab task could only be verified by the clicks it made. A new
+`final_state` field renders one line per element carrying `checked`,
+`selected`, `expanded` or `value`, and a new `expect.state_match` clause
+asserts against it.
 
-Three of the 21 failures are the agent succeeding by a different route
-than the expectation names.
+## Finding 1: the suite tests mechanism, not outcome — FIXED
 
-- `tin-checkboxes` wants two `CLICK:checkbox` ops. The page ships
+Three failures looked like the agent going wrong. Two were the harness
+asserting *how* instead of *what*. The third was worse: a task that could
+not fail.
+
+- `tin-checkboxes` wanted two `CLICK:checkbox` ops. The page ships
   `<input type="checkbox" checked>` on checkbox 2, so checking both takes
-  exactly one click. The agent clicked once and was right.
-- `tin-infinite-scroll` wants `SCROLL_DOWN` twice. The agent pressed
+  exactly one click. The agent clicked once and was right. The outcome was
+  not assertable at all — page text for that page is just
+  `Checkboxes / checkbox 1 / checkbox 2`, identical checked or not.
+- `tin-infinite-scroll` wanted `SCROLL_DOWN` twice. The agent pressed
   PageDown twice and loaded the content. Same outcome, different op name.
-- `apg-tabs` fails 3/3 in the hard tier and passes 3/3 in the harder
-  tier. Same page, two expectations, one of them wrong.
+- `apg-tabs` existed twice under one id — `tabs-automatic` in the hard
+  tier, `tabs-manual` in the hardest tier. The hardest copy asserted
+  `text_match: "Maria|Ahlefeldt"`, which the page's own prose satisfies on
+  load. It passed 3/3 while the ops were only `WAIT` and `SCROLL_DOWN` —
+  the agent never touched the tablist. A false pass, not a disagreement
+  between tiers.
 
-All three are `action_match` patterns asserting how the goal was reached.
-That contradicts the repo's own principle — test behavior, not
-implementation — and it is the harness, not the agent, that needs the fix.
+**What was done.** `final_state` and `expect.state_match` were added, then:
 
-**Proposed tooling change.** Keep `action_match` for cases where the
-action *is* the behavior (a drag must drag, a download must download).
-Everywhere else assert the end state the user would see, via `text_match`
-or `answer_match`. Where an op family genuinely matters, match the family
-rather than the literal: a `scrolled` predicate covering SCROLL_DOWN and
-PRESS_PAGEDOWN, rather than one op name.
+| task | was | now |
+|---|---|---|
+| `tin-checkboxes` | `action_match: CLICK:checkbox ×2` | `state_match: checked=true ×2` |
+| `tin-infinite-scroll` | `action_match: SCROLL_DOWN ×2` | op family — `SCROLL_DOWN\|PRESS_PAGEDOWN\|PRESS_END` ×2 |
+| `apg-tabs` (hard) | `action_match: Ahlefeldt` | id `apg-tabs-auto`, `state_match: Ida da Fonseca selected=true` |
+| `apg-tabs` (hardest) | `text_match: Maria\|Ahlefeldt` | id `apg-tabs-manual`, same `state_match` |
+
+Both tabs tasks also changed target. "Maria Ahlefeldt" is the first tab and
+is selected on load, so even a correct state assertion passed without the
+agent doing anything. "Ida da Fonseca" is the third tab and requires a real
+click.
+
+Where the action genuinely *is* the behavior — a drag must drag, a download
+must download — `action_match` stays. Where an op family matters rather than
+one op name, match the family.
+
+**Evidence.** All four pass 3/3 with the intended ops:
+`fix1-base-1790007458581.json` (6/6, `tin-checkboxes` one click and both
+boxes `checked=true`; `tin-infinite-scroll` two PageDowns),
+`fix1-hard2-1790007575425.json` and `fix1-hardest2-1790007607274.json`
+(3/3 each, ops end `CLICK:Ida da Fonseca`, state flips to
+`Ida da Fonseca selected=true`).
 
 ## Finding 2: the answer channel returns nothing on compound goals
 
@@ -152,8 +180,8 @@ read-only.
 
 ## Suggested order
 
-1. Fix the three mechanism-asserting expectations (Finding 1). Cheapest,
-   and it removes noise from every later measurement.
+1. ~~Fix the three mechanism-asserting expectations (Finding 1).~~ Done —
+   see Finding 1. Also added the `state_match` clause they needed.
 2. Answer extraction on compound goals (Finding 2). Largest capability
    gain per unit of work.
 3. Destructive-newcomer exclusion in `CLICK_MATCH_TYPED` (Finding 3).
