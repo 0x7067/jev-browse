@@ -19,7 +19,7 @@
     },
     "com.openai": {
       "interface": {
-        "displayName": "Jev Drive",
+        "displayName": "jev-browse",
         "shortDescription": "TypeSafe Jev drives a real browser toward one goal",
         "category": "Developer Tools"
       }
