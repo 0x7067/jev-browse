@@ -3,85 +3,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import ts from "typescript";
-
-const ROOT = path.resolve(import.meta.dirname, "..");
-const EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
-const SKIP_DIRS = new Set([
-  ".git",
-  "node_modules",
-  "dist",
-  "bundled",
-  "evals",
-]);
-
-function listFiles(dir) {
-  const out = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (SKIP_DIRS.has(entry.name)) continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      out.push(...listFiles(full));
-      continue;
-    }
-    if (!EXTENSIONS.has(path.extname(entry.name))) continue;
-    out.push(full);
-  }
-  return out;
-}
-
-function scriptKindFor(filePath) {
-  switch (path.extname(filePath)) {
-    case ".ts":
-      return ts.ScriptKind.TS;
-    case ".tsx":
-      return ts.ScriptKind.TSX;
-    case ".jsx":
-      return ts.ScriptKind.JSX;
-    default:
-      return ts.ScriptKind.JS;
-  }
-}
-
-function collectCommentRanges(body, fileName) {
-  const sourceFile = ts.createSourceFile(
-    fileName,
-    body,
-    ts.ScriptTarget.Latest,
-    true,
-    scriptKindFor(fileName),
-  );
-  const byKey = new Map();
-
-  const add = (ranges) => {
-    for (const range of ranges ?? []) {
-      byKey.set(`${range.pos}:${range.end}`, { pos: range.pos, end: range.end });
-    }
-  };
-
-  const visit = (node) => {
-    add(ts.getLeadingCommentRanges(body, node.getFullStart()));
-    add(ts.getTrailingCommentRanges(body, node.end));
-
-    if (ts.isBlock(node) && node.statements.length === 0) {
-      const innerStart = node.getStart(sourceFile) + 1;
-      const inner = body.slice(innerStart, node.end - 1);
-      const pattern = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
-      let match;
-      while ((match = pattern.exec(inner)) !== null) {
-        const pos = innerStart + match.index;
-        const end = pos + match[0].length;
-        byKey.set(`${pos}:${end}`, { pos, end });
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
-  add(ts.getLeadingCommentRanges(body, 0));
-
-  return [...byKey.values()].sort((a, b) => b.pos - a.pos);
-}
+import {
+  ROOT,
+  collectCommentRanges,
+  listFiles,
+} from "./lib/comments.mjs";
 
 function stripComments(text, fileName) {
   let shebang = "";
@@ -93,7 +19,9 @@ function stripComments(text, fileName) {
     body = body.slice(nl + 1);
   }
 
-  const ranges = collectCommentRanges(body, fileName);
+  const ranges = collectCommentRanges(body, fileName).sort(
+    (a, b) => b.pos - a.pos,
+  );
   if (ranges.length === 0) return text;
 
   let next = body;

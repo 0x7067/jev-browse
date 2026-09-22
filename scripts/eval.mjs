@@ -226,6 +226,7 @@ async function main() {
 
   if (args.help) {
     console.log(HELP.trimEnd());
+
     return;
   }
 
