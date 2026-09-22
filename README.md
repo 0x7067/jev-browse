@@ -196,7 +196,6 @@ table rather than offer dead targets.
 | [src/cli.ts](src/cli.ts) | Headless entry point every adapter runs |
 | [src/mcp.ts](src/mcp.ts) | stdio MCP server exposing `jev_browse` |
 | [integrations/pi](integrations/pi/index.ts) | Pi extension: `jev_browse` tool + skill |
-| [integrations/opencode](integrations/opencode/jev-browse.ts) | OpenCode plugin (dormant; MCP is the install path) |
 | [bundled](bundled/) | Committed esbuild bundles; the entry points installs actually run |
 | [plugin.json](plugin.json) · [mcp.json](mcp.json) | Portable Agent Plugins manifest and MCP wiring |
 | [scripts/eval.mjs](scripts/eval.mjs) + [evals/](evals/) | Real-world task suite and results |
