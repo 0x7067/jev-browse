@@ -24,6 +24,8 @@
     "build:bundle": "esbuild src/cli.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/cli.mjs && esbuild src/mcp.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/mcp.mjs && cp src/snapshot.js bundled/snapshot.js",
     "check:bundle": "npm run --silent build:bundle && git diff --exit-code -- bundled/",
     "check:comments": "node scripts/check-no-comments.mjs",
+    "eval": "node scripts/eval.mjs",
+    "eval:all": "node scripts/eval.mjs --file tasks.json && node scripts/eval.mjs --file tasks-hard.json && node scripts/eval.mjs --file tasks-harder.json && node scripts/eval.mjs --file tasks-hardest.json",
     "lint": "oxlint && npm run check:comments",
     "run": "tsx src/cli.ts",
     "typecheck": "tsc --noEmit"
@@ -36,7 +38,6 @@
     "typebox": "^1.3.33"
   },
   "devDependencies": {
-    "@opencode-ai/plugin": "^1.18.31",
     "@oxlint/plugins": "^1.83.0",
     "@types/node": "^22.0.0",
     "esbuild": "^0.28.2",

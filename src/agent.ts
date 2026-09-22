@@ -1,7 +1,12 @@
 
+import { choose, type Decision } from "./model/decide.ts";
+import { warmModelEndpoints } from "./model/endpoints.ts";
+import { actionSpace } from "./model/space.ts";
+import { extractAnswer, fieldContext, fieldText } from "./model/text.ts";
+import { makeClient } from "./env.ts";
 import { MAX_STEPS } from "./questions.ts";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+import { sleep } from "./sleep.ts";
+import { StalePage, type BrowserDriver, type JsonValue, type PageState } from "./types.ts";
 
 const FIRST_SETTLE_MS = 1500;
 
@@ -43,13 +48,6 @@ function atWordBoundary(haystack: string, needle: string): boolean {
 
   return false;
 }
-
-import { choose, type Decision } from "./model/decide.ts";
-import { warmModelEndpoints } from "./model/endpoints.ts";
-import { actionSpace } from "./model/space.ts";
-import { extractAnswer, fieldContext, fieldText } from "./model/text.ts";
-import { makeClient } from "./env.ts";
-import { StalePage, type BrowserDriver, type JsonValue, type PageState } from "./types.ts";
 
 export interface AgentOptions {
   url: string;

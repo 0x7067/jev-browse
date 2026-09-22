@@ -1,10 +1,9 @@
 
 import { isString } from "../json.ts";
 import { ANSWER_VALUE, TEXT_VALUE } from "../questions.ts";
-import { actionSpace } from "./space.ts";
+import { sleep } from "../sleep.ts";
 import type { JsonObject, JsonValue, ObservedAction, PageState } from "../types.ts";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+import { actionSpace } from "./space.ts";
 
 async function postJson(url: string, key: string, body: JsonValue): Promise<any> {
   for (let attempt = 0; attempt < 3; attempt++) {

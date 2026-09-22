@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { cliEntryPath } from "./lib/cli-entry.mjs";
+import { loadEnvFile } from "./lib/env.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -14,19 +16,18 @@ const TASK_TIMEOUT_MS = 120_000;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function loadEnvFile(path, env) {
-  if (!existsSync(path)) return env;
+const HELP = `Usage: node scripts/eval.mjs [options]
 
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+  --file tasks.json       Task file under evals/ (default: tasks.json)
+  --tasks id1,id2         Run only these task ids
+  --repeat N              Median-of-N runs per task (default: 1)
+  --label NAME            Tag the results file
+  --engine cdp|agent-browser  Browser engine (default: cli default)
+  --compare a.json b.json Compare two result files
+  --help                  Show this help
 
-    if (!m || line.trim().startsWith("#")) continue;
-
-    if (env[m[1]] === undefined) env[m[1]] = m[2].replace(/^["']|["']$/g, "");
-  }
-
-  return env;
-}
+Results land in evals/results/. Exit code is non-zero when any run fails verification.
+`;
 
 function parseArgs(argv) {
   const args = { repeat: 1, label: null, tasks: null, compare: null, file: "tasks.json" };
@@ -35,6 +36,10 @@ function parseArgs(argv) {
     const val = () => argv[++i];
 
     switch (argv[i]) {
+      case "--help":
+      case "-h":
+        args.help = true;
+        break;
       case "--repeat": args.repeat = Number(val()); break;
       case "--label": args.label = val(); break;
       case "--tasks": args.tasks = val().split(","); break;
@@ -109,7 +114,7 @@ function runOnce(task, env, engine) {
     const cli = spawn(
       process.execPath,
       [
-        join(ROOT, "src", "cli.ts"),
+        cliEntryPath(ROOT),
         "--url", url,
         "--goal", task.goal,
         ...(engine ? ["--engine", engine] : []),
@@ -219,6 +224,11 @@ const median = (xs) => {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
+  if (args.help) {
+    console.log(HELP.trimEnd());
+    return;
+  }
+
   if (args.compare) {
     const [a, b] = args.compare.map((f) => JSON.parse(readFileSync(resolve(f), "utf8")));
     console.log(`\n${"task".padEnd(24)} ${(a.label ?? "A").padEnd(22)} ${b.label ?? "B"}`);
@@ -309,6 +319,8 @@ async function main() {
       console.log(`  ${clause.padEnd(14)} ${ids.length}  ${ids.join(", ")}`);
     }
   }
+
+  if (totals.failed > 0) process.exit(1);
 }
 
 main().catch((e) => {

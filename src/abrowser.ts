@@ -6,6 +6,7 @@ import { promisify } from "node:util";
 
 import { fingerprint, isJsonObject, markerMatches } from "./json.ts";
 import { loadSnapshotJs } from "./snapshot-loader.ts";
+import { sleep } from "./sleep.ts";
 import {
   StalePage,
   type ActResult,
@@ -16,8 +17,6 @@ import {
 } from "./types.ts";
 
 const execFileAsync = promisify(execFile);
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const READ_STATE = loadSnapshotJs();
 

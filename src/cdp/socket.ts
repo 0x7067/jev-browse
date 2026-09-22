@@ -1,9 +1,10 @@
 
 import { createServer } from "node:net";
 
+import { sleep } from "../sleep.ts";
 import type { JsonObject } from "../types.ts";
 
-export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+export { sleep };
 
 const CALL_TIMEOUT_MS = 30_000;
 
