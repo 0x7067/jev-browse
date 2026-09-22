@@ -22,7 +22,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -30,6 +29,8 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { cliEntryPath } from "./lib/cli-entry.mjs";
+import { loadEnvFile } from "./lib/env.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -75,20 +76,6 @@ function parseArgs(argv) {
   args.goals = args.goals.map((goal) => expandDates(goal, now));
 
   return args;
-}
-
-function loadEnvFile(path, env) {
-  if (!existsSync(path)) return env;
-
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-
-    if (!m || line.trim().startsWith("#")) continue;
-
-    if (env[m[1]] === undefined) env[m[1]] = m[2].replace(/^["']|["']$/g, "");
-  }
-
-  return env;
 }
 
 function findChrome() {
@@ -248,7 +235,7 @@ async function main() {
     const cli = spawn(
       process.execPath,
       [
-        join(ROOT, "src", "cli.ts"),
+        cliEntryPath(ROOT),
         "--url", args.url,
         ...args.goals.flatMap((g) => ["--goal", g]),
         "--engine", "cdp",

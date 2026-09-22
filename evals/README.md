@@ -1,7 +1,8 @@
 # evals
 
-Real-world task suite for jev-browse. `node scripts/eval.mjs` runs each task
-in `tasks.json` through `src/cli.ts`, parses the `RunResult`, and verifies the
+Real-world task suite for jev-browse. `npm run eval` (or `node scripts/eval.mjs`)
+runs each task in `tasks.json` through `bundled/cli.mjs` — the same entrypoint
+installed users get via `jev-browse` — parses the `RunResult`, and verifies the
 outcome — `DONE` is a claim, not proof, so tasks carry expectations where the
 outcome is checkable:
 
@@ -19,12 +20,18 @@ A task with no runnable expectation reports `unverifiable` — distinct from
 line prints verified / unverifiable / failed separately.
 
 ```bash
-node scripts/eval.mjs                       # all tasks, one run each
+npm run eval                                # all tasks in tasks.json, one run each
+npm run eval:all                            # all four tier files (tasks*.json)
 node scripts/eval.mjs --repeat 3            # median-of-N per task
 node scripts/eval.mjs --tasks fx-range,tin-hovers
 node scripts/eval.mjs --label baseline      # tags the results file
+node scripts/eval.mjs --file tasks-hard.json
+node scripts/eval.mjs --engine agent-browser  # cdp (default) or agent-browser
 node scripts/eval.mjs --compare a.json b.json
 ```
+
+Failed verifications exit non-zero — suitable as an evidence gate in CI or
+before merging behavioral changes.
 
 Results land in `evals/results/` with per-step latency breakdowns
 (`latency_ms` per Jev call, `text_latency_ms` per helper call) and the stderr
