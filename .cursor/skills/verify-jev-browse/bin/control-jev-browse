@@ -85,7 +85,9 @@ Usage: control-jev-browse <command> [args]
                        Refuses when an active run exists unless --reuse.
                        Does not auto-clean; run cleanup for a new run id.
   doctor               Read-only health check for the active run
-  env                  Print exportable assignments for eval "$(control-jev-browse env)"
+  env                  Print exports for eval "$(control-jev-browse env)".
+                       Reads the active-run state file. Unsets run vars when
+                       no run is active. Ambient run vars must match state.
   cleanup              Tear down the disposable home; keep evidence
   status               Print the active RUN_ID, VERIFY_HOME, and evidence dir
   eval -- <args...>    Run node scripts/eval.mjs with the isolated profile env
@@ -102,7 +104,10 @@ Environment:
   XDG_RUNTIME_DIR              Preferred private dir for the active-run state file;
                                if unset, uses /tmp/jev-browse-verify-control-<uid> mode 0700
 
-State is a validated RUN_ID line only — never sourced as shell. Prefer
+State is a validated RUN_ID line only — never sourced as shell. Commands
+load that file. Ambient RUN_ID/VERIFY_HOME/EVIDENCE_DIR are accepted only
+when they match it; doctor, cli, and cleanup refuse a mismatch. env exports
+the state file, or unsets those vars when no run is active. Prefer
 eval "$(control-jev-browse env)" for recipe vars; that does not export HOME.
 EOF
 }
@@ -156,8 +161,8 @@ ensure_verify_home() {
     [[ -d "$VERIFY_HOME" ]] || die "VERIFY_HOME exists and is not a directory: $VERIFY_HOME"
     owner="$(stat -c '%u' "$VERIFY_HOME" 2>/dev/null || stat -f '%u' "$VERIFY_HOME")"
     [[ "$owner" == "$uid" ]] || die "VERIFY_HOME not owned by current user: $VERIFY_HOME (owner=$owner)"
-    resolved="$(realpath "$VERIFY_HOME")"
-    expected_resolved="$(realpath "$expected")"
+    resolved="$(resolve_path "$VERIFY_HOME")"
+    expected_resolved="$(resolve_path "$expected")"
     [[ "$resolved" == "$expected_resolved" ]] || die "resolved VERIFY_HOME $resolved != $expected_resolved"
     chmod 700 "$VERIFY_HOME"
   else
@@ -179,8 +184,8 @@ assert_run_paths() {
     [[ -d "$VERIFY_HOME" ]] || die "VERIFY_HOME exists and is not a directory: $VERIFY_HOME"
     owner="$(stat -c '%u' "$VERIFY_HOME" 2>/dev/null || stat -f '%u' "$VERIFY_HOME")"
     [[ "$owner" == "$uid" ]] || die "VERIFY_HOME not owned by current user: $VERIFY_HOME (owner=$owner)"
-    resolved="$(realpath "$VERIFY_HOME")"
-    expected_resolved="$(realpath "$expected")"
+    resolved="$(resolve_path "$VERIFY_HOME")"
+    expected_resolved="$(resolve_path "$expected")"
     [[ "$resolved" == "$expected_resolved" ]] || die "resolved VERIFY_HOME $resolved != $expected_resolved"
     chmod 700 "$VERIFY_HOME"
   fi
@@ -227,14 +232,24 @@ write_state() {
   chmod 600 "$STATE_FILE"
 }
 
+ambient_matches_loaded_state() {
+  local ambient_id="$1"
+  local ambient_home="$2"
+  local ambient_ev="$3"
+  [[ -z "$ambient_id" || "$ambient_id" == "$RUN_ID" ]] \
+    && [[ -z "$ambient_home" || "$ambient_home" == "$VERIFY_HOME" ]] \
+    && [[ -z "$ambient_ev" || "$ambient_ev" == "$EVIDENCE_DIR" ]]
+}
+
 require_active() {
   ensure_state_dir
-  if [[ -n "${RUN_ID:-}" && -n "${VERIFY_HOME:-}" && -n "${EVIDENCE_DIR:-}" ]]; then
-    assert_run_paths
-    [[ -d "$VERIFY_HOME" ]] || die "VERIFY_HOME missing for RUN_ID=$RUN_ID; re-launch"
-    return 0
-  fi
+  local ambient_id="${RUN_ID-}"
+  local ambient_home="${VERIFY_HOME-}"
+  local ambient_ev="${EVIDENCE_DIR-}"
   load_state || die "no active run; run: control-jev-browse launch"
+  if ! ambient_matches_loaded_state "$ambient_id" "$ambient_home" "$ambient_ev"; then
+    die "ambient RUN_ID/VERIFY_HOME/EVIDENCE_DIR do not match active run RUN_ID=$RUN_ID (state file $STATE_FILE). Refusing to use them. Run: eval \"\$(control-jev-browse env)\""
+  fi
   [[ -d "$VERIFY_HOME" ]] || die "VERIFY_HOME missing for RUN_ID=$RUN_ID; re-launch"
 }
 
@@ -409,8 +424,8 @@ cmd_cleanup() {
   [[ -d "$home_to_remove" ]] || die "VERIFY_HOME missing before cleanup: $home_to_remove"
   owner="$(stat -c '%u' "$home_to_remove" 2>/dev/null || stat -f '%u' "$home_to_remove")"
   [[ "$owner" == "$uid" ]] || die "refusing to remove VERIFY_HOME not owned by current user (owner=$owner)"
-  resolved="$(realpath "$home_to_remove")"
-  expected_resolved="$(realpath "$expected")"
+  resolved="$(resolve_path "$home_to_remove")"
+  expected_resolved="$(resolve_path "$expected")"
   [[ "$resolved" == "$expected_resolved" ]] || die "resolved VERIFY_HOME $resolved != $expected_resolved (symlink escape?)"
   chmod 700 "$home_to_remove"
   rm -rf -- "$home_to_remove"
@@ -439,12 +454,15 @@ EOF
 cmd_env() {
   ensure_state_dir
   printf 'export JEV_BROWSE_ROOT=%q\n' "$ROOT"
-  if [[ -n "${RUN_ID:-}" && -n "${VERIFY_HOME:-}" && -n "${EVIDENCE_DIR:-}" ]]; then
-    assert_run_paths
-  elif load_state; then
-    :
-  else
+  local ambient_id="${RUN_ID-}"
+  local ambient_home="${VERIFY_HOME-}"
+  local ambient_ev="${EVIDENCE_DIR-}"
+  if ! load_state; then
+    printf 'unset RUN_ID\nunset VERIFY_HOME\nunset EVIDENCE_DIR\nunset JEV_PROFILE\nunset JEV_AB_PROFILE\n'
     return 0
+  fi
+  if ! ambient_matches_loaded_state "$ambient_id" "$ambient_home" "$ambient_ev"; then
+    echo "control-jev-browse: ambient RUN_ID/VERIFY_HOME/EVIDENCE_DIR do not match active run RUN_ID=$RUN_ID; exporting the state file" >&2
   fi
   printf 'export RUN_ID=%q\n' "$RUN_ID"
   printf 'export VERIFY_HOME=%q\n' "$VERIFY_HOME"

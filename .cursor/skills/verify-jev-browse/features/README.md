@@ -15,6 +15,8 @@ feature file as the recipe.
   `$EVIDENCE_DIR/doctor.txt`.
 - Run `eval "$(control-jev-browse env)"` before any recipe line that expands
   `$EVIDENCE_DIR`, `$RUN_ID`, `$JEV_PROFILE`, or `$JEV_BROWSE_ROOT`.
+  Re-run it after `cleanup` or a new `launch`. Commands refuse shell values
+  that disagree with the active-run state file.
 - Never drive a verify home that was not started by this verification run.
 - Do not `source` the control state file into your shell.
 - Prefer engine `cdp` (default) and headless. Use `--engine agent-browser` only

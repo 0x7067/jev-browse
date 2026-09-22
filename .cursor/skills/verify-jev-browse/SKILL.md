@@ -71,8 +71,13 @@ Isolation: each run uses `VERIFY_HOME=/tmp/jev-browse-verify-$RUN_ID` with
 lives under `$XDG_RUNTIME_DIR/jev-browse-verify-control` when set, otherwise
 `/tmp/jev-browse-verify-control-<uid>` (mode 0700). The state file is a
 validated `RUN_ID=` line only (never `source`d). Prefer
-`eval "$(control-jev-browse env)"`. Do not point two drives at the same verify
-home or the shared default `~/.jev-browse/profile`.
+`eval "$(control-jev-browse env)"`. `env` reads that state file. Shell values
+of `RUN_ID`, `VERIFY_HOME`, and `EVIDENCE_DIR` are accepted only when they
+match it. After `cleanup` or a new `launch`, eval `env` again before
+`doctor`, `cli`, or `cleanup`. Those commands refuse a stale export instead
+of acting on the previous home. When no run is active, `env` unsets those
+variables. Do not point two drives at the same verify home or the shared
+default `~/.jev-browse/profile`.
 
 Safest local defaults when a choice is needed: engine `cdp` (default), headless
 (no `--headed`), and a deterministic `file_url` fixture task for behavioral
