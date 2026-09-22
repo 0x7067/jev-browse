@@ -1,15 +1,89 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+die() { echo "control-jev-browse: $*" >&2; exit 1; }
+
+resolve_path() {
+  local input="$1"
+  local depth="${2:-0}"
+  [[ -n "$input" ]] || die "empty path"
+  [[ "$depth" -lt 40 ]] || die "symlink cycle resolving path: $input"
+
+  local path="$input"
+  if [[ "$path" != /* ]]; then
+    path="$(pwd -P)/$path"
+  fi
+
+  local acc="/"
+  local rest="${path#/}"
+  local seg next parent target
+
+  while [[ -n "$rest" ]]; do
+    seg="${rest%%/*}"
+    if [[ "$rest" == *"/"* ]]; then
+      rest="${rest#*/}"
+    else
+      rest=""
+    fi
+    [[ -z "$seg" || "$seg" == "." ]] && continue
+    if [[ "$seg" == ".." ]]; then
+      if [[ "$acc" != "/" ]]; then
+        if [[ -d "$acc" ]]; then
+          acc="$(cd "$acc" && cd .. && pwd -P)" || die "cannot resolve parent of: $acc"
+        else
+          acc="${acc%/*}"
+          [[ -n "$acc" ]] || acc="/"
+        fi
+      fi
+      continue
+    fi
+    if [[ "$acc" == "/" ]]; then
+      next="/$seg"
+    else
+      next="$acc/$seg"
+    fi
+    if [[ -d "$next" ]]; then
+      acc="$(cd "$next" && pwd -P)" || die "cannot resolve directory: $next"
+    elif [[ -L "$next" ]]; then
+      target="$(readlink "$next")" || die "cannot read symlink: $next"
+      [[ -n "$target" ]] || die "empty symlink target: $next"
+      if [[ "$target" != /* ]]; then
+        if [[ "$acc" == "/" ]]; then
+          target="/$target"
+        else
+          target="$acc/$target"
+        fi
+      fi
+      if [[ -n "$rest" ]]; then
+        target="${target%/}/$rest"
+      fi
+      resolve_path "$target" $((depth + 1))
+      return
+    elif [[ -e "$next" ]]; then
+      parent="$(cd "$acc" && pwd -P)" || die "cannot resolve directory: $acc"
+      if [[ "$parent" == "/" ]]; then
+        acc="/$seg"
+      else
+        acc="$parent/$seg"
+      fi
+    else
+      acc="$next"
+    fi
+  done
+  printf '%s\n' "$acc"
+}
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ARTIFACTS_ROOT="$(realpath -m "${JEV_BROWSE_VERIFY_EVIDENCE:-$SKILL_DIR/artifacts}")"
+ARTIFACTS_ROOT="$(resolve_path "${JEV_BROWSE_VERIFY_EVIDENCE:-$SKILL_DIR/artifacts}")"
 
 usage() {
   cat <<'EOF'
 Usage: control-jev-browse <command> [args]
 
-  launch [--reuse]     Create an isolated verify home and record the run id
+  launch [--reuse]     Create an isolated verify home and record the run id.
+                       Refuses when an active run exists unless --reuse.
+                       Does not auto-clean; run cleanup for a new run id.
   doctor               Read-only health check for the active run
   env                  Print exportable assignments for eval "$(control-jev-browse env)"
   cleanup              Tear down the disposable home; keep evidence
@@ -32,8 +106,6 @@ State is a validated RUN_ID line only — never sourced as shell. Prefer
 eval "$(control-jev-browse env)" for recipe vars; that does not export HOME.
 EOF
 }
-
-die() { echo "control-jev-browse: $*" >&2; exit 1; }
 
 ensure_state_dir() {
   local uid owner
@@ -72,7 +144,7 @@ path_under() {
 }
 
 ensure_verify_home() {
-  local uid owner expected resolved
+  local uid owner expected resolved expected_resolved
   uid="$(id -u)"
   validate_run_id "$RUN_ID"
   expected="/tmp/jev-browse-verify-$RUN_ID"
@@ -85,7 +157,8 @@ ensure_verify_home() {
     owner="$(stat -c '%u' "$VERIFY_HOME" 2>/dev/null || stat -f '%u' "$VERIFY_HOME")"
     [[ "$owner" == "$uid" ]] || die "VERIFY_HOME not owned by current user: $VERIFY_HOME (owner=$owner)"
     resolved="$(realpath "$VERIFY_HOME")"
-    [[ "$resolved" == "$expected" ]] || die "resolved VERIFY_HOME $resolved != $expected"
+    expected_resolved="$(realpath "$expected")"
+    [[ "$resolved" == "$expected_resolved" ]] || die "resolved VERIFY_HOME $resolved != $expected_resolved"
     chmod 700 "$VERIFY_HOME"
   else
     mkdir -m 700 "$VERIFY_HOME"
@@ -95,7 +168,7 @@ ensure_verify_home() {
 
 assert_run_paths() {
   validate_run_id "$RUN_ID"
-  local expected="/tmp/jev-browse-verify-$RUN_ID" uid owner resolved
+  local expected="/tmp/jev-browse-verify-$RUN_ID" uid owner resolved expected_resolved
   uid="$(id -u)"
   [[ -n "${VERIFY_HOME:-}" ]] || die "VERIFY_HOME unset"
   [[ -n "${EVIDENCE_DIR:-}" ]] || die "EVIDENCE_DIR unset"
@@ -107,13 +180,14 @@ assert_run_paths() {
     owner="$(stat -c '%u' "$VERIFY_HOME" 2>/dev/null || stat -f '%u' "$VERIFY_HOME")"
     [[ "$owner" == "$uid" ]] || die "VERIFY_HOME not owned by current user: $VERIFY_HOME (owner=$owner)"
     resolved="$(realpath "$VERIFY_HOME")"
-    [[ "$resolved" == "$expected" ]] || die "resolved VERIFY_HOME $resolved != $expected"
+    expected_resolved="$(realpath "$expected")"
+    [[ "$resolved" == "$expected_resolved" ]] || die "resolved VERIFY_HOME $resolved != $expected_resolved"
     chmod 700 "$VERIFY_HOME"
   fi
   local expected_ev artifacts_resolved ev_resolved
-  artifacts_resolved="$(realpath -m "$ARTIFACTS_ROOT")"
-  expected_ev="$(realpath -m "$ARTIFACTS_ROOT/$RUN_ID")"
-  ev_resolved="$(realpath -m "$EVIDENCE_DIR")"
+  artifacts_resolved="$(resolve_path "$ARTIFACTS_ROOT")"
+  expected_ev="$(resolve_path "$ARTIFACTS_ROOT/$RUN_ID")"
+  ev_resolved="$(resolve_path "$EVIDENCE_DIR")"
   [[ "$ev_resolved" == "$expected_ev" ]] || die "EVIDENCE_DIR must be $expected_ev (got: $EVIDENCE_DIR -> $ev_resolved)"
   path_under "$ev_resolved" "$artifacts_resolved" || die "EVIDENCE_DIR escapes ARTIFACTS_ROOT"
 }
@@ -193,8 +267,8 @@ evidence_dest() {
   esac
   local dest="$base/$rel"
   local resolved base_resolved
-  resolved="$(realpath -m "$dest")"
-  base_resolved="$(realpath -m "$base")"
+  resolved="$(resolve_path "$dest")"
+  base_resolved="$(resolve_path "$base")"
   path_under "$resolved" "$base_resolved" || die "evidence path escapes $base (got: $rel)"
   printf '%s\n' "$dest"
 }
@@ -206,6 +280,17 @@ cmd_launch() {
     ensure_verify_home
     mkdir -p "$EVIDENCE_DIR"
   else
+    if [[ -e "$STATE_FILE" || -L "$STATE_FILE" ]]; then
+      local existing=""
+      if [[ -f "$STATE_FILE" && ! -L "$STATE_FILE" ]]; then
+        existing="$(grep -E '^RUN_ID=' "$STATE_FILE" 2>/dev/null | head -n 1 || true)"
+        existing="${existing#RUN_ID=}"
+      fi
+      if [[ -n "$existing" ]]; then
+        die "active run already exists (RUN_ID=$existing). Run 'control-jev-browse cleanup' or 'control-jev-browse launch --reuse' before minting a new run. Refusing to overwrite $STATE_FILE."
+      fi
+      die "active run already exists at $STATE_FILE. Run 'control-jev-browse cleanup' or 'control-jev-browse launch --reuse' before minting a new run. Refusing to overwrite the active run."
+    fi
     RUN_ID="${JEV_BROWSE_VERIFY_RUN_ID:-$(date +%Y%m%d-%H%M%S)-$$}"
     validate_run_id "$RUN_ID"
     VERIFY_HOME="/tmp/jev-browse-verify-$RUN_ID"
@@ -316,7 +401,7 @@ cmd_cleanup() {
   local run="$RUN_ID"
   local evidence="$EVIDENCE_DIR"
   local expected="/tmp/jev-browse-verify-$run"
-  local uid owner resolved
+  local uid owner resolved expected_resolved
   uid="$(id -u)"
   assert_run_paths
   [[ "$home_to_remove" == "$expected" ]] || die "VERIFY_HOME must be $expected (got: $home_to_remove)"
@@ -325,7 +410,8 @@ cmd_cleanup() {
   owner="$(stat -c '%u' "$home_to_remove" 2>/dev/null || stat -f '%u' "$home_to_remove")"
   [[ "$owner" == "$uid" ]] || die "refusing to remove VERIFY_HOME not owned by current user (owner=$owner)"
   resolved="$(realpath "$home_to_remove")"
-  [[ "$resolved" == "$expected" ]] || die "resolved VERIFY_HOME $resolved != $expected (symlink escape?)"
+  expected_resolved="$(realpath "$expected")"
+  [[ "$resolved" == "$expected_resolved" ]] || die "resolved VERIFY_HOME $resolved != $expected_resolved (symlink escape?)"
   chmod 700 "$home_to_remove"
   rm -rf -- "$home_to_remove"
   rm -f -- "$STATE_FILE"

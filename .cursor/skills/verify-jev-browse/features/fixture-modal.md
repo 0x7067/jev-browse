@@ -31,7 +31,7 @@ Preconditions:
   `fixture-modal/eval-result.json` (or save a trimmed excerpt with status,
   verified, final_text).
 - **CLI path.** Run
-  `control-jev-browse cli -- --allow-file-urls --url "file://$PWD/fixture-interactions.html" --goal 'Open the modal dialog and confirm deleting the draft. Stop when DONE is shown.'`.
+  `control-jev-browse cli -- --allow-file-urls --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" --goal 'Open the modal dialog and confirm deleting the draft. Stop when DONE is shown.'`.
   Exit `0`. Stdout `status` is `done` and `final_text` matches
   `DONE: draft deleted`. Save stdout as `fixture-modal/cli-result.json`.
 - **Proof.** Prefer the eval path: `expect.text_match` is the verifier, not

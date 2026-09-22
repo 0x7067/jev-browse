@@ -53,9 +53,15 @@ export PATH="$PWD/.cursor/skills/verify-jev-browse/bin:$PATH"
 control-jev-browse launch
 # prints run_id=... home=/tmp/jev-browse-verify-... evidence_dir=... ready=1
 # force a specific id with JEV_BROWSE_VERIFY_RUN_ID=... (must match [A-Za-z0-9._-]+,
-# no `..`); reuse the last home with launch --reuse
+# no `..`). A second launch without --reuse refuses while an active run exists.
+# It does not remove the previous home. Run cleanup, or pass launch --reuse.
 eval "$(control-jev-browse env)"
 ```
+
+`launch` without `--reuse` refuses when the active-run state file already
+exists. It does not auto-clean and does not mint a new `RUN_ID` over that
+file. Run `control-jev-browse cleanup`, or `control-jev-browse launch --reuse`,
+before starting another home.
 
 Teardown is `control-jev-browse cleanup` (see Cleanup). Never drive an instance
 whose verify home was not created by `control-jev-browse launch` for this run.
@@ -91,13 +97,17 @@ http(s)-only error. Writes `$EVIDENCE_DIR/doctor.txt`. Fail the run if
 gates do not need keys. Fixture and live drives that call Jev are out-of-band;
 see feature files.
 
+Doctor does not create, replace, or clean the active run. If `launch` refused
+because an active run exists, run `cleanup` or `launch --reuse` before doctor
+on a new home.
+
 ## Drive
 
 Harness: `control-jev-browse` (shell). Prefer it over raw `node` so the verify
 profile and evidence paths stay consistent.
 
-Before any recipe that expands `$EVIDENCE_DIR`, `$RUN_ID`, or `$JEV_PROFILE`,
-load the exportable assignments:
+Before any recipe that expands `$EVIDENCE_DIR`, `$RUN_ID`, `$JEV_PROFILE`, or
+`$JEV_BROWSE_ROOT`, load the exportable assignments:
 
 ```bash
 eval "$(control-jev-browse env)"
@@ -106,7 +116,7 @@ eval "$(control-jev-browse env)"
 ```bash
 # In-band file:// gate (no API key)
 control-jev-browse cli -- \
-  --url "file://$PWD/fixture-interactions.html" \
+  --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" \
   --goal "stop"
 # expect exit 1 and stdout JSON error containing "only drives http(s) pages"
 
@@ -117,7 +127,7 @@ control-jev-browse eval -- --tasks fx-modal --label verify
 # Same fixture via CLI (needs key + --allow-file-urls)
 control-jev-browse cli -- \
   --allow-file-urls \
-  --url "file://$PWD/fixture-interactions.html" \
+  --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" \
   --goal 'Open the modal dialog and confirm deleting the draft. Stop when DONE is shown.'
 ```
 
@@ -164,7 +174,9 @@ control-jev-browse cleanup
 
 Removes only `/tmp/jev-browse-verify-$RUN_ID` for the active run and clears the
 control state file. Does **not** delete
-`.cursor/skills/verify-jev-browse/artifacts/<RUN_ID>/`. After cleanup, confirm
+`.cursor/skills/verify-jev-browse/artifacts/<RUN_ID>/`. `launch` without
+`--reuse` refuses while that state file exists; cleanup is what allows a new
+run id. Launch never deletes the previous home by itself. After cleanup, confirm
 evidence still exists:
 
 ```bash

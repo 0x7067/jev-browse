@@ -25,15 +25,15 @@ Preconditions:
 
 - `control-jev-browse doctor` reports `doctor=ok` for this run.
 - Disposable verify home is set by `control-jev-browse launch`.
-- `eval "$(control-jev-browse env)"` if the recipe needs exported run vars.
+- `eval "$(control-jev-browse env)"` so `$JEV_BROWSE_ROOT` is set.
 - `TYPESAFE_API_KEY` may be unset.
 
 - **Denied.** Run
-  `control-jev-browse cli -- --url "file://$PWD/fixture-interactions.html" --goal "stop"`.
+  `control-jev-browse cli -- --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" --goal "stop"`.
   Exit code `1`. Stdout JSON `status` is `error` and `error` contains
   `only drives http(s) pages`. Save stdout as `file-url-gate/denied.json`.
 - **Allow reaches auth.** Run
-  `control-jev-browse cli -- --allow-file-urls --url "file://$PWD/fixture-interactions.html" --goal "stop"`
+  `control-jev-browse cli -- --allow-file-urls --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" --goal "stop"`
   with `TYPESAFE_API_KEY` unset. Exit code `1`. Stdout `error` contains
   `TYPESAFE_API_KEY is not set`. Save stdout as `file-url-gate/allow-nokey.json`.
 - **Proof.** Both artifacts show the exit and error strings above. Do not launch
