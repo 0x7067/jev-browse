@@ -57,3 +57,25 @@ for the flags, the expectation types, and the result format.
 - The `cdp` and `agent-browser` engines share one snapshot and the
   `markerMatches` freshness contract in `src/json.ts`. Any freshness or
   marker change must keep both engines coherent.
+
+## Verify
+
+For a scripted launch → doctor → drive → evidence → cleanup loop (isolated
+Chrome profile, feature map under
+`.cursor/skills/verify-jev-browse/features/`), use the project-local Cursor
+skill:
+
+```bash
+export PATH="$PWD/.cursor/skills/verify-jev-browse/bin:$PATH"
+control-jev-browse launch
+control-jev-browse doctor
+eval "$(control-jev-browse env)"
+# then follow one feature file under features/
+control-jev-browse cleanup
+```
+
+See `.cursor/skills/verify-jev-browse/SKILL.md`. Prefer deterministic
+`file_url` fixture tasks for behavioral proofs; live-site evals flake.
+`evals/results/` stays gitignored — copy proof into the skill
+`artifacts/<RUN_ID>/` tree. Keep the map honest with
+`/maintain-verification-skill` as the CLI and tasks change.

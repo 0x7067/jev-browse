@@ -1,0 +1,522 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+die() { echo "control-jev-browse: $*" >&2; exit 1; }
+
+resolve_path() {
+  local input="$1"
+  local depth="${2:-0}"
+  [[ -n "$input" ]] || die "empty path"
+  [[ "$depth" -lt 40 ]] || die "symlink cycle resolving path: $input"
+
+  local path="$input"
+  if [[ "$path" != /* ]]; then
+    path="$(pwd -P)/$path"
+  fi
+
+  local acc="/"
+  local rest="${path#/}"
+  local seg next parent target
+
+  while [[ -n "$rest" ]]; do
+    seg="${rest%%/*}"
+    if [[ "$rest" == *"/"* ]]; then
+      rest="${rest#*/}"
+    else
+      rest=""
+    fi
+    [[ -z "$seg" || "$seg" == "." ]] && continue
+    if [[ "$seg" == ".." ]]; then
+      if [[ "$acc" != "/" ]]; then
+        if [[ -d "$acc" ]]; then
+          acc="$(cd "$acc" && cd .. && pwd -P)" || die "cannot resolve parent of: $acc"
+        else
+          acc="${acc%/*}"
+          [[ -n "$acc" ]] || acc="/"
+        fi
+      fi
+      continue
+    fi
+    if [[ "$acc" == "/" ]]; then
+      next="/$seg"
+    else
+      next="$acc/$seg"
+    fi
+    if [[ -d "$next" ]]; then
+      acc="$(cd "$next" && pwd -P)" || die "cannot resolve directory: $next"
+    elif [[ -L "$next" ]]; then
+      target="$(readlink "$next")" || die "cannot read symlink: $next"
+      [[ -n "$target" ]] || die "empty symlink target: $next"
+      if [[ "$target" != /* ]]; then
+        if [[ "$acc" == "/" ]]; then
+          target="/$target"
+        else
+          target="$acc/$target"
+        fi
+      fi
+      if [[ -n "$rest" ]]; then
+        target="${target%/}/$rest"
+      fi
+      resolve_path "$target" $((depth + 1))
+      return
+    elif [[ -e "$next" ]]; then
+      parent="$(cd "$acc" && pwd -P)" || die "cannot resolve directory: $acc"
+      if [[ "$parent" == "/" ]]; then
+        acc="/$seg"
+      else
+        acc="$parent/$seg"
+      fi
+    else
+      acc="$next"
+    fi
+  done
+  printf '%s\n' "$acc"
+}
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ARTIFACTS_ROOT="$(resolve_path "${JEV_BROWSE_VERIFY_EVIDENCE:-$SKILL_DIR/artifacts}")"
+
+usage() {
+  cat <<'EOF'
+Usage: control-jev-browse <command> [args]
+
+  launch [--reuse]     Create an isolated verify home and record the run id.
+                       Refuses when an active run exists unless --reuse.
+                       Does not auto-clean; run cleanup for a new run id.
+  doctor               Read-only health check for the active run
+  env                  Print exports for eval "$(control-jev-browse env)".
+                       Reads the active-run state file. Unsets run vars when
+                       no run is active. Ambient run vars must match state.
+  cleanup              Tear down the disposable home; keep evidence
+  status               Print the active RUN_ID, VERIFY_HOME, and evidence dir
+  eval -- <args...>    Run node scripts/eval.mjs with the isolated profile env
+  cli -- <args...>     Run node bundled/cli.mjs with the isolated profile env
+  evidence <relpath>   Print the absolute evidence path for this run
+  save <relpath> -     Write stdin to evidence/<relpath> (creates parents)
+
+Environment:
+  JEV_BROWSE_VERIFY_RUN_ID     Force the run id on launch (default: timestamp-pid);
+                               must match [A-Za-z0-9._-]+
+  JEV_BROWSE_VERIFY_EVIDENCE   Override evidence root (default: skill artifacts/)
+  TYPESAFE_API_KEY             Required for fixture/live drives that call Jev
+  TEXT_MODEL_API_KEY           Required for TYPE_TEXT tasks (with BASE_URL/MODEL)
+  XDG_RUNTIME_DIR              Preferred private dir for the active-run state file;
+                               if unset, uses /tmp/jev-browse-verify-control-<uid> mode 0700
+
+State is a validated RUN_ID line only — never sourced as shell. Commands
+load that file. Ambient RUN_ID/VERIFY_HOME/EVIDENCE_DIR are accepted only
+when they match it; doctor, cli, and cleanup refuse a mismatch. env exports
+the state file, or unsets those vars when no run is active. Prefer
+eval "$(control-jev-browse env)" for recipe vars; that does not export HOME.
+EOF
+}
+
+ensure_state_dir() {
+  local uid owner
+  uid="$(id -u)"
+  if [[ -n "${XDG_RUNTIME_DIR:-}" ]]; then
+    [[ -d "$XDG_RUNTIME_DIR" ]] || die "XDG_RUNTIME_DIR is not a directory: $XDG_RUNTIME_DIR"
+    owner="$(stat -c '%u' "$XDG_RUNTIME_DIR" 2>/dev/null || stat -f '%u' "$XDG_RUNTIME_DIR")"
+    [[ "$owner" == "$uid" ]] || die "XDG_RUNTIME_DIR not owned by current user"
+    STATE_DIR="$XDG_RUNTIME_DIR/jev-browse-verify-control"
+  else
+    STATE_DIR="/tmp/jev-browse-verify-control-$uid"
+  fi
+  if [[ -e "$STATE_DIR" ]]; then
+    [[ -d "$STATE_DIR" ]] || die "state path exists and is not a directory: $STATE_DIR"
+    [[ ! -L "$STATE_DIR" ]] || die "state dir must not be a symlink: $STATE_DIR"
+    owner="$(stat -c '%u' "$STATE_DIR" 2>/dev/null || stat -f '%u' "$STATE_DIR")"
+    [[ "$owner" == "$uid" ]] || die "state dir not owned by current user: $STATE_DIR"
+    chmod 700 "$STATE_DIR"
+  else
+    mkdir -m 700 "$STATE_DIR"
+  fi
+  STATE_FILE="$STATE_DIR/active-run"
+}
+
+validate_run_id() {
+  local id="$1"
+  [[ -n "$id" ]] || die "empty RUN_ID"
+  [[ "$id" =~ ^[A-Za-z0-9._-]+$ ]] || die "RUN_ID must match [A-Za-z0-9._-]+ (got: $id)"
+  [[ "$id" != *..* ]] || die "RUN_ID must not contain .. (got: $id)"
+}
+
+path_under() {
+  local resolved="$1"
+  local base="$2"
+  [[ "$resolved" == "$base" || "$resolved" == "$base"/* ]]
+}
+
+ensure_verify_home() {
+  local uid owner expected resolved expected_resolved
+  uid="$(id -u)"
+  validate_run_id "$RUN_ID"
+  expected="/tmp/jev-browse-verify-$RUN_ID"
+  [[ -n "${VERIFY_HOME:-}" ]] || die "VERIFY_HOME unset"
+  [[ "$VERIFY_HOME" == "$expected" ]] || die "VERIFY_HOME must be $expected (got: $VERIFY_HOME)"
+  [[ "$VERIFY_HOME" != *..* ]] || die "VERIFY_HOME must not contain .. (got: $VERIFY_HOME)"
+  if [[ -e "$VERIFY_HOME" || -L "$VERIFY_HOME" ]]; then
+    [[ ! -L "$VERIFY_HOME" ]] || die "VERIFY_HOME must not be a symlink (got: $VERIFY_HOME)"
+    [[ -d "$VERIFY_HOME" ]] || die "VERIFY_HOME exists and is not a directory: $VERIFY_HOME"
+    owner="$(stat -c '%u' "$VERIFY_HOME" 2>/dev/null || stat -f '%u' "$VERIFY_HOME")"
+    [[ "$owner" == "$uid" ]] || die "VERIFY_HOME not owned by current user: $VERIFY_HOME (owner=$owner)"
+    resolved="$(resolve_path "$VERIFY_HOME")"
+    expected_resolved="$(resolve_path "$expected")"
+    [[ "$resolved" == "$expected_resolved" ]] || die "resolved VERIFY_HOME $resolved != $expected_resolved"
+    chmod 700 "$VERIFY_HOME"
+  else
+    mkdir -m 700 "$VERIFY_HOME"
+  fi
+  mkdir -p "$VERIFY_HOME/profile"
+}
+
+assert_run_paths() {
+  validate_run_id "$RUN_ID"
+  local expected="/tmp/jev-browse-verify-$RUN_ID" uid owner resolved expected_resolved
+  uid="$(id -u)"
+  [[ -n "${VERIFY_HOME:-}" ]] || die "VERIFY_HOME unset"
+  [[ -n "${EVIDENCE_DIR:-}" ]] || die "EVIDENCE_DIR unset"
+  [[ "$VERIFY_HOME" == "$expected" ]] || die "VERIFY_HOME must be $expected (got: $VERIFY_HOME)"
+  [[ "$VERIFY_HOME" != *..* ]] || die "VERIFY_HOME must not contain .. (got: $VERIFY_HOME)"
+  if [[ -e "$VERIFY_HOME" || -L "$VERIFY_HOME" ]]; then
+    [[ ! -L "$VERIFY_HOME" ]] || die "VERIFY_HOME must not be a symlink (got: $VERIFY_HOME)"
+    [[ -d "$VERIFY_HOME" ]] || die "VERIFY_HOME exists and is not a directory: $VERIFY_HOME"
+    owner="$(stat -c '%u' "$VERIFY_HOME" 2>/dev/null || stat -f '%u' "$VERIFY_HOME")"
+    [[ "$owner" == "$uid" ]] || die "VERIFY_HOME not owned by current user: $VERIFY_HOME (owner=$owner)"
+    resolved="$(resolve_path "$VERIFY_HOME")"
+    expected_resolved="$(resolve_path "$expected")"
+    [[ "$resolved" == "$expected_resolved" ]] || die "resolved VERIFY_HOME $resolved != $expected_resolved"
+    chmod 700 "$VERIFY_HOME"
+  fi
+  local expected_ev artifacts_resolved ev_resolved
+  artifacts_resolved="$(resolve_path "$ARTIFACTS_ROOT")"
+  expected_ev="$(resolve_path "$ARTIFACTS_ROOT/$RUN_ID")"
+  ev_resolved="$(resolve_path "$EVIDENCE_DIR")"
+  [[ "$ev_resolved" == "$expected_ev" ]] || die "EVIDENCE_DIR must be $expected_ev (got: $EVIDENCE_DIR -> $ev_resolved)"
+  path_under "$ev_resolved" "$artifacts_resolved" || die "EVIDENCE_DIR escapes ARTIFACTS_ROOT"
+}
+
+load_state() {
+  ensure_state_dir
+  [[ -f "$STATE_FILE" ]] || return 1
+  [[ ! -L "$STATE_FILE" ]] || die "state file must not be a symlink"
+  local line val found=0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    case "$line" in
+      RUN_ID=*)
+        val="${line#RUN_ID=}"
+        validate_run_id "$val"
+        RUN_ID="$val"
+        found=1
+        ;;
+      *)
+        die "invalid state line (only RUN_ID= allowed): $line"
+        ;;
+    esac
+  done <"$STATE_FILE"
+  [[ "$found" -eq 1 ]] || die "state file missing RUN_ID"
+  VERIFY_HOME="/tmp/jev-browse-verify-$RUN_ID"
+  EVIDENCE_DIR="$ARTIFACTS_ROOT/$RUN_ID"
+  assert_run_paths
+  return 0
+}
+
+write_state() {
+  ensure_state_dir
+  ensure_verify_home
+  assert_run_paths
+  mkdir -p "$EVIDENCE_DIR"
+  printf 'RUN_ID=%s\n' "$RUN_ID" >"$STATE_FILE"
+  chmod 600 "$STATE_FILE"
+}
+
+ambient_matches_loaded_state() {
+  local ambient_id="$1"
+  local ambient_home="$2"
+  local ambient_ev="$3"
+  [[ -z "$ambient_id" || "$ambient_id" == "$RUN_ID" ]] \
+    && [[ -z "$ambient_home" || "$ambient_home" == "$VERIFY_HOME" ]] \
+    && [[ -z "$ambient_ev" || "$ambient_ev" == "$EVIDENCE_DIR" ]]
+}
+
+require_active() {
+  ensure_state_dir
+  local ambient_id="${RUN_ID-}"
+  local ambient_home="${VERIFY_HOME-}"
+  local ambient_ev="${EVIDENCE_DIR-}"
+  load_state || die "no active run; run: control-jev-browse launch"
+  if ! ambient_matches_loaded_state "$ambient_id" "$ambient_home" "$ambient_ev"; then
+    die "ambient RUN_ID/VERIFY_HOME/EVIDENCE_DIR do not match active run RUN_ID=$RUN_ID (state file $STATE_FILE). Refusing to use them. Run: eval \"\$(control-jev-browse env)\""
+  fi
+  [[ -d "$VERIFY_HOME" ]] || die "VERIFY_HOME missing for RUN_ID=$RUN_ID; re-launch"
+}
+
+with_verify_env() {
+  assert_run_paths
+  env \
+    JEV_PROFILE="$VERIFY_HOME/profile" \
+    JEV_AB_PROFILE="$VERIFY_HOME/profile" \
+    "$@"
+}
+
+find_chrome() {
+  local c
+  for c in google-chrome google-chrome-stable chromium chromium-browser; do
+    if command -v "$c" >/dev/null 2>&1; then
+      command -v "$c"
+      return 0
+    fi
+  done
+  return 1
+}
+
+evidence_dest() {
+  local base="$1"
+  local rel="$2"
+  [[ -n "$rel" ]] || die "relative evidence path required"
+  [[ "$rel" != /* ]] || die "evidence path must be relative (got absolute: $rel)"
+  case "/$rel/" in
+    */../*) die "evidence path must not contain .. (got: $rel)" ;;
+  esac
+  local dest="$base/$rel"
+  local resolved base_resolved
+  resolved="$(resolve_path "$dest")"
+  base_resolved="$(resolve_path "$base")"
+  path_under "$resolved" "$base_resolved" || die "evidence path escapes $base (got: $rel)"
+  printf '%s\n' "$dest"
+}
+
+cmd_launch() {
+  ensure_state_dir
+  if [[ "${1:-}" == "--reuse" ]]; then
+    load_state || die "no state to reuse; run: control-jev-browse launch"
+    ensure_verify_home
+    mkdir -p "$EVIDENCE_DIR"
+  else
+    if [[ -e "$STATE_FILE" || -L "$STATE_FILE" ]]; then
+      local existing=""
+      if [[ -f "$STATE_FILE" && ! -L "$STATE_FILE" ]]; then
+        existing="$(grep -E '^RUN_ID=' "$STATE_FILE" 2>/dev/null | head -n 1 || true)"
+        existing="${existing#RUN_ID=}"
+      fi
+      if [[ -n "$existing" ]]; then
+        die "active run already exists (RUN_ID=$existing). Run 'control-jev-browse cleanup' or 'control-jev-browse launch --reuse' before minting a new run. Refusing to overwrite $STATE_FILE."
+      fi
+      die "active run already exists at $STATE_FILE. Run 'control-jev-browse cleanup' or 'control-jev-browse launch --reuse' before minting a new run. Refusing to overwrite the active run."
+    fi
+    RUN_ID="${JEV_BROWSE_VERIFY_RUN_ID:-$(date +%Y%m%d-%H%M%S)-$$}"
+    validate_run_id "$RUN_ID"
+    VERIFY_HOME="/tmp/jev-browse-verify-$RUN_ID"
+    EVIDENCE_DIR="$ARTIFACTS_ROOT/$RUN_ID"
+    ensure_verify_home
+    mkdir -p "$EVIDENCE_DIR"
+  fi
+  assert_run_paths
+  write_state
+  cat <<EOF
+run_id=$RUN_ID
+home=$VERIFY_HOME
+profile=$VERIFY_HOME/profile
+repo_root=$ROOT
+evidence_dir=$EVIDENCE_DIR
+ready=1
+EOF
+}
+
+cmd_doctor() {
+  require_active
+  local ok=1
+  local report="$EVIDENCE_DIR/doctor.txt"
+  local chrome node_v major
+  mkdir -p "$EVIDENCE_DIR"
+  {
+    echo "run_id=$RUN_ID"
+    echo "home=$VERIFY_HOME"
+    echo "profile=$VERIFY_HOME/profile"
+    echo "repo_root=$ROOT"
+    echo "node=$(node --version 2>&1)"
+    echo "typesafe_api_key=$([ -n "${TYPESAFE_API_KEY:-}" ] && echo set || echo unset)"
+    echo "text_model_api_key=$([ -n "${TEXT_MODEL_API_KEY:-}" ] && echo set || echo unset)"
+  } >"$report"
+
+  node_v="$(node --version 2>&1 | tr -d 'v')"
+  major="${node_v%%.*}"
+  if [[ "$major" -ge 22 ]]; then
+    echo "node_ok=1" | tee -a "$report"
+  else
+    echo "node_ok=0 want>=22 got=$node_v" | tee -a "$report"
+    ok=0
+  fi
+
+  if chrome="$(find_chrome)"; then
+    echo "chrome=$chrome" | tee -a "$report"
+    echo "chrome_version=$("$chrome" --version 2>&1 | head -1)" | tee -a "$report"
+  else
+    echo "chrome=missing" | tee -a "$report"
+    ok=0
+  fi
+
+  if [[ -f "$ROOT/bundled/cli.mjs" ]]; then
+    echo "bundled_cli=ok" | tee -a "$report"
+  else
+    echo "bundled_cli=missing" | tee -a "$report"
+    ok=0
+  fi
+
+  if [[ -f "$ROOT/scripts/eval.mjs" ]]; then
+    echo "eval_harness=ok" | tee -a "$report"
+  else
+    echo "eval_harness=missing" | tee -a "$report"
+    ok=0
+  fi
+
+  if [[ -f "$ROOT/fixture-interactions.html" ]]; then
+    echo "fixture=ok" | tee -a "$report"
+  else
+    echo "fixture=missing" | tee -a "$report"
+    ok=0
+  fi
+
+  if [[ -d "$VERIFY_HOME" && -d "$VERIFY_HOME/profile" ]]; then
+    echo "home_ok=1" | tee -a "$report"
+  else
+    echo "home_missing=1" | tee -a "$report"
+    ok=0
+  fi
+
+  local exitc out
+  set +e
+  out="$(with_verify_env node "$ROOT/bundled/cli.mjs" \
+    --url "file://$ROOT/fixture-interactions.html" \
+    --goal "stop" 2>/dev/null)"
+  exitc=$?
+  set -e
+  echo "file_url_denied_exit=$exitc" | tee -a "$report"
+  echo "file_url_denied_out=$out" | tee -a "$report"
+  if [[ "$exitc" -eq 1 && "$out" == *"only drives http(s) pages"* ]]; then
+    echo "file_url_gate=ok" | tee -a "$report"
+  else
+    echo "file_url_gate=fail" | tee -a "$report"
+    ok=0
+  fi
+
+  if [[ "$ok" -eq 1 ]]; then
+    echo "doctor=ok" | tee -a "$report"
+    return 0
+  fi
+  echo "doctor=fail" | tee -a "$report"
+  return 1
+}
+
+cmd_cleanup() {
+  require_active
+  local home_to_remove="$VERIFY_HOME"
+  local run="$RUN_ID"
+  local evidence="$EVIDENCE_DIR"
+  local expected="/tmp/jev-browse-verify-$run"
+  local uid owner resolved expected_resolved
+  uid="$(id -u)"
+  assert_run_paths
+  [[ "$home_to_remove" == "$expected" ]] || die "VERIFY_HOME must be $expected (got: $home_to_remove)"
+  [[ ! -L "$home_to_remove" ]] || die "refusing to remove symlink VERIFY_HOME=$home_to_remove"
+  [[ -d "$home_to_remove" ]] || die "VERIFY_HOME missing before cleanup: $home_to_remove"
+  owner="$(stat -c '%u' "$home_to_remove" 2>/dev/null || stat -f '%u' "$home_to_remove")"
+  [[ "$owner" == "$uid" ]] || die "refusing to remove VERIFY_HOME not owned by current user (owner=$owner)"
+  resolved="$(resolve_path "$home_to_remove")"
+  expected_resolved="$(resolve_path "$expected")"
+  [[ "$resolved" == "$expected_resolved" ]] || die "resolved VERIFY_HOME $resolved != $expected_resolved (symlink escape?)"
+  chmod 700 "$home_to_remove"
+  rm -rf -- "$home_to_remove"
+  rm -f -- "$STATE_FILE"
+  cat <<EOF
+cleaned_home=$home_to_remove
+run_id=$run
+evidence_dir=$evidence
+evidence_kept=$([ -d "$evidence" ] && echo 1 || echo 0)
+EOF
+}
+
+cmd_status() {
+  require_active
+  cat <<EOF
+run_id=$RUN_ID
+home=$VERIFY_HOME
+profile=$VERIFY_HOME/profile
+repo_root=$ROOT
+evidence_dir=$EVIDENCE_DIR
+typesafe_api_key=$([ -n "${TYPESAFE_API_KEY:-}" ] && echo set || echo unset)
+text_model_api_key=$([ -n "${TEXT_MODEL_API_KEY:-}" ] && echo set || echo unset)
+EOF
+}
+
+cmd_env() {
+  ensure_state_dir
+  printf 'export JEV_BROWSE_ROOT=%q\n' "$ROOT"
+  local ambient_id="${RUN_ID-}"
+  local ambient_home="${VERIFY_HOME-}"
+  local ambient_ev="${EVIDENCE_DIR-}"
+  if ! load_state; then
+    printf 'unset RUN_ID\nunset VERIFY_HOME\nunset EVIDENCE_DIR\nunset JEV_PROFILE\nunset JEV_AB_PROFILE\n'
+    return 0
+  fi
+  if ! ambient_matches_loaded_state "$ambient_id" "$ambient_home" "$ambient_ev"; then
+    echo "control-jev-browse: ambient RUN_ID/VERIFY_HOME/EVIDENCE_DIR do not match active run RUN_ID=$RUN_ID; exporting the state file" >&2
+  fi
+  printf 'export RUN_ID=%q\n' "$RUN_ID"
+  printf 'export VERIFY_HOME=%q\n' "$VERIFY_HOME"
+  printf 'export EVIDENCE_DIR=%q\n' "$EVIDENCE_DIR"
+  printf 'export JEV_PROFILE=%q\n' "$VERIFY_HOME/profile"
+  printf 'export JEV_AB_PROFILE=%q\n' "$VERIFY_HOME/profile"
+}
+
+cmd_eval() {
+  require_active
+  if [[ "${1:-}" == "--" ]]; then shift; fi
+  with_verify_env node "$ROOT/scripts/eval.mjs" "$@"
+}
+
+cmd_cli() {
+  require_active
+  if [[ "${1:-}" == "--" ]]; then shift; fi
+  with_verify_env node "$ROOT/bundled/cli.mjs" "$@"
+}
+
+cmd_evidence() {
+  require_active
+  local rel="${1:-}"
+  evidence_dest "$EVIDENCE_DIR" "$rel"
+}
+
+cmd_save() {
+  require_active
+  local rel="${1:-}"
+  local dash="${2:-}"
+  [[ -n "$rel" && "$dash" == "-" ]] || die "usage: control-jev-browse save <relpath> -"
+  local dest
+  dest="$(evidence_dest "$EVIDENCE_DIR" "$rel")"
+  mkdir -p "$(dirname "$dest")"
+  cat >"$dest"
+  echo "saved=$dest"
+}
+
+main() {
+  local cmd="${1:-}"
+  shift || true
+  case "$cmd" in
+    launch) cmd_launch "$@" ;;
+    doctor) cmd_doctor "$@" ;;
+    env) cmd_env "$@" ;;
+    cleanup) cmd_cleanup "$@" ;;
+    status) cmd_status "$@" ;;
+    eval) cmd_eval "$@" ;;
+    cli) cmd_cli "$@" ;;
+    evidence) cmd_evidence "$@" ;;
+    save) cmd_save "$@" ;;
+    -h|--help|help|"") usage; [[ -n "$cmd" ]] || exit 2 ;;
+    *) die "unknown command: $cmd" ;;
+  esac
+}
+
+main "$@"

@@ -1,0 +1,4 @@
+feature=file-url-gate
+entry=file-url-denied
+exit=1
+cmd=control-jev-browse cli -- --url file://$PWD/fixture-interactions.html --goal stop
