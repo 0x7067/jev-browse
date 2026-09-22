@@ -14,9 +14,6 @@
     "works.earendil.pi": {
       "extension": "integrations/pi/index.ts"
     },
-    "ai.opencode": {
-      "plugin": "integrations/opencode/jev-browse.ts"
-    },
     "com.openai": {
       "interface": {
         "displayName": "Jev Drive",
