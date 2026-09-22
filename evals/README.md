@@ -29,67 +29,15 @@ node scripts/eval.mjs --compare a.json b.json
 Results land in `evals/results/` with per-step latency breakdowns
 (`latency_ms` per Jev call, `text_latency_ms` per helper call) and the stderr
 step-event trail — which survives on errors, where the result's history is
-empty.
+empty. That directory is gitignored: results are local run evidence, not
+repo artifacts. Compare runs with `--compare a.json b.json` using files
+from your own eval output.
 
 Task classes covered: navigation, search+autocomplete, multi-field forms,
 native select, iframes, shadow roots, hover-reveal menus, file upload,
 key presses, AJAX waits, disabled-until-input controls, modals, new tabs,
 range sliders, and a full Google Flights flow. `fixture-interactions.html`
 runs through `file_url` tasks for deterministic coverage.
-
-## bench-v9 vs full-v7
-
-`bench-v9-1789795504888.json` vs baseline `full-v7-1789789722092.json`
-(55 tasks, 1 run each). The verifier now reports `unverifiable` for tasks
-with no runnable expectation — an honest non-failure, excluded from the
-verified count rather than silently passed.
-
-| | full-v7 | bench-v9 |
-| --- | --- | --- |
-| verified | 54 | 36 |
-| unverifiable | 0 | 16 |
-| failed | 1 | 3 |
-| median per-task | 2583ms | 2373ms |
-| median total | 181715ms | 247005ms |
-
-The 16 unverifiable verdicts are tasks whose `expect` is empty — the old
-verifier counted them as passes; the new one declines to claim a check.
-
-**Since then, all 16 carry expectations.** Each formerly-empty `expect` was
-grounded in the page's real end state (page text probed through `observe()`,
-or the URL the site actually navigates to): `action_match` for the
-interaction-only goals (dropdown SELECT, checkbox clicks, scrolls,
-CONTEXT_CLICK, DRAG, calendar day click), `text_match` for pages that render
-a result string (slider value, autocomplete chip, closed entry ad, dismissed
-consent banner, swapped drag columns), and `url_match` for the navigating
-ones (dynamic_content's static link, MDN search). Two goals were sharpened so
-they name a checkable end state (`tin-dynamic-content`, `tin-large-dom`);
-nothing was removed. Because of this, verified / unverifiable counts from
-runs before this change are **not comparable** with runs after it — 16 tasks
-moved out of the unverifiable bucket and now report verified or failed on
-their own merits.
-
-**Fixed vs baseline:** github-issues (done/NO → done/yes).
-
-**New failures:**
-
-- `tin-file-upload` — done → **blocked**: the model clicked `Focus textbox`
-  four times and never triggered the upload.
-- `tin-dynamic-controls` — done/**NO**: clicked `Enable` once and declared
-  DONE ~850ms later, before the async enable produced "It's enabled".
-- `tin-key-press` — done/**NO**: clicked `Focus textbox` and declared DONE
-  without ever pressing the key (expected "You entered: TAB").
-
-All three are premature-DONE / wrong-action decision failures on text-input
-tasks; the machinery ran fine.
-
-**Notable timing deltas** (median elapsed): the typical task got faster
-(median −34ms; 12 tasks improved ≥500ms, led by wikipedia-search-nav −2.3s,
-parabank-login −2.2s), but a long tail pushed the total +36%:
-tin-nested-frames +19.1s and tin-sortable +11.3s (both blocked-expected —
-the repair consult extends how long a stuck run persists), tin-slow +16.4s
-(28 steps), hn-paginate +9.8s, demoqa-autocomplete +8.5s, europa-consent
-+7.0s, tin-dynamic-loading +4.9s, fx-disabled-redeem +3.3s.
 
 ## Diagnosed issues and their fixes
 
@@ -131,54 +79,6 @@ the repair consult extends how long a stuck run persists), tin-slow +16.4s
 | conduit (realworld) unreachable | demo backends are dead — shell renders, no forms | environmental; dropped |
 | opencart blocked post-nav | Cloudflare interstitial | environmental; dropped |
 | tin-shifting-content unverifiable | its Gallery link is a designed 404 — blocked, done, and retreat are all defensible; it verifies nothing | dropped in 3dc4750 |
-
-## live-v11 (2026-09-20)
-
-Four consecutive full runs against the live TypeSafe model (`jev-latest`)
-with `inception/mercury-2.5` on OpenRouter as the text helper, from a
-headless Linux container behind an egress proxy. Runs 1 and 2 carry the
-driver fixes below; run 3 adds the two loop changes; run 4 adds the modal
-and shadow-text changes at the end of the table.
-
-| | bench-v10 | live-v11 run 1 | run 2 | run 3 | run 4 |
-| --- | --- | --- | --- | --- | --- |
-| verified | 36 | 35 | 35 | 35 | 35 |
-| unverifiable | 16 | 16 | 16 | 16 | 16 |
-| failed | 3 | 4 | 4 | 4 | 4 |
-| median total | 388.9 s | 238.9 s | 253.0 s | 192.8 s | 182.2 s |
-
-Verdicts were identical across all four runs. The one unverifiable task
-that changed outcome is `mdn-search`: blocked in runs 1–3 (reproducibly),
-done in run 4 after the modal fix.
-
-The four failures are this container's network, not the agent, and were
-confirmed by tracing each one (`final_text` is now kept in results):
-
-- `github-issues` — github.com answers with the proxy's "access not
-  enabled" JSON; the page has no controls.
-- `parabank-login`, `parabank-transfer` — the proxy rejects the site's
-  `;jsessionid=` URLs ("path contains matrix parameter separator").
-- `flights-zurich-london` — the Flights frontend bundle from gstatic fails
-  with `ERR_BLOCKED_BY_ORB` on every load, so the ticket-type combobox
-  never initializes: trusted click, in-page click, and focus+Enter all leave
-  `aria-expanded=false`. Typing into the destination field still works.
-
-Fixes in this version, each confirmed by a live re-run of the affected task:
-
-| Symptom (task) | Root cause | Fix |
-| --- | --- | --- |
-| Chrome never exposes CDP as root (containers, CI) | Chrome refuses uid 0 without `--no-sandbox` | flag added for uid 0; `JEV_CHROME_ARGS` for operator flags such as `--proxy-server` |
-| delegation containers offered as targets | `ul.onclick`/`div.onclick` wrappers precede their children and take their text as a name; the click lands between the real targets | containers with an offered interactive descendant are not offered themselves |
-| shadow-in-shadow controls read as covered | `elementFromPoint` stops at the outer host | the hit test descends open shadow roots; e's own host chain is uncovered |
-| DONE/BLOCKED on pages with a clock or re-render stale-stormed into `blocked` | claims compared the full marker, text and node ids included | claims use `structure` freshness (identity, URL, title, controls, form state); page key and click guard drop node ids and ambient text; a swapped node is re-resolved once by root, role, name |
-| scroll cost ~1 s per step, first wheel dropped | headless Chrome acks `mouseWheel` late and drops the first | programmatic `scrollBy` on the inner scroller or window; `--disable-smooth-scrolling` |
-| WAIT burned a decision per 100 ms | fixed sleep | WAIT polls up to 1.5 s for a marker change or network idle (tin-dynamic-loading: 6 decisions) |
-| repeated BLOCKED paid a second 10 s probe | probe re-armed after the repair consult | one probe per stuck episode |
-| one-click tasks cost 3.7–3.9 s (example-link, books-toscrape) | the premature-done consult ran after the 1.5 s stability window, so the window was paid twice | consult first, window once: 2.1 s and 1.2 s |
-| a BLOCKED claim on an idle page cost 10 s (hn-paginate 13.1 s, nested-frames 11.2 s) | probe deadline fixed at 10 s | 4 s when no request is in flight, 10 s otherwise: 6.0 s and 4.6 s |
-| mdn-search: 9 stale cycles then blocked, every run | the model clicked the header Search button behind MDN's open modal; the snapshot offered it because inertness under `:modal` has no attribute to match | controls outside an open modal dialog are not offered; dialog text inside shadow roots is now read (the text walk pierces open shadow roots) |
-| nested-shadow ancestors invisible to the covered check | the composed ancestor walk jumped to the host before the ancestors inside the shadow tree | parents first, host last; a target clipped by its own scroll container is scrolled into view once before it counts as covered |
-| stale storms were opaque | events carried no reason | stale events name the target and the failed precondition |
 
 ## Known limits (not bugs)
 
