@@ -1,9 +1,3 @@
-/**
- * The decision request: one systemOne call answers the operation and, in
- * parallel, a speculative target per compatible operation. Retries are
- * scoped — malformed answers retry once unchanged, context overflow retries
- * on a shrunken page state.
- */
 
 import type { TypeSafeClient, Questions, ChoiceCriteria } from "@typesafe-ai/sdk";
 
@@ -52,9 +46,7 @@ export interface Decision {
   choice: string;
   operation: string;
   target: string | null;
-  /** DRAG: the destination action id; the choice is the source. */
   target2?: string | null;
-  /** Speculative next step, resolved against the post-action state. */
   follow_up?: string;
   confidence: number;
   probabilities: Record<string, number>;
@@ -67,11 +59,6 @@ export interface Decision {
   latency_ms: number;
 }
 
-/**
- * Shrink the decision input for context-limit retries. Element ids are bound
- * to DOM nodes (not positions), so trimming the offered set stays consistent —
- * but node-less controls (scroll/wait/back/press) must all survive the cut.
- */
 function shrunkState(state: PageState, textCap: number, actionCap: number): PageState {
   const elements = state.actions.filter((a) => a.node !== undefined);
   const controls = state.actions.filter((a) => a.node === undefined);
@@ -98,14 +85,12 @@ export async function choose(
     } catch (error) {
       const msg = String(error);
 
-      // A malformed answer hasn't mutated anything — one fresh ask is safe.
       if (msg.includes("Invalid TypeSafe response") && !invalidRetried) {
         invalidRetried = true;
         i--;
         continue;
       }
 
-      // Context overflow: the next attempt offers less state.
       if (/max_tokens|context|too (large|long|many)/i.test(msg) && i + 1 < attempts.length) continue;
 
       throw error;
@@ -183,8 +168,6 @@ async function chooseOnce(
   };
 
   for (const [operation, candidates] of Object.entries(targets)) {
-    // DRAG's target head names the destination — a wider pool than the
-    // flagged drag sources the candidates map holds.
     const pool = operation === "DRAG" ? dragDestinations : candidates;
 
     questions[`${operation.toLowerCase()}_target`] = {
@@ -194,8 +177,6 @@ async function chooseOnce(
     };
   }
 
-  // DRAG needs both ends: drag_target (destination, any element) and
-  // drag_source (the flagged draggable that moves).
   if (questions.drag_target && targets.DRAG) {
     questions.drag_target.instructions = {
       goal,
@@ -220,10 +201,6 @@ async function chooseOnce(
     };
   }
 
-  // Speculation: common sequences (type → pick suggestion, fill → submit)
-  // can execute without a second decision round-trip when the model is
-  // confident. Resolution is deferred to the post-action observation; an
-  // unresolvable prediction falls back to a normal decide.
   const followUps: ChoiceCriteria = {
     NONE: "The next step can't be predicted confidently.",
     CLICK_MATCH_TYPED:
@@ -245,9 +222,6 @@ async function chooseOnce(
 
   const started = performance.now();
 
-  // A PRESS_* that changed nothing may have gone to the wrong focus target,
-  // and an auto-accepted dialog explains a vanished page — offer both when
-  // the observation carried them.
   const page = {
     url: state.url,
     title: state.title,
@@ -276,7 +250,6 @@ async function chooseOnce(
     questions,
   });
 
-  // SAFETY: systemOne answers are free-form per question name; validateChoice decodes the used fields.
   const answers = result.answers as Record<string, RawChoiceAnswer>;
   const operationAnswer = answers.operation ?? {};
   validateChoice(operationAnswer, new Set(Object.keys(operations)));
@@ -291,11 +264,8 @@ async function chooseOnce(
   let target2: string | null = null;
 
   if (operation in targets) {
-    // DRAG's target head names the destination pool, wider than the flagged
-    // sources in targets.DRAG.
     const pool = operation === "DRAG" ? dragDestinations : targets[operation];
 
-    // Unused target heads cannot cause an action. Validate the selected head only.
     const answer = answers[`${operation.toLowerCase()}_target`] ?? {};
     validateChoice(answer, new Set(Object.keys(pool)));
     target = answer.choice;
@@ -304,7 +274,6 @@ async function chooseOnce(
     choice = pool[target].id;
 
     if (operation === "DRAG") {
-      // drag_target is the destination; drag_source picks the moved element.
       const sourceAnswer = answers.drag_source ?? {};
       validateChoice(sourceAnswer, new Set(Object.keys(targets.DRAG)));
       target2 = choice;
@@ -320,8 +289,6 @@ async function chooseOnce(
     probabilities[choice] = operationAnswer.probabilities[operation];
   }
 
-  // Speculation is best-effort: an absent or malformed follow-up is NONE,
-  // never a reason to discard an otherwise valid decision.
   const followUpAnswer = answers.follow_up;
 
   const followUp =

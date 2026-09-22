@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
 
-/** Merge repo .env into env without overwriting keys already set. */
 export function loadEnvFile(path, env) {
   if (!existsSync(path)) return env;
 

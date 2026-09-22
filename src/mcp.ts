@@ -1,15 +1,4 @@
 #!/usr/bin/env node
-/**
- * Minimal stdio MCP server exposing one tool: jev_browse.
- *
- * Newline-delimited JSON-RPC 2.0 — enough for Claude Code / OpenCode / Codex
- * mcp config to spawn `node dist/mcp.js` without another dependency.
- * Engine selection per call via the `engine` arg. `JEV_CDP_URL` (env only,
- * never a tool argument) attaches the cdp engine to an existing browser.
- *
- * Calls are serialized: two browser runs in one process would collide on the
- * shared profile and interleave progress on stderr.
- */
 
 import { createInterface } from "node:readline";
 import { readFileSync } from "node:fs";
@@ -21,7 +10,6 @@ import { loadDotEnv } from "./env.ts";
 import { isFiniteNumber, isString } from "./json.ts";
 import type { JsonObject, JsonValue } from "./types.ts";
 
-/** One decoded JSON-RPC request line (only the fields this server reads). */
 interface JsonRpcRequest {
   id?: JsonValue;
   method?: string;
@@ -97,7 +85,6 @@ function toolResult(id: JsonValue, text: string, isError = false): void {
   respond(id, { content: [{ type: "text", text }], isError });
 }
 
-// Serialize tool calls: one browser run at a time per server process.
 let queue: Promise<void> = Promise.resolve();
 
 function enqueue<T>(fn: () => Promise<T>): Promise<T> {

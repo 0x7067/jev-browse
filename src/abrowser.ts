@@ -1,9 +1,3 @@
-/**
- * Agent-browser engine: the same agent loop, but observation and input go
- * through the `agent-browser` CLI (managed Chrome session). snapshot.js runs
- * via `eval`; code-owned node ids are tagged to data-jev-node attributes and
- * mutated with agent-browser's trusted click/fill/select.
- */
 
 import { execFile } from "node:child_process";
 import { homedir } from "node:os";
@@ -30,7 +24,6 @@ const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null
 
 const TAG_ATTR = "data-jev-node";
 
-/** agent-browser press takes DOM key names; the action table uses lowercase ids. */
 const PRESS_KEYS: ReadonlyMap<string, string> = new Map(
   Object.entries({
     enter: "Enter",
@@ -50,20 +43,14 @@ const PRESS_KEYS: ReadonlyMap<string, string> = new Map(
   }),
 );
 
-/** stderr/envelope wording that means the page left — bare words like
- *  "closed" or "stale" also match ordinary messages ("reading 'closed'"). */
 const STALE_ERROR =
   /context.{0,20}destroy|execution context|navigat|detach|target.{0,20}(closed|crash)|page.{0,20}(closed|crash)|tab_gone/i;
 
-/** Fallback wheel amount when the observed action carried no delta. */
 const SCROLL_DELTA = 560;
 
 export interface AgentBrowserOptions {
-  /** agent-browser binary; default "agent-browser" on PATH. */
   bin?: string;
-  /** Explicit session name; default jev-<pid>. */
   session?: string;
-  /** Extra launch-scoped args for the first open, e.g. ["--headed"]. */
   launchArgs?: string[];
 }
 
@@ -83,18 +70,11 @@ export class AgentBrowser implements BrowserDriver {
   static async open(url: string, opts: AgentBrowserOptions = {}): Promise<AgentBrowser> {
     const browser = new AgentBrowser(opts);
 
-    // A dedicated persistent profile keeps this session off the shared
-    // agent-browser Main profile (SingletonLock) while preserving logins.
     const profile =
       process.env.JEV_AB_PROFILE ?? join(homedir(), ".jev-browse", "agent-browser-profile");
 
     try {
-      // open with no URL first: the session binds to its own tab. open <url> at
-      // launch can leave the bound tab on about:blank while the page loads in a
-      // detached target.
       await browser.run(["--profile", profile, ...browser.launchArgs, "open"]);
-      // From here a live session exists; mark before the navigation so close()
-      // still tears it down if `open <url>` fails.
       browser.opened = true;
       await browser.run(["open", url]);
     } catch (error) {
@@ -102,7 +82,6 @@ export class AgentBrowser implements BrowserDriver {
       throw error;
     }
 
-    // Give the first document a beat before the first snapshot eval.
     for (let i = 0; i < 150; i++) {
       const ready = await browser
         .evaluate("document.readyState")
@@ -115,7 +94,6 @@ export class AgentBrowser implements BrowserDriver {
     return browser;
   }
 
-  /** Child env without ambient session/profile pointers — the jev session is self-owned. */
   private env(): NodeJS.ProcessEnv {
     const env = { ...process.env };
     delete env.AGENT_BROWSER_PROFILE;
@@ -140,15 +118,12 @@ export class AgentBrowser implements BrowserDriver {
       const detail = (error?.stderr || error?.stdout || error?.message || "").toString().trim();
 
       if (STALE_ERROR.test(detail)) {
-        // A mutation that triggers navigation must look stale, not fatal: the
-        // agent loop re-observes and decides again on the new page.
         throw new StalePage(`agent-browser ${args[0]} hit a changed page`);
       }
 
       throw new Error(`agent-browser ${args[0]} failed: ${detail.slice(-500)}`);
     }
 
-    // A success:false envelope whose error describes a dead page is stale too.
     try {
       return parseOutput(stdout);
     } catch (error) {
@@ -161,7 +136,6 @@ export class AgentBrowser implements BrowserDriver {
   }
 
   private async evaluate<T>(expression: string): Promise<T | undefined> {
-    // eval --stdin keeps large scripts out of argv.
     const argv = ["--session", this.session, "--json", "eval", "--stdin"];
     let stdout: string;
 
@@ -196,7 +170,6 @@ export class AgentBrowser implements BrowserDriver {
     try {
       parsed = parseOutput(stdout);
     } catch (error: any) {
-      // A page that navigates mid-eval reports success:false with context errors.
       if (STALE_ERROR.test(String(error?.message))) {
         throw new StalePage("Document changed during evaluation");
       }
@@ -204,13 +177,10 @@ export class AgentBrowser implements BrowserDriver {
       throw error;
     }
 
-    // --json envelope: {success, data:{result: <eval value>}}
     if (isJsonObject(parsed) && "result" in parsed) {
-      // SAFETY: the evaluated expression's return contract is declared by each call site's T.
       return parsed.result as T;
     }
 
-    // SAFETY: same contract — a bare eval value rather than an envelope payload.
     return parsed as T | undefined;
   }
 
@@ -242,20 +212,15 @@ export class AgentBrowser implements BrowserDriver {
           requestAnimationFrame(ready);
         }))(${JSON.stringify(action)})`);
       } catch {
-        // settle wait is best-effort; the snapshot below is the real read
       }
     }
 
-    // Brief navigations (redirect chains, post-load location changes)
-    // outlast a few hundred ms; the retry budget must cover real ones.
     for (let attempt = 0; attempt < 100; attempt++) {
       try {
         const info = await this.evaluate<PageState | null>(READ_STATE);
 
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
-        // CLI selectors cannot reach iframe/shadow elements — hide them so the
-        // model can't pick unexecutable actions.
         info.actions = info.actions.filter((a) => !a.frame && !a.shadow);
 
         return info;
@@ -285,7 +250,6 @@ export class AgentBrowser implements BrowserDriver {
       return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
     }
 
-    // 'page' level: same document and field state, ignoring text churn.
     if (level === "page") {
       const current = await this.evaluate(
         `(() => { const c=window.__jevFast; return c ? c.pageKey() : null; })()`,
@@ -298,7 +262,6 @@ export class AgentBrowser implements BrowserDriver {
   }
 
   async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {
-    // Guard compare for click/select; document key for everything else.
     if (!(await this.fresh(page, action, "page"))) {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
@@ -337,8 +300,6 @@ export class AgentBrowser implements BrowserDriver {
 
     if (action.node === undefined) throw new Error("Invalid observed node");
 
-    // Tag the observed node so agent-browser can target it by selector. The
-    // model never emits selectors; code maps its own node id to an attribute.
     const tagged = await this.evaluate<string | false>(`(() => {
       const e=window.__jevFast?.node(${action.node});
       // Visibility alone doesn't decide clickability — the covered check
@@ -378,8 +339,6 @@ export class AgentBrowser implements BrowserDriver {
           return "ok";
         })()`);
       } else if (kind === "context") {
-        // A lone contextmenu event misses hover/down handlers — send the
-        // full right-button sequence a real mouse produces.
         await this.evaluate(`(() => {
           const e=document.querySelector(${JSON.stringify(selector)});
           if (!e) return "stale";
@@ -482,14 +441,12 @@ export class AgentBrowser implements BrowserDriver {
     try {
       await this.run(["close"]);
     } catch {
-      // session already gone
     }
 
     this.opened = false;
   }
 }
 
-/** agent-browser --json prints {success, data, error}; fall back to raw JSON/text. */
 function parseOutput(stdout: string): JsonValue {
   const text = stdout.trim();
 
@@ -515,7 +472,6 @@ function parseOutput(stdout: string): JsonValue {
         try {
           return JSON.parse(match[0]);
         } catch {
-          // give up below
         }
       }
 

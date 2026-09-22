@@ -1,20 +1,4 @@
 #!/usr/bin/env node
-/**
- * Real-world eval runner for jev-browse.
- *
- *   node scripts/eval.mjs                     # all tasks, one run each
- *   node scripts/eval.mjs --repeat 3          # median-of-N per task
- *   node scripts/eval.mjs --tasks hn-comments,flights-zurich-london
- *   node scripts/eval.mjs --label baseline    # tag the results file
- *   node scripts/eval.mjs --compare a.json b.json
- *
- * Each run spawns bundled/cli.mjs (same entrypoint as `jev-browse`), parses the
- * RunResult on stdout, and verifies
- * the outcome against the task's URL expectations — DONE is a claim, not
- * proof. Results (per-step latencies included) land in evals/results/.
- *
- * Env: repo .env, merged over the current environment.
- */
 
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -71,13 +55,8 @@ function parseArgs(argv) {
 
 const VERIFIABLE_KEYS = ["status", "url_match", "url_not_match", "text_match", "state_match", "action_match", "answer_match", "download_match"];
 
-// A task with no runnable expectation can't be verified — reported
-// "unverifiable", not silently counted as a pass.
 const isVerifiable = (task) => VERIFIABLE_KEYS.some((k) => task.expect?.[k] !== undefined);
 
-// A rejected run reports which clause rejected it, the pattern, and what the
-// page actually offered — without it a failure is indistinguishable from a
-// wrong expectation, and both look like "verified:NO".
 const clip = (v, n = 160) => String(v ?? "").replace(/\s+/g, " ").slice(0, n);
 
 function verify(task, result, opsText) {
@@ -86,8 +65,6 @@ function verify(task, result, opsText) {
   const fail = (clause, pattern, actual) => ({ ok: false, clause, pattern: String(pattern), actual: clip(actual) });
 
   if (exp.status) {
-    // Expected non-done outcome — e.g. "blocked" is the honest answer when a
-    // page binds interactivity with no DOM signal to offer.
     if (result.status !== exp.status) return fail("status", exp.status, result.status);
   } else if (result.status !== "done") {
     return fail("status", "done", `${result.status}${result.blocked_cause ? `/${result.blocked_cause}` : ""}${result.error ? `: ${result.error}` : ""}`);
@@ -97,8 +74,6 @@ function verify(task, result, opsText) {
 
   if (exp.url_not_match && new RegExp(exp.url_not_match).test(url)) return fail("url_not_match", exp.url_not_match, url);
 
-  // Page text keeps element-level newlines; match on the collapsed form so
-  // "items left" still matches when the DOM splits it across lines.
   const text = (result.final_text ?? "").replace(/\s+/g, " ");
 
   if (exp.text_match && !new RegExp(exp.text_match).test(text)) return fail("text_match", exp.text_match, text);
@@ -109,8 +84,6 @@ function verify(task, result, opsText) {
 
   if (exp.action_match && !new RegExp(exp.action_match).test(opsText)) return fail("action_match", exp.action_match, opsText);
 
-  // The agent's final answer (question goals) and downloaded filenames are
-  // verifiable signals, like url/text — a DONE claim is not proof.
   if (exp.answer_match !== undefined && !new RegExp(exp.answer_match).test(result.answer ?? "")) {
     return fail("answer_match", exp.answer_match, result.answer ?? `(no answer — ${result.answer_note ?? "reason unrecorded"})`);
   }
@@ -122,8 +95,6 @@ function verify(task, result, opsText) {
   return { ok: true };
 }
 
-/** Split the verdict into the recorded shape: the boolean the counts use,
- *  plus the rejecting clause when there is one. */
 function verdictFields(task, result, ops) {
   if (!isVerifiable(task)) return { verified: "unverifiable" };
 
@@ -135,12 +106,7 @@ function verdictFields(task, result, ops) {
 function runOnce(task, env, engine) {
   return new Promise((resolvePromise) => {
     const url = task.file_url ? `file://${join(ROOT, task.url)}` : task.url;
-    // Fresh profile per run: cookies and SPA sessions persist in the shared
-    // profile, which makes anonymous-state tasks non-deterministic (a logged-in
-    // ParaBank page has no login form to fill).
     const profile = mkdtempSync(join(tmpdir(), "jev-eval-"));
-    // Both driver env vars point at the same fresh dir; each engine reads its
-    // own (JEV_PROFILE for cdp, JEV_AB_PROFILE for agent-browser).
     const childEnv = { ...env, JEV_PROFILE: profile, JEV_AB_PROFILE: profile };
 
     if (task.file_url) childEnv.JEV_ALLOW_FILE_URLS = "1";
@@ -181,7 +147,6 @@ function runOnce(task, env, engine) {
       const jev_ms = (result.history ?? []).reduce((s, h) => s + (h.latency_ms || 0), 0);
       const text_ms = (result.history ?? []).reduce((s, h) => s + (h.text_latency_ms || 0), 0);
 
-      // Error results drop history; stderr step events keep the run legible.
       const events = stderr
         .split("\n")
         .map((l) => {
@@ -194,8 +159,6 @@ function runOnce(task, env, engine) {
         .filter((e) => e?.type === "step")
         .map((e) => `${e.operation}:${(e.action ?? "").slice(0, 30)}@${e.elapsed_ms}`);
 
-      // Keep enough to judge the run without re-running it: what was typed,
-      // what changed, and what the terminal page said.
       const trail = (result.history ?? []).map((h) => ({
         op: h.operation,
         action: (h.action ?? "").slice(0, 60),
@@ -209,9 +172,6 @@ function runOnce(task, env, engine) {
 
       const stale = stderr.split('"type":"stale"').length - 1;
 
-      // Decision events carry the action space the model was offered. The
-      // spread between offered elements and the handful a task actually
-      // needs is the overhead number, measurable per run.
       const decisionEvents = stderr
         .split("\n")
         .map((l) => { try { return JSON.parse(l); } catch { return null; } })
@@ -266,6 +226,7 @@ async function main() {
 
   if (args.help) {
     console.log(HELP.trimEnd());
+
     return;
   }
 
@@ -342,8 +303,6 @@ async function main() {
     `\nwrote evals/results/${name}  median total: ${report.median_total_ms}ms  verified:${totals.verified} unverifiable:${totals.unverifiable} failed:${totals.failed}`,
   );
 
-  // Failures grouped by rejecting clause: which contract the suite is losing
-  // on, rather than a flat list of task ids.
   const byClause = new Map();
 
   for (const [id, t] of Object.entries(report.tasks)) {

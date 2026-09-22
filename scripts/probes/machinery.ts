@@ -1,5 +1,3 @@
-// Model-free machinery test: scripted actions through the real CDP driver on
-// fixture-interactions.html, verified by the fixture's DONE text.
 import { mkdtempSync } from "node:fs"; import { tmpdir } from "node:os"; import { join } from "node:path";
 import { CdpBrowser } from "../../src/cdp/browser.ts";
 process.env.JEV_ALLOW_FILE_URLS="1";

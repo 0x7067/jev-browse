@@ -1,12 +1,6 @@
-/**
- * The indexed action space: one element index per observed DOM node, one
- * valid target set per operation. Element ids stay bound to nodes, so the
- * model can only name things that were actually observed.
- */
 
 import type { ActionKind, JsonValue, ObservedAction } from "../types.ts";
 
-/** One candidate element as presented to the choice model. */
 export type ElementChoice = {
   index: string;
   label: string;
@@ -84,10 +78,6 @@ export function actionSpace(actions: ObservedAction[], delegatedContextmenu = fa
     group[target] = action;
   }
 
-  // DRAG sources and CONTEXT_CLICK targets come only from flagged elements:
-  // draggable===true marks a real drag source, contextMenu===true a real
-  // right-click handler. With no flags neither operation is offered — the
-  // model picks CLICK instead of aiming at an element that can't respond.
   for (const action of actions) {
     if (action.node === undefined) continue;
 
@@ -110,9 +100,6 @@ export function actionSpace(actions: ObservedAction[], delegatedContextmenu = fa
     }
   }
 
-  // Delegated right-click (frameworks bind contextmenu on a root container
-  // or document): any click target can respond, so the CONTEXT_CLICK pool
-  // widens to the whole click space instead of flagged elements only.
   if (delegatedContextmenu) {
     for (const [index, action] of Object.entries(targets.CLICK ?? {})) {
       (targets.CONTEXT_CLICK ??= {})[index] = action;
@@ -123,11 +110,6 @@ export function actionSpace(actions: ObservedAction[], delegatedContextmenu = fa
     }
   }
 
-  // A drag destination is wherever the source lands — drop zones are often
-  // plain elements with no interactive signal of their own, so the dest
-  // pool is the whole indexed set, not the flagged sources. Fellow drag
-  // sources are destinations too (sortable lists reorder onto siblings).
-  // dropZone flags only make otherwise-invisible targets reachable.
   const dragDestinations = { ...targets.CLICK, ...targets.DRAG };
 
   return { elements, targets, controls, dragDestinations };

@@ -2,17 +2,9 @@
   if (!document.body) return null;
   const cache = window.__jevFast ||= {ids:new WeakMap(), nodes:new Map(), next:1};
 
-  // A caller about to re-read the page should wait for it to stop moving,
-  // not for a timer to expire. The observer only bumps a counter and wakes
-  // its listeners; whether a move is a real change stays the freshness
-  // compare's call, so a clock tick or a re-render that recreates every node
-  // is still a non-change.
   const wake = cache.wake ||= {rev:0, listeners:new Set()};
 
   if (!wake.observer) {
-    // Resolve once the DOM has held still for quietMs, capped by budgetMs. A
-    // caller that re-reads the page needs stillness, not the first mutation:
-    // comparing mid-render reads an unfinished page as a changed one.
     wake.quiet = (quietMs, budgetMs) => new Promise(resolve => {
       const deadline = Date.now() + budgetMs;
       let timer;
@@ -30,7 +22,6 @@
     });
 
     wake.observer = new MutationObserver(records => {
-      // Our own node tagging is not page movement.
       if (records.every(r => r.type === 'attributes' && r.attributeName === 'data-jev-node')) return;
       wake.rev++;
 
@@ -61,8 +52,6 @@
   const visible = e => !e.closest('[aria-hidden="true"],[inert]') &&
     e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true});
 
-  // Data-only descendants contribute nothing to an accessible name — inline
-  // scripts inside links would otherwise name the element with their source.
   const SKIP_NAME = new Set(['SCRIPT','STYLE','NOSCRIPT','TEMPLATE']);
 
   const name = (e,seen=new Set()) => {
@@ -81,53 +70,30 @@ return s?[s]:[]}).join(' ') ||
       (e.tagName==='INPUT' ? '' : [...e.childNodes].map(n=>n.nodeType===3 ? n.textContent :
         n.nodeType===1 && !(e.tagName==='SELECT' && (n.tagName==='OPTION'||n.tagName==='OPTGROUP')) &&
           !SKIP_NAME.has(n.tagName) && n.getAttribute('aria-hidden')!=='true' ? name(n,seen) : '').join(' ').trim()) ||
-      // Sibling labels name unlabelled inputs — the input+label pattern is
-      // how most checkboxes and toggles get their text.
       (e.tagName==='INPUT' && e.nextElementSibling?.matches?.('label')
         ? name(e.nextElementSibling,seen) : '') ||
       e.getAttribute('title') || e.getAttribute('placeholder') || '';
   };
 
-  // listbox is deliberately absent: it is the suggestion CONTAINER — clicking
-  // it steals focus and dead-ends; its option/menuitem children are the acts.
   const roles=['button','link','checkbox','radio','switch','tab','menuitem','menuitemradio',
     'menuitemcheckbox','option','treeitem','gridcell','cell','columnheader',
     'rowheader','combobox','textbox','searchbox','spinbutton','slider','scrollbar'];
 
-  // The containers those acts live in, named so the no-role rescue in role()
-  // cannot re-admit them. They are wired by delegated listeners, which is
-  // exactly what the rescue looks for — leaving them unnamed put the
-  // suggestion listbox back in the space as a button.
   const CONTAINER_ROLES=['listbox','menu','menubar','tablist','tree','treegrid',
     'radiogroup','grid','table','rowgroup'];
 
-  // Popup/hover handlers mark elements that reveal content — indexed so they
-  // can be offered as hover actions even without an interactive role. Class
-  // substrings (menu/dropdown/tooltip) are NOT candidates: Tailwind-style
-  // utilities make them match arbitrary elements.
   const hoverSel='[aria-haspopup],[onmouseover],[oncontextmenu]';
 
-  // Sortable/drag handles wired by delegated mouse listeners (jQuery UI,
-  // dnd-kit, SortableJS) carry no per-element handler signal — the library's
-  // class names are the only mark. They index as DRAG sources below.
   const dragHandleSel='.ui-sortable-handle,[aria-grabbed],[class*="drag-handle"],[class*="sortable-handle"],[draggable="true"]';
 
-  // [onclick], [draggable] and handler attributes mark interactivity with no
-  // role or link semantics — custom widgets live on plain divs. tabindex is
-  // gathered separately (tabindexSel): focus order alone isn't clickability.
   const selector='a[href],button,input,textarea,select,summary,[contenteditable="true"],'+
     '[draggable="true"],[onclick],[ondrop],[ondragover],[ondragenter],'+dragHandleSel+','+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
 
   const tabindexSel='[tabindex]:not([tabindex^="-"])';
 
-  // Handler properties are invisible to selectors: el.oncontextmenu=... wires
-  // the same interactivity as the attribute, and drop zones are usually plain
-  // divs. Gather scans every element and tests these in JS.
   const HANDLER_PROPS=['onclick','oncontextmenu','onmousedown','onkeydown','onkeypress','onmouseover'];
   const DROP_PROPS=['ondrop','ondragover','ondragenter'];
 
-  // An unset on* handler reads null; a non-callable assignment turns into
-  // null too — a truthy read is a wired handler.
   const hasHandlerProp=e=>{
     for (const p of HANDLER_PROPS) if (e[p]) return true;
 
@@ -140,11 +106,6 @@ return s?[s]:[]}).join(' ') ||
     return false;
   };
 
-  // addEventListener-bound handlers are invisible to selectors and on* props.
-  // The injected init script records them in a per-realm WeakMap — iframe
-  // elements register into their own realm's map, so read via ownerDocument.
-  // window/document are valid WeakMap keys but have no ownerDocument — the
-  // realm map lives on the window they belong to.
   const listenSet=e=>{
     const w = e instanceof Window ? e : ((e.ownerDocument||e).defaultView||window);
 
@@ -196,31 +157,17 @@ return s?[s]:[]}).join(' ') ||
            'month','week'].includes(e.type)) return 'textbox';
     }
 
-    // A container's children are the acts, never the container. Clicking one
-    // steals focus from whatever held it: on GitHub's search that drops focus
-    // to BODY, which withdraws the Enter key that would have submitted the
-    // query. Native tag semantics above still win — this blocks only the
-    // rescue below, which would otherwise re-admit it on its delegated
-    // listeners alone.
     if (CONTAINER_ROLES.includes(explicit)) return null;
 
-    // No-role interactivity: click/hover handlers, focusable widgets, drag
-    // sources. They matched the candidacy test for a reason — call them
-    // buttons so they reach the action table.
     if (e.matches(hoverSel+',[onclick],[draggable="true"],'+tabindexSel+','+dragHandleSel) ||
         hasHandlerProp(e) || hasDropProp(e) || listenSet(e)) return 'button';
 
     return null;
   };
 
-  // No node identity here: a re-render that swaps nodes but keeps the
-  // fields is the same page.
   cache.pageKey=()=>[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
     [...document.querySelectorAll('input,textarea,select')]
       .flatMap(e=>safe(e)?[[e.tagName,e.type||null,name(e),e.value,e.checked,e.selectedIndex,e.disabled,e.readOnly]]:[])];
-  // The click guard: identity, semantics, and rounded geometry. Ambient text
-  // (a clock next to the button) is not part of it — a control that kept
-  // its node, name, state, and place is the control the model chose.
   cache.guard=e=>{
     if (!e?.isConnected || !visible(e)) return null;
     const r=e.getBoundingClientRect();
@@ -233,15 +180,10 @@ return s?[s]:[]}).join(' ') ||
       [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]];
   };
 
-  // Offered-control cap. Labels are capped at 240 chars and choose() shrinks
-  // the state on context overflow, so a larger table costs tokens, not runs.
   const MAX_ACTIONS=500;
 
   const actions=[];
 
-  // Hit-test through open shadow roots: document.elementFromPoint stops at
-  // the outermost host, so nested shadow content is never "hit" directly.
-  // Shared with the drivers' input scripts via window.__jevFast.
   const deepHit=cache.deepHit=(doc,x,y)=>{
     let hit=doc.elementFromPoint(x,y);
 
@@ -255,21 +197,13 @@ return s?[s]:[]}).join(' ') ||
     return hit;
   };
 
-  // Interactive elements hidden by CSS (menus, captions revealed on :hover)
-  // never reach the action table — but their visible container can be
-  // hovered to reveal them. ancestor → {fx,fy} for post-gather hover offers.
   const hoverZones=new Map();
 
   const INTERACTIVE='a[href],button,select,input,textarea,summary,'+
     roles.map(role=>'[role="'+role+'"]').join(',');
 
-  // Only real hover-reveal signals qualify: popup handler signals and
-  // listener-registered mouseover/mouseenter bindings both count.
   const hoverable=e=>e.matches(hoverSel)||listenedHover(e);
 
-  // Piercing gather: same-origin iframes recurse with accumulated viewport
-  // offsets; open shadow roots recurse in the same coordinate space. `frame`
-  // records the offset so execution can hit-test and click correctly.
   const gather=(root,fx,fy,depth)=>{
     if (depth>4) return;
 
@@ -283,15 +217,9 @@ return s?[s]:[]}).join(' ') ||
 
       const dropZone=hasDropProp(e);
 
-      // Click-capable by any signal; hover-listened elements that can't be
-      // clicked are offered as hover actions instead (revealing menus).
       const clickCapable = dropZone || e.matches(selector) || hasHandlerProp(e) ||
           listenedClick(e) || e.matches(tabindexSel);
 
-      // Candidacy: selector match, a handler property, or a drop handler.
-      // tabindex>=0 alone is routine focus management, not clickability —
-      // it needs a second signal: handler/jsaction attribute or property,
-      // pointer cursor, or an interactive descendant.
       const isCandidate = dropZone || e.matches(selector) || hasHandlerProp(e) ||
           listenedClick(e) || listenedHover(e) ||
           (e.matches(tabindexSel) &&
@@ -299,10 +227,6 @@ return s?[s]:[]}).join(' ') ||
               (e.ownerDocument.defaultView||window).getComputedStyle(e).cursor==='pointer' ||
               e.querySelector(INTERACTIVE)));
 
-      // Independently scrollable regions (feeds, panes, menu lists, modal
-      // bodies) get their own SCROLL actions — the page-level wheel can't
-      // reach content trapped inside them. Plain layout containers qualify:
-      // candidacy is not required, only real overflow.
       if (!isCandidate && panes.size < 10 && e.scrollHeight > e.clientHeight + 60 &&
           e.clientHeight >= 80 && e.clientHeight < innerHeight * 0.95 &&
           ['auto','scroll'].includes((e.ownerDocument.defaultView||window).getComputedStyle(e).overflowY) &&
@@ -312,11 +236,6 @@ return s?[s]:[]}).join(' ') ||
 
       if (!isCandidate) continue;
 
-      // Opacity:0 custom controls (iOS toggles, styled checkboxes, material
-      // switches) fail checkVisibility yet remain the real click target —
-      // the hit test, not the visibility check, is the arbiter of
-      // clickability. Rescue them when they win a point inside their
-      // on-viewport area; a <label> covering its control counts too.
       let vis = visible(e);
 
       if (!vis && e.matches(INTERACTIVE)) {
@@ -334,20 +253,11 @@ return s?[s]:[]}).join(' ') ||
       }
 
       if (!safe(e) || !vis || e.matches(':disabled') || e.closest('[aria-disabled="true"]')) {
-        // An interactive element hidden only by CSS (menus revealed on
-        // :hover) can be exposed by hovering a visible ancestor — record
-        // that zone. Hidden inputs and disabled controls are not
-        // hover-revealable and don't feed it.
         if (!vis && safe(e) && !e.matches(':disabled') && !e.closest('[aria-disabled="true"]') &&
             e.matches(INTERACTIVE) && hoverZones.size < 24) {
-          // Walk up to a visible ancestor sized like a hover zone — keep
-          // climbing past oversized wrappers where hovering means nothing.
           let a=e.parentElement, hops=0;
 
           while (a && hops++<6 && !hoverZones.has(a)) {
-            // The nearest visible ancestor is the hover target even when it
-            // is itself indexed — climbing past it lands on wrappers whose
-            // center hits dead space (or a disabled sibling menu item).
             if (visible(a)) {
               const ar=a.getBoundingClientRect();
               const ax=fx+ar.x+ar.width/2, ay=fy+ar.y+ar.height/2;
@@ -377,8 +287,6 @@ return s?[s]:[]}).join(' ') ||
       const frame=(fx||fy)?{x:fx,y:fy}:undefined;
       const shadow=e.getRootNode() instanceof ShadowRoot;
 
-      // Accessible names are short; a cap bounds per-element token cost and
-      // contains pathological pages (giant labels once blew the model request).
       const accessibleName=name(e);
 
       const base={node:identity(e),role:rname,label:(accessibleName||rname).slice(0,240),
@@ -388,9 +296,6 @@ return s?[s]:[]}).join(' ') ||
 
       if (e.getAttribute('draggable')==='true' || e.ondragstart || e.matches(dragHandleSel)) {
         base.draggable=true;
-        // Order is to a drag what `checked` is to a checkbox. Without it a
-        // landed drag and an unlanded one read identically, so the model
-        // drags again and undoes the move it just made.
 
         const sibs=[...(e.parentElement?.children||[])].filter(s=>
           s.getAttribute('draggable')==='true' || s.ondragstart || s.matches(dragHandleSel));
@@ -404,8 +309,6 @@ return s?[s]:[]}).join(' ') ||
 
       if (dropZone) base.dropZone=true;
 
-      // Classes often carry the only semantic signal a control has
-      // (button.success is the green one). Truncate aggressively.
       const cls=(e.getAttribute('class')||'').trim().replace(/\s+/g,' ');
 
       if (cls) base.cls=cls.slice(0,80);
@@ -436,9 +339,6 @@ return s?[s]:[]}).join(' ') ||
         const value='value' in e ? String(e.value) :
           e.isContentEditable || rname==='combobox' ? e.innerText.trim() : '';
 
-        // File inputs: fill is the only sane action — TYPE_TEXT carries the
-        // path into DOM.setFileInputFiles; a click opens a native chooser we
-        // cannot drive, so no click or Focus companion is offered.
         if (e.type==='file') {
           actions.push({...base,kind:'fill',value});
         } else {
@@ -448,10 +348,6 @@ return s?[s]:[]}).join(' ') ||
         }
       }
 
-      // A container's hover duplicates its offered descendants — hovering
-      // the specific child is the useful action (menu roots swallow the
-      // choice). Offer the leaf, not the root. A hover-only element already
-      // emitted 'hover' as its main action — skip the duplicate offer.
       if (clickCapable && hoverable(e) && !e.querySelector(selector))
         actions.push({...base,kind:'hover',value:undefined,label:'Hover '+base.label});
     }
@@ -463,13 +359,10 @@ return s?[s]:[]}).join(' ') ||
         if (!d?.body || !visible(f)) continue;
         const r=f.getBoundingClientRect();
         gather(d,fx+r.x,fy+r.y,depth+1);
-      } catch { /* cross-origin */ }
+      } catch { }
     }
   };
 
-  // Ancestor test across shadow boundaries: parents first, then the host
-  // once the root is reached — jumping to the host early skips the
-  // ancestors inside the shadow tree. Shared with the drivers.
   const composedContains=cache.composedContains=(a,n)=>{
     for (let x=n;x;) {
       if (x===a) return true;
@@ -480,9 +373,6 @@ return s?[s]:[]}).join(' ') ||
     return false;
   };
 
-  // An open modal dialog makes everything outside it inert without any
-  // attribute to match. gather records them as it walks; offers outside
-  // every modal of the same document are dropped afterwards.
   const modalsByDoc=new Map();
 
   const behindModal=e=>{
@@ -491,14 +381,10 @@ return s?[s]:[]}).join(' ') ||
     return modals!==undefined && !modals.some(m=>composedContains(m,e));
   };
 
-  // Scrollable-region offers, filled during gather (element → frame offset).
   const panes=new Map();
 
   gather(document,0,0,0);
 
-  // Emit element-scoped scrolls for independently scrollable regions. Each
-  // gets a named operation id (scroll_pane_<n>) so the operation head picks
-  // the pane directly — there is no element-level SCROLL target head.
   for (const [e,off] of panes) {
     const r=e.getBoundingClientRect();
 
@@ -529,14 +415,6 @@ return s?[s]:[]}).join(' ') ||
     for (const a of hoverZones.keys()) if (behindModal(a)) hoverZones.delete(a);
   }
 
-  // Event-delegation containers (ul.onclick, grid.onclick) carry a handler
-  // but no semantics of their own; they precede their children in DOM order
-  // and take the children's text as a name, so a model picks the container
-  // and the click lands between the real targets. Suppress one only when
-  // offered descendants cover most of its area — a container whose matching
-  // descendants were all filtered out (hidden, disabled), or whose own
-  // region does distinct work (a clickable card with one nested button), is
-  // the only way to reach that behavior and stays.
   {
     const offered=new Set();
 
@@ -549,8 +427,6 @@ return s?[s]:[]}).join(' ') ||
     const drop=new Set();
 
     for (const a of actions) {
-      // Only click offers can steal a child's target — scroll_pane and
-      // hover offers belong to elements with no delegated click.
       if (a.kind!=='click') continue;
       const e=a.node===undefined ? null : cache.nodes.get(a.node);
 
@@ -577,11 +453,6 @@ return s?[s]:[]}).join(' ') ||
     for (let i=actions.length-1;i>=0;i--) if (drop.has(actions[i].node)) actions.splice(i,1);
   }
 
-  // Node lookup with one re-resolution: a virtual-DOM re-render swaps the
-  // element behind an observed node between decision and input. When the
-  // observed node is gone, the unique element in the same root with the
-  // same role and accessible name is the same control; bind it to the id
-  // unless a newer snapshot already named it.
   cache.node=id=>{
     const e=cache.nodes.get(id);
 
@@ -608,7 +479,6 @@ return s?[s]:[]}).join(' ') ||
     return found;
   };
 
-  // Emit hover offers on the visible ancestors of hidden interactive content.
   for (const [a,off] of hoverZones) {
     const ar=a.getBoundingClientRect();
 
@@ -622,8 +492,6 @@ return s?[s]:[]}).join(' ') ||
     actions.push({...base,kind:'hover'});
   }
 
-  // Lists repeat control labels: six "Add to cart" buttons can't be told
-  // apart. Enrich duplicates with the item scope's heading or named text.
   const byLabel=new Map();
 
   for (const a of actions) {
@@ -655,8 +523,6 @@ return s?[s]:[]}).join(' ') ||
   const walkText=(doc)=>{
     const w=doc.defaultView, vw=w?w.innerWidth:innerWidth, vh=w?w.innerHeight:innerHeight;
     const body=doc.body||doc.documentElement, range=doc.createRange();
-    // Open shadow roots hold real text (dialogs, custom widgets); walk
-    // them in place, in document order, so the model reads what it sees.
 
     const walkRoot=(root,depth)=>{
       const walker=doc.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);
@@ -685,7 +551,7 @@ return s?[s]:[]}).join(' ') ||
         const fr=f.getBoundingClientRect();
 
         if (f.contentDocument && fr.width>0 && fr.height>0 && visible(f)) walkText(f.contentDocument);
-      } catch { /* cross-origin */ }
+      } catch { }
 
       if (length>=24000) break;
     }
@@ -693,23 +559,17 @@ return s?[s]:[]}).join(' ') ||
 
   walkText(document);
 
-  // The budget keeps the head of the DOM; confirmations, toasts, and results
-  // usually land at its tail. Over budget, keep both ends.
   let text=words.join('\n');
 
   if (text.length>6000) text=text.slice(0,4500)+'\n[… '+(text.length-6000)+' chars omitted …]\n'+text.slice(-1500);
   const height=document.documentElement.scrollHeight, page_key=cache.pageKey();
 
-  // Bot/CAPTCHA challenges advertise themselves in text and markup. Flagged
-  // only on control-sparse pages — a normal page merely mentioning 'captcha'
-  // is not a wall.
   const challenge=actions.length<=10 && (
     /just a moment|verifying you are|verify you are (a )?human|checking your (browser|connection)|are you a (robot|human)|unusual traffic|complete the (captcha|security)|enter the characters|i'?m not a robot|attention required|cf-chl|h-captcha|g-recaptcha|please verify/i
       .test(text+' '+document.title) ||
     !!document.querySelector('iframe[src*="captcha"],iframe[src*="challenges.cloudflare"],.h-captcha,.g-recaptcha,#cf-please-wait,[class*="cf-chl"],[data-sitekey]')
   ) || undefined;
 
-  // Compare meaning and identity. Geometry is always resolved and hit-tested just before input.
   const semantics=actions.map(({rect: _rect,...action})=>action);
 
   const marker=[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
@@ -721,12 +581,8 @@ return s?[s]:[]}).join(' ') ||
   if (omitted_actions>0)
     text+='\n['+omitted_actions+' more interactive elements not shown — scroll or narrow the page]';
 
-  // Element-scroll actions carry their own operation-shaped ids (picked as
-  // controls, not targets) — keep them; everything else takes eN.
   actions.forEach((a,i)=>{ if (!a.id) a.id='e'+(i+1) });
 
-  // Guards pay a synchronous-layout innerText cost — compute them only for
-  // elements that survived the cap.
   const guards={};
 
   for (const a of actions) if (!(a.node in guards)) guards[a.node]=cache.guard(cache.nodes.get(a.node));
@@ -747,11 +603,6 @@ return s?[s]:[]}).join(' ') ||
   if (history.length>1) actions.push({id:'go_back',kind:'back',label:'Go back to the previous page'});
   actions.push({id:'go_forward',kind:'forward',label:'Go forward in history'});
 
-  // PRESS_* goes to whatever holds focus, so with nothing focused the key is
-  // lost. Offering all fourteen on every page is fourteen choices that cannot
-  // act; each key is gated on the thing that could answer it. Tab and Escape
-  // stay — Tab is how focus is acquired, Escape closes native pickers that
-  // expose no element of their own.
   const editing=ae && (ae.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(ae.tagName));
   const scrollable=height>innerHeight+2;
   const keys=new Set(['tab','escape']);
@@ -764,9 +615,6 @@ return s?[s]:[]}).join(' ') ||
 
   for (const k of keys) actions.push({id:'press_'+k,kind:'press',key:k,label:'Press '+k});
 
-  // A contextmenu listener bound on a root container or document means a
-  // framework delegates right-clicks — every element can respond, so the
-  // model gets CONTEXT_CLICK on the full click pool, not just flagged ones.
   const delegatedContextmenu=[window,document,document.documentElement,document.body,
       ...(document.body ? [...document.body.children] : [])]
     .some(e=>e && listenSet(e)?.has('contextmenu'));

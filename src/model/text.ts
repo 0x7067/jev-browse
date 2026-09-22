@@ -1,7 +1,3 @@
-/**
- * The text helper: a small OpenAI-compatible model writes field values for
- * TYPE_TEXT. Values are never guessed by the executor — no key, no typing.
- */
 
 import { isString } from "../json.ts";
 import { ANSWER_VALUE, TEXT_VALUE } from "../questions.ts";
@@ -129,18 +125,10 @@ export async function fieldText(
   return { text: value, helper };
 }
 
-/**
- * Direct answer for an interrogative goal, read off the terminal page.
- * Best-effort by contract: a helper or parse failure means no answer, never
- * a failed run.
- */
 export async function extractAnswer(
   goal: string,
   page: PageState,
 ): Promise<{ answer: string | null; helper: { model: string; latency_ms: number } }> {
-  // The text walk flattens a labeled control into its surroundings: a cart
-  // badge reads as "Swag Labs 2 Products", indistinguishable from the "2"
-  // in a product count. The indexed labels keep the control's own value.
   const elements = actionSpace(page.actions)
     .elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = "))
     .join("\n")
@@ -151,8 +139,6 @@ export async function extractAnswer(
     page: { title: page.title, url: page.url, text: page.text.slice(0, 6000), elements },
   };
 
-  // A malformed helper reply is a provider hiccup, not a missing answer —
-  // one retry, the same allowance TYPE_TEXT already gets.
   let output: JsonObject;
   let helper: { model: string; latency_ms: number };
 

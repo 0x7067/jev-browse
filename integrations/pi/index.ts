@@ -1,9 +1,3 @@
-// Pi extension for jev-browse. Registers a `jev_browse` tool that runs the Jev
-// driver loop in-process and streams step events as tool-call updates.
-//
-// Installed via `pi install git:github.com/0x7067/jev-browse` — pi runs
-// npm install (typebox) and loads this file from the package's `pi` field.
-// It resolves ../../src/* relative to itself inside the checkout.
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { StringEnum } from "@earendil-works/pi-ai";
@@ -60,7 +54,6 @@ export default function (pi: ExtensionAPI) {
       );
 
       if (result.status === "error") {
-        // Throw so the call is marked as a tool error, not a prose result.
         throw new Error(result.error ?? "jev-browse run failed");
       }
 

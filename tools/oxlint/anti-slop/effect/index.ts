@@ -6,7 +6,6 @@ import { noManualTaggedConstructionRule } from "./rules/no-manual-tagged-constru
 import { noServiceConstructorImportsRule } from "./rules/no-service-constructor-imports.ts";
 import { preferEffectMatchRule } from "./rules/prefer-effect-match.ts";
 
-/** Opt-in Oxlint rules for Effect service and Layer architecture. */
 const antiSlopEffectPlugin = eslintCompatPlugin({
 	meta: { name: "anti-slop-effect" },
 	rules: {

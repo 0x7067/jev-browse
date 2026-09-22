@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-/**
- * Headless entry point. Every harness adapter ultimately runs this:
- *
- *   node dist/cli.js --url URL --goal "a narrow goal" [--engine cdp|agent-browser]
- *
- * Progress events stream to stderr as JSONL; the final RunResult is the only
- * stdout payload, so callers can pipe stdout without scraping progress.
- */
 
 import { mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -21,10 +13,6 @@ import { loadDotEnv } from "./env.ts";
 import { sleep } from "./sleep.ts";
 import type { BrowserDriver, JsonValue } from "./types.ts";
 
-// Two runs sharing a profile dir collide on Chrome's SingletonLock — one wins,
-// the other hangs on a debug port that never binds. A pid lock dir fails fast.
-// The lock is keyed by profile: isolated profiles (eval runs, agent-browser)
-// may run in parallel; only same-profile runs serialize.
 const lockDir = (profileDir: string) => {
   const key = createHash("sha1").update(profileDir).digest("hex").slice(0, 12);
 
@@ -59,7 +47,7 @@ async function acquireLock(profileDir: string, timeoutMs = 30_000): Promise<void
 
       if (holder && !pidAlive(holder)) {
         rmSync(join(dir, "pid"), { force: true });
-        continue; // stale lock from a dead process
+        continue;
       }
 
       if (Date.now() > deadline) {
@@ -79,7 +67,6 @@ function releaseLock(): void {
 
     if (holder === process.pid) rmSync(heldLock, { recursive: true, force: true });
   } catch {
-    // never ours
   }
 
   heldLock = null;
@@ -110,7 +97,6 @@ function parseArgs(argv: string[]): CliArgs {
         args.goals.push(next()!);
         break;
       case "--engine":
-        // SAFETY: engine names outside the allowlist are rejected by the usage check below.
         args.engine = next() as CliArgs["engine"];
         break;
       case "--headed":
@@ -148,11 +134,6 @@ export function makeDriver(args: CliArgs): (url: string) => Promise<BrowserDrive
   return (url) => CdpBrowser.open(url, { cdpUrl: args.cdpUrl, headed: args.headed });
 }
 
-/**
- * Embeddable run: lock + abort signal, no process-level handlers. Safe to call
- * inside a host process (pi extension, OpenCode plugin); the caller owns
- * lifecycle. Aborting `signal` closes the browser and releases the lock.
- */
 export async function runAgent(
   args: CliArgs,
   opts: {
@@ -160,9 +141,6 @@ export async function runAgent(
     signal?: AbortSignal;
   } = {},
 ): Promise<RunResult> {
-  // Scheme allowlist: page text flows to external model APIs, so file:// and
-  // chrome:// are exfiltration paths, not just navigation. file:// needs an
-  // explicit opt-in (tests/fixtures); everything else is refused.
   const protocol = new URL(args.url!).protocol;
   const allowFile = args.allowFileUrls || process.env.JEV_ALLOW_FILE_URLS === "1";
 
@@ -174,8 +152,6 @@ export async function runAgent(
     throw new Error(`jev-browse only drives http(s) pages; got ${args.url}`);
   }
 
-  // Lock keyed by the profile the chosen engine will launch — same-profile
-  // runs serialize, isolated profiles run in parallel.
   const profileDir =
     args.engine === "agent-browser"
       ? (process.env.JEV_AB_PROFILE ?? join(homedir(), ".jev-browse", "agent-browser-profile"))
@@ -202,8 +178,6 @@ export async function runAgent(
   try {
     return await agent.run(opts.onEvent);
   } catch (error) {
-    // Error results carry no history — emit the final state so stderr
-    // consumers (evals, harness logs) can see what the agent last saw.
     const snap = agent.snapshot();
 
     opts.onEvent?.({
@@ -227,14 +201,10 @@ export async function runAgent(
   }
 }
 
-/** Process-owning run: embeddable core plus signal handlers for CLI/MCP. */
 export async function runOnce(
   args: CliArgs,
   onEvent?: (event: { type: string; [k: string]: JsonValue }) => void,
 ): Promise<RunResult> {
-  // An external kill must still close the browser — Node's default SIGTERM
-  // disposition skips finally blocks entirely. Bound the cleanup so a hung
-  // close can't wedge the exit itself.
   const controller = new AbortController();
 
   const onSignal = (signal: "SIGTERM" | "SIGINT") => {
@@ -245,7 +215,6 @@ export async function runOnce(
 
     timeout.unref();
     controller.abort();
-    // runAgent's finally closes the browser; exit once it settles.
     void result
       .catch(() => {})
       .finally(() => process.exit(128 + (signal === "SIGTERM" ? 15 : 2)));
@@ -295,9 +264,6 @@ async function main(): Promise<void> {
   }
 }
 
-// Entry check: npm/npx bins invoke through a symlink named for the package,
-// so resolve argv[1] first. The cli.* basename gate keeps this module inert
-// inside the mcp bundle, which shares the same argv[1].
 const entryPath = process.argv[1] ? realpathSync(process.argv[1]) : "";
 
 const invokedAsScript =

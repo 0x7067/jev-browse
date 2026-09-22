@@ -1,7 +1,3 @@
-/**
- * Minimal CDP JSON-RPC client over a browser-level WebSocket, plus the
- * process-level helpers needed to reach one (free port, /json/version poll).
- */
 
 import { createServer } from "node:net";
 
@@ -10,7 +6,6 @@ import type { JsonObject } from "../types.ts";
 
 export { sleep };
 
-/** A command with no response after this long means the target is wedged. */
 const CALL_TIMEOUT_MS = 30_000;
 
 export class CdpSocket {
@@ -21,7 +16,6 @@ export class CdpSocket {
     { sessionId?: string; resolve: (v: any) => void; reject: (e: Error) => void }
   >();
   private listeners = new Map<string, Set<(params: any, sessionId?: string) => void>>();
-  /** Sessions whose renderer died; calls against them reject, the socket lives. */
   private crashed = new Set<string>();
   private closed = false;
 
@@ -37,7 +31,6 @@ export class CdpSocket {
         const sessionId: string | undefined = msg.sessionId;
 
         if (sessionId) {
-          // One dead renderer must not kill calls on sibling sessions.
           this.crashed.add(sessionId);
 
           for (const [id, p] of this.pending) {
@@ -50,7 +43,6 @@ export class CdpSocket {
           return;
         }
 
-        // A browser-level crash never answers again — refuse new calls too.
         this.closed = true;
 
         for (const p of this.pending.values()) p.reject(new Error("Renderer crashed"));
@@ -137,7 +129,6 @@ export class CdpSocket {
     try {
       this.ws.close();
     } catch {
-      // already gone
     }
   }
 }
@@ -155,7 +146,6 @@ export function freePort(): Promise<number> {
         return;
       }
 
-      // SAFETY: a listening TCP server reports AddressInfo; the string form is only for IPC pipes.
       const port = (address as { port: number }).port;
       server.close(() => resolve(port));
     });
@@ -169,14 +159,12 @@ export async function browserWsUrl(port: number, timeoutMs = 15000): Promise<str
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/version`);
 
-      // SAFETY: /json/version returns a small JSON object; the only field read is checked below.
       const info = response.ok
         ? ((await response.json()) as { webSocketDebuggerUrl?: string })
         : null;
 
       if (info?.webSocketDebuggerUrl) return info.webSocketDebuggerUrl;
     } catch {
-      // not up yet
     }
 
     await sleep(100);
@@ -185,11 +173,9 @@ export async function browserWsUrl(port: number, timeoutMs = 15000): Promise<str
   throw new Error(`Chrome did not expose CDP on port ${port}`);
 }
 
-/** Target.getTargets payload entry (CDP TargetInfo). */
 export interface TargetInfo {
   targetId: string;
   type: string;
-  /** Set when another target opened this one (window.open, target=_blank). */
   openerId?: string;
   title?: string;
   url?: string;

@@ -1,14 +1,8 @@
-/**
- * Chrome/Chromium discovery for the launched engine: CHROME_PATH, per-user
- * installs, platform candidates, driver caches (Playwright/Puppeteer), then a
- * PATH sweep. Attach mode (`--cdp`) skips all of this.
- */
 
 import { existsSync, readdirSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { join } from "node:path";
 
-/** System-installed Chrome-family binaries, stable and pre-release channels. */
 function systemCandidates(): readonly string[] {
   switch (platform()) {
     case "darwin":
@@ -55,7 +49,6 @@ function systemCandidates(): readonly string[] {
   }
 }
 
-/** Versioned driver caches — the binary sits a few directories deep. */
 function cacheRoots(): string[] {
   const roots: string[] = [];
 
@@ -70,7 +63,6 @@ function cacheRoots(): string[] {
   return roots;
 }
 
-/** Executable basenames inside those caches (macOS .app names included). */
 const CACHE_BINARY = new Set([
   "chrome",
   "chrome.exe",
@@ -120,7 +112,6 @@ export function findChrome(): string {
     if (existsSync(candidate)) return candidate;
   }
 
-  // PATH fallback: catches flatpak, nix, homebrew-link, and vendor installs.
   for (const name of [
     "google-chrome",
     "google-chrome-stable",

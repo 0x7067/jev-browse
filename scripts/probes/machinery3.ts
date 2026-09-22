@@ -16,6 +16,6 @@ async function fresh(url:string){ process.env.JEV_PROFILE = mkdtempSync(join(tmp
   await b.act(f,p,"palette query"); p=await b.observe(); const enter=p.actions.find(a=>a.kind==="press"&&/enter/i.test(a.key??a.label))!;
   await b.act(enter,p,null); await new Promise(r=>setTimeout(r,250)); p=await b.observe();
   console.log(`type+enter focused=${p.focused} -> ${/DONE/.test(p.text.slice(p.text.indexOf("Type then")))?"PASS?":"see"} text=${p.text.replace(/\s+/g," ").match(/DONE[^ ]* ?[^.]{0,30}/g)?.join(";")}`); await b.close(); }
-{ // SPA hydration race: crates.io
+{
   const b=await fresh("https://crates.io/"); const t=performance.now(); let p=await b.observe(); const first={ms:Math.round(performance.now()-t),txt:p.text.length,acts:p.actions.length,pending:p.pending_requests};
   await new Promise(r=>setTimeout(r,3000)); p=await b.observe(); console.log(`crates first=${JSON.stringify(first)} after3s={txt:${p.text.length},acts:${p.actions.length},pending:${p.pending_requests}} head="${p.text.slice(0,80).replace(/\s+/g," ")}"`); await b.close(); }
