@@ -15,12 +15,11 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 
 import { Agent, type RunResult } from "./agent.ts";
-import { loadDotEnv } from "./env.ts";
 import { CdpBrowser } from "./cdp/browser.ts";
 import { AgentBrowser } from "./abrowser.ts";
+import { loadDotEnv } from "./env.ts";
+import { sleep } from "./sleep.ts";
 import type { BrowserDriver, JsonValue } from "./types.ts";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Two runs sharing a profile dir collide on Chrome's SingletonLock — one wins,
 // the other hangs on a debug port that never binds. A pid lock dir fails fast.
