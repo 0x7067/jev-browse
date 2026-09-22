@@ -1,21 +1,4 @@
 #!/usr/bin/env node
-/**
- * Record a jev-browse run as a real-time video.
- *
- * Launches its own Chrome on a fixed debug port, attaches the jev-browse CLI
- * to it with --cdp, captures the agent's tab via Page.startScreencast on a
- * second CDP connection, then assembles docs/demo.mp4 and docs/demo.gif with
- * ffmpeg. Frame timing comes from CDP metadata timestamps, so playback is 1×.
- *
- *   node scripts/record_demo.mjs --url URL --goal "..." [--out docs] [--name demo]
- *
- * A goal may carry {{DATE+Nd}}, which resolves to a date N days after the
- * recording: a literal departure date expires, and a past one makes the task
- * unsatisfiable, because Google Flights greys out past departures.
- *
- * Env: repo .env, merged over the current environment — the CLI child gets
- * the merged result without touching the user's shell env.
- */
 
 import { spawn } from "node:child_process";
 import {
@@ -130,7 +113,6 @@ async function waitHttp(url, timeoutMs = 15000) {
   }
 }
 
-/** Attach to a page target and yield each screencast frame until stop() is called. */
 async function screencast(wsUrl, onFrame) {
   const ws = new WebSocket(wsUrl);
   await new Promise((res, rej) => {
@@ -150,7 +132,6 @@ async function screencast(wsUrl, onFrame) {
 
   let stopped = false;
   ws.addEventListener("close", () => {
-    // The agent closes its tab on exit — a dead socket must not hang stop().
     for (const p of pending.values()) p.reject(new Error("CDP connection closed"));
     pending.clear();
   });
@@ -173,7 +154,6 @@ async function screencast(wsUrl, onFrame) {
     if (msg.method === "Page.screencastFrame") {
       const { data, metadata, sessionId } = msg.params;
       await onFrame(data, metadata);
-      // Ack last — falling behind is better than dropping frames.
       send("Page.screencastFrameAck", { sessionId }).catch(() => {});
     }
   });
@@ -244,7 +224,6 @@ async function main() {
         .map((t) => t.id),
     );
 
-    // Run the agent attached to our Chrome.
     const cli = spawn(
       process.execPath,
       [
@@ -266,7 +245,6 @@ async function main() {
 
     const cliDone = new Promise((res) => cli.on("exit", res));
 
-    // Wait for the tab the agent creates (it is not in the initial set).
     let cast = null;
     let t0 = null;
     let frameIndex = 0;
@@ -283,7 +261,6 @@ async function main() {
 
           if (t0 === null) t0 = ts;
           stamps.push(ts);
-          // Persist incrementally — a crash must not lose frame timing.
           writeFileSync(join(framesDir, "stamps.json"), JSON.stringify(stamps));
           writeFileSync(
             join(framesDir, `f_${String(++frameIndex).padStart(6, "0")}.jpg`),
@@ -299,7 +276,7 @@ async function main() {
     if (!cast) throw new Error("Never saw the agent's tab appear on CDP");
 
     const exitCode = await cliDone;
-    await sleep(700); // let the final state emit a last frame
+    await sleep(700);
     await cast.stop();
     chrome.kill("SIGKILL");
 
@@ -309,7 +286,6 @@ async function main() {
 
     if (!frameIndex) throw new Error("Screencast captured zero frames");
 
-    // Assemble at 1× from CDP frame timestamps; ~0.8 s hold on the last frame.
     const rel = stamps.map((t) => Math.max(0, t - t0));
 
     const concat = rel

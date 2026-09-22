@@ -1,16 +1,4 @@
-/**
- * OpenCode plugin: exposes the jev_browse tool, running the Jev driver loop
- * in-process (no CLI spawn).
- *
- * OpenCode v2 has no plugin-tool API, so the supported install path is the
- * MCP server (`opencode mcp add jev -- npx -y -p github:0x7067/jev-browse
- * jev-browse-mcp`). This file remains for a future tool-capable plugin API.
- * Dev: resolve ../../src/* relative to this file (npm install first).
- */
 
-// Named export: OpenCode v2 treats each exported function as a plugin and
-// validates a default export as a {id, setup} definition, which a plain
-// plugin function fails.
 import { tool } from "@opencode-ai/plugin";
 
 import { runAgent } from "../../src/cli.ts";

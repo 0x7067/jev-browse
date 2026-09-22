@@ -1,8 +1,3 @@
-/**
- * Pre-establish TLS/HTTP2 to the model endpoints while the browser still
- * launches and navigates — the first real request then skips the handshake.
- * Fire-and-forget; failures are irrelevant.
- */
 export function warmModelEndpoints(): void {
   const origins = new Set<string>();
 
@@ -13,7 +8,6 @@ export function warmModelEndpoints(): void {
     try {
       if (raw) origins.add(new URL(raw).origin);
     } catch {
-      // unparseable env — the real request will surface it
     }
   }
 

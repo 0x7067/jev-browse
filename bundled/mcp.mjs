@@ -87,8 +87,6 @@ function fingerprint(state) {
   const content = {
     url: state.url,
     text: state.text,
-    // Marker parity: geometry is resolved and hit-tested at input time, so
-    // layout jitter between observations must not move the fingerprint.
     actions: state.actions.map(({ rect: _rect, ...action }) => action),
     scroll: state.scroll
   };
@@ -1214,7 +1212,6 @@ var Agent = class _Agent {
   earlyWaits = 0;
   fingerprints = [];
   domRetried = /* @__PURE__ */ new Set();
-  /** node id → clicks that changed nothing, counted after the in-page retry. */
   domDead = /* @__PURE__ */ new Map();
   domDoc;
   followUp = null;
@@ -1225,12 +1222,7 @@ var Agent = class _Agent {
   probeConsulted = false;
   fuseConsulted = false;
   doneConsults = 0;
-  /** Set for the lifetime of run(); lets the decide path report the action
-   *  space it actually offered, which the step events cannot show. */
   onEvent;
-  /** Why the loop stopped short. A bare "blocked" cannot distinguish a model
-   *  give-up from an exhausted budget or a stale storm, and the three call
-   *  for different fixes. */
   blockedCause = null;
   repairHint = null;
   staleStreak = 0;
@@ -1266,19 +1258,16 @@ var Agent = class _Agent {
   elapsed() {
     return Math.round(performance.now() - this.startedAt);
   }
-  /** Terminal status for results and adapters. */
   get status() {
     if (this.phase === "done" || this.phase === "blocked" || this.phase === "error") {
       return this.phase;
     }
     return "ready";
   }
-  // --- observe -------------------------------------------------------------
   async observeStep() {
     this.page = await this.browser.observe();
     this.phase = "decide";
   }
-  // --- decide --------------------------------------------------------------
   async decideStep() {
     if (!this.startedAt) this.startedAt = performance.now();
     if (this.decisions.length >= this.maxSteps * 2) {
@@ -1350,9 +1339,6 @@ ${repair}` : this.goal;
     this.lastOperation = this.decision.operation;
     this.phase = "act";
   }
-  /** What the model was given and what it picked. The offered counts expose
-   *  fixed action-space overhead — controls that are listed on every page
-   *  whether or not they can do anything — which step events never show. */
   reportDecision(page, repaired) {
     if (!this.onEvent) return;
     const space = actionSpace(page.actions);
@@ -1371,12 +1357,6 @@ ${repair}` : this.goal;
       url: page.url
     });
   }
-  /**
-   * A done claim behind an imperative goal is a claim without evidence when
-   * the run barely acted — or when it only navigated (scroll/hover/wait)
-   * and never touched the element the goal names. One confirmation consult
-   * before accepting; a second claim stands. Observe-only goals skip it.
-   */
   prematureDone() {
     const acted = this.history.filter((h) => h.operation !== "WAIT");
     const MUTATING = /* @__PURE__ */ new Set(["click", "context", "select", "fill", "drag", "press"]);
@@ -1398,9 +1378,6 @@ ${repair}` : this.goal;
     this.repairHint = this.doneConsults === 1 ? "If the goal asks you to interact with the page, do it \u2014 a done claim without evidence is premature. Claim DONE again only if the goal state is already visibly satisfied." : "Final check \u2014 the goal's action still has no effect on the page. If it is already satisfied, claim DONE; otherwise act on the element now.";
     return true;
   }
-  /** Detect a click-toggle loop: the same control clicked twice in a row
-   *  with the page changing each time means it opened then closed — the
-   *  reveal is in the table and the model keeps pressing the switch. */
   toggleHint() {
     const tail = this.history.slice(-2);
     const norm = (s) => s.replace(/ \(dom\)$/, "");
@@ -1409,8 +1386,6 @@ ${repair}` : this.goal;
     }
     return null;
   }
-  /** One-line nudge for a give-up claim, tailored to what the run hasn't
-   *  tried — a taller-than-viewport page never scrolled is the common miss. */
   giveUpHint(page) {
     const base = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
     const scrolled = this.history.some((h) => h.kind === "scroll");
@@ -1419,7 +1394,6 @@ ${repair}` : this.goal;
     }
     return base;
   }
-  /** Map a speculative follow-up to an action id on the current page. */
   resolveFollowUp(fu) {
     if (fu.type === "PRESS_ENTER") {
       return this.page.actions.find((a) => a.id === "press_enter")?.id ?? null;
@@ -1439,17 +1413,6 @@ ${repair}` : this.goal;
     }
     return null;
   }
-  // --- act -----------------------------------------------------------------
-  /**
-   * Confirm a DONE claim. A click-triggered navigation in flight means the
-   * claim verifies the page the action just left: poll freshness through a
-   * commit window — the commit fails fresh() and sends the machine back to
-   * decide on the new page. The deadline falls through, never vetoes: busy
-   * pages (perpetual connections, stuck counters) would otherwise loop a
-   * done claim forever. The stability window below is the real arbiter —
-   * requests in flight (Turbo-style swaps land without navigation events)
-   * widen it, because a swap during the claim fails fresh().
-   */
   async confirmDone(page) {
     if (page.pending_nav || this.browser.pendingNav?.()) {
       const deadline = Date.now() + 2500;
@@ -1588,7 +1551,6 @@ ${repair}` : this.goal;
     this.settleContext = { action, page, text, decision };
     this.settleEntry = entry;
   }
-  // --- settle --------------------------------------------------------------
   async settleStep() {
     const ctx = this.settleContext;
     const entry = this.settleEntry;
@@ -1662,7 +1624,6 @@ ${repair}` : this.goal;
       this.phase = "blocked";
     }
   }
-  /** True when the recent fingerprint trail is a short cycle repeated whole. */
   cycling() {
     const f = this.fingerprints;
     const n = f.length;
@@ -1692,9 +1653,6 @@ ${repair}` : this.goal;
     this.staleStreak = 0;
     return entry;
   }
-  /** A page nothing can be done on: a Chrome error page, or a bot wall that
-   *  offers no control to solve it. A challenge with a checkbox or button is
-   *  still worth attempting, so only the empty case short-circuits. */
   deadPageReason(page) {
     if (page.actions.some((a) => a.node !== void 0)) return null;
     if (page.url.startsWith("chrome-error://")) {
@@ -1829,8 +1787,6 @@ ${repair}` : this.goal;
     if (this.page.downloads?.length) result.downloads = this.page.downloads;
     return result;
   }
-  /** True when the goal asks for information rather than only a state —
-   *  those runs extract an answer off the terminal page. */
   static goalAsksForAnswer(goal) {
     return /\?|\b(what|which|who|whom|whose|when|where|why|how (many|much|old|tall|long|far))\b|\b(name|list|report|tell me|find out|extract|read)\b[^\n]{0,80}\b(price|version|date|number|name|title|count|population|email|phone|author|score|address|link|url|size|status|message|text|error|reason|value|winner|top|latest|first|total)s?\b/i.test(
       goal
@@ -1839,7 +1795,6 @@ ${repair}` : this.goal;
   async close() {
     await this.browser?.close();
   }
-  /** Introspection for adapters/tests. */
   snapshot() {
     return {
       status: this.status,
@@ -1995,7 +1950,6 @@ var CdpSocket = class _CdpSocket {
   nextId = 1;
   pending = /* @__PURE__ */ new Map();
   listeners = /* @__PURE__ */ new Map();
-  /** Sessions whose renderer died; calls against them reject, the socket lives. */
   crashed = /* @__PURE__ */ new Set();
   closed = false;
   constructor(ws) {
@@ -2207,22 +2161,13 @@ var CdpBrowser = class _CdpBrowser {
   afterInput = null;
   seen = /* @__PURE__ */ new Set();
   adopted = [];
-  /** targetId → sessionId for every tab we own (initial + adopted). */
   sessions = /* @__PURE__ */ new Map();
-  /** In-flight request ids per session — the "is the page actually working" signal. */
-  /** In-flight requests per session: requestId → start time for age pruning. */
   pending = /* @__PURE__ */ new Map();
-  /** Uncommitted main-frame navigations per session — click → commit is a gap. */
   navPending = /* @__PURE__ */ new Map();
-  /** Each session's main frame id — iframe nav events must not count as pending. */
   mainFrame = /* @__PURE__ */ new Map();
-  /** The last auto-accepted JS dialog, surfaced on the next observation. */
   lastDialog = null;
-  /** CDP key modifier for select-all — Meta (4) on a macOS browser, Control (2) else. */
   selectAllModifier = 2;
-  /** guid → suggested filename while a download is in flight. */
   downloadGuids = /* @__PURE__ */ new Map();
-  /** Filenames of completed downloads, in finish order. */
   downloads = [];
   constructor() {
   }
@@ -2407,7 +2352,6 @@ var CdpBrowser = class _CdpBrowser {
       throw error;
     }
   }
-  /** Record the session's main frame so iframe nav events don't fake a pending nav. */
   async learnMainFrame() {
     const tree = await this.call(
       "Page.getFrameTree"
@@ -2429,7 +2373,6 @@ var CdpBrowser = class _CdpBrowser {
     }
     return response.result?.value;
   }
-  /** Follow newly opened tabs — the driver observes what the user would see. */
   async adoptNewTarget() {
     const { targetInfos } = await this.socket.call("Target.getTargets").catch(() => ({ targetInfos: [] }));
     const fresh = targetInfos.filter(
@@ -2467,8 +2410,6 @@ var CdpBrowser = class _CdpBrowser {
       }
     }
   }
-  /** Owned page targets (initial tab + adopted ones) with their titles —
-   *  powers the tabs field and FOCUS_TAB_* controls. */
   async listTabs() {
     const { targetInfos } = await this.socket.call("Target.getTargets").catch(() => ({ targetInfos: [] }));
     return targetInfos.filter((t) => t.type === "page" && this.sessions.has(t.targetId)).map((t) => ({ targetId: t.targetId, title: t.title ?? "", url: t.url ?? "" }));
@@ -2540,9 +2481,6 @@ var CdpBrowser = class _CdpBrowser {
     }
     throw new StalePage("Page did not settle");
   }
-  /** Requests still young enough to count as in-flight work; older entries
-   *  are reaped — a request that outlives the grace window is hung, not
-   *  settling. */
   pendingCount(session) {
     const requests = this.pending.get(session);
     if (!requests) return 0;
@@ -2554,8 +2492,6 @@ var CdpBrowser = class _CdpBrowser {
     }
     return count;
   }
-  /** Hold until the page has been still for QUIET_MS, capped at budgetMs. A
-   *  caller about to re-compare needs stillness, not the first mutation. */
   async settle(budgetMs, quietMs = QUIET_MS) {
     const quiet = await this.evaluate(
       `(() => {const w = window.__jevFast && window.__jevFast.wake;
@@ -2817,12 +2753,6 @@ var CdpBrowser = class _CdpBrowser {
     this.afterInput = action;
     return { executed: action.id };
   }
-  /**
-   * Fallback when trusted input silently delivers nothing — seen on pages
-   * where a canceled provisional navigation leaves the input pipeline dead
-   * (same document, all dispatch* calls no-op). Dispatches the pointer/mouse
-   * sequence in-page; untrusted events still run ordinary handlers.
-   */
   async domClick(action, page, text) {
     if (!await this.fresh(page, action)) {
       throw new StalePage("Page changed since this decision. Observe again.");
@@ -2964,7 +2894,6 @@ var AgentBrowser = class _AgentBrowser {
     }
     return browser;
   }
-  /** Child env without ambient session/profile pointers — the jev session is self-owned. */
   env() {
     const env = { ...process.env };
     delete env.AGENT_BROWSER_PROFILE;

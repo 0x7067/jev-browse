@@ -1,48 +1,16 @@
-/**
- * The complete agent loop. Typed choices, observable state, bounded execution.
- * Driver-agnostic port of jev-ultrafast's agent.py: predict (one systemOne
- * call) -> act (guarded mutation) -> observe, until DONE/BLOCKED or budget.
- *
- * The loop is an explicit phase machine. States:
- *
- *   observe  → refresh the page snapshot after staleness or a give-up probe
- *   decide   → produce a decision: model call or resolved follow-up
- *   act      → execute the decision (guarded mutation, DONE/BLOCKED claims)
- *   settle   → post-action observation, dom fallback, stalemate fuses
- *   done | blocked | error → terminal
- *
- * Transitions:
- *   observe → decide          (fresh snapshot in hand)
- *   decide  → act             (decision made — model or synthetic follow-up)
- *   decide  → done            (DONE_AFTER follow-up survived its stability check)
- *   act     → settle          (action executed)
- *   act     → observe         (BLOCKED claim probed; StalePage anywhere)
- *   act     → done | blocked  (claim confirmed after probes/stability)
- *   settle  → decide          (page still converging)
- *   settle  → blocked         (a stalemate fuse fired)
- *   any     → error           (fatal: budgets, dead helper, unknown action)
- */
 
 import { MAX_STEPS } from "./questions.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Bounds for the first-observation settle (see settleFirstObservation). */
 const FIRST_SETTLE_MS = 1500;
 
 const FIRST_SETTLE_POLL_MS = 150;
 
-/** The page offers something to read or something to operate — anything past
- *  the baseline scroll/wait/press/back/forward controls is element-backed. */
 function hasContent(page: PageState): boolean {
   return Boolean(page.text.trim()) || page.actions.some((a) => a.node !== undefined);
 }
 
-/** An SPA can commit its document before painting anything: the first snapshot
- *  then carries no text and no controls, and the first decision is spent on a
- *  WAIT. Re-observe until content appears or the network goes quiet, bounded
- *  so a genuinely empty page costs no more than FIRST_SETTLE_MS. Pages that
- *  already have content return untouched. */
 async function settleFirstObservation(
   browser: BrowserDriver,
   page: PageState,
@@ -57,16 +25,12 @@ async function settleFirstObservation(
 
     if (hasContent(latest)) break;
 
-    // Nothing in flight and still nothing rendered — waiting buys nothing.
     if (!latest.pending_requests && !latest.pending_nav) break;
   }
 
   return latest;
 }
 
-/** True when `needle` occurs in `haystack` starting at a word boundary —
- *  "pari" matches "Paris, France" but "art" does not match "Start". */
-/** Labels that undo a selection rather than offer one. */
 const UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
 
 function atWordBoundary(haystack: string, needle: string): boolean {
@@ -90,7 +54,6 @@ import { StalePage, type BrowserDriver, type JsonValue, type PageState } from ".
 export interface AgentOptions {
   url: string;
   goal: string | string[];
-  /** Browser engine factory. */
   open: (url: string) => Promise<BrowserDriver>;
   maxSteps?: number;
 }
@@ -126,26 +89,15 @@ export interface RunResult {
   decisions: number;
   elapsed_ms: number;
   history: HistoryEntry[];
-  /** Page text at terminal state — lets verifiers check outcomes, not claims. */
   final_text?: string;
-  /** Direct answer for interrogative/extractive goals, extracted at done. */
   answer?: string;
-  /** Filenames downloaded during the run. */
   downloads?: string[];
   error?: string;
-  /** Which exit ended a blocked run — a model give-up, an exhausted budget,
-   *  a stale storm and a dead page each call for a different fix. */
   blocked_cause?: string;
-  /** Element state at the terminal page — checked boxes, chosen options,
-   *  field values. Page text cannot show these, so without it a checkbox
-   *  task can only be verified by the clicks it made, not by how it ended. */
   final_state?: string;
-  /** Why `answer` is absent. An unset answer used to be indistinguishable
-   *  from an unasked one, so a missed extraction looked like a wrong page. */
   answer_note?: string;
 }
 
-/** One line per element that carries state, for `expect.state_match`. */
 function stateSummary(page: PageState): string {
   const lines: string[] = [];
 
@@ -154,14 +106,12 @@ function stateSummary(page: PageState): string {
       element[k] === undefined || element[k] === "" ? [] : [`${k}=${element[k]}`],
     );
 
-    // Labels can carry a whole page's text; the state is the point here.
     if (state.length) lines.push(`${String(element.label).slice(0, 60)} ${state.join(" ")}`);
   }
 
   return lines.join("\n");
 }
 
-/** Non-terminal phases; terminal status is reported as done/blocked/error. */
 type Phase = "observe" | "decide" | "act" | "settle" | "done" | "blocked" | "error";
 
 export class Agent {
@@ -174,7 +124,6 @@ export class Agent {
   private earlyWaits = 0;
   private fingerprints: string[] = [];
   private domRetried = new Set<number>();
-  /** node id → clicks that changed nothing, counted after the in-page retry. */
   private domDead = new Map<number, number>();
   private domDoc: string | undefined;
   private followUp: { type: string; text: string | null; prevNodes: Set<number> } | null = null;
@@ -191,13 +140,8 @@ export class Agent {
   private fuseConsulted = false;
   private doneConsults = 0;
 
-  /** Set for the lifetime of run(); lets the decide path report the action
-   *  space it actually offered, which the step events cannot show. */
   private onEvent?: (event: { type: string; [k: string]: JsonValue }) => void;
 
-  /** Why the loop stopped short. A bare "blocked" cannot distinguish a model
-   *  give-up from an exhausted budget or a stale storm, and the three call
-   *  for different fixes. */
   private blockedCause: string | null = null;
   private repairHint: string | null = null;
   private staleStreak = 0;
@@ -241,7 +185,6 @@ export class Agent {
     return Math.round(performance.now() - this.startedAt);
   }
 
-  /** Terminal status for results and adapters. */
   private get status(): "ready" | "done" | "blocked" | "error" {
     if (this.phase === "done" || this.phase === "blocked" || this.phase === "error") {
       return this.phase;
@@ -250,14 +193,10 @@ export class Agent {
     return "ready";
   }
 
-  // --- observe -------------------------------------------------------------
-
   private async observeStep(): Promise<void> {
     this.page = await this.browser.observe();
     this.phase = "decide";
   }
-
-  // --- decide --------------------------------------------------------------
 
   private async decideStep(): Promise<void> {
     if (!this.startedAt) this.startedAt = performance.now();
@@ -275,16 +214,11 @@ export class Agent {
 
     this.decision = null;
 
-    // A confident speculation skips the decision call entirely: resolve the
-    // follow-up against the post-action state into a synthetic decision, and
-    // let the normal act path execute it (freshness, entries, fuses intact).
     if (this.followUp) {
       const fu = this.followUp;
       this.followUp = null;
 
       if (fu.type === "DONE") {
-        // The consult is a cheap decision; the stability window is not.
-        // Ask first, so a claim that gets re-decided never pays the window.
         if (this.prematureDone()) {
           this.phase = "decide";
 
@@ -321,22 +255,12 @@ export class Agent {
       }
     }
 
-    // A probe, fuse, or stale storm asked for one repair consult: say it
-    // plainly, then consume it — the hint applies to exactly this decide.
-    // The history already shows the failed pattern; the model needs the
-    // nudge to try a different approach instead of repeating it once more.
     const toggle = this.toggleHint();
     const repair = this.repairHint ?? toggle;
     this.repairHint = null;
 
     const goal = repair ? `${this.goal}\n\n${repair}` : this.goal;
 
-    // A toggle loop is structural, not just a wording problem — the same
-    // control keeps winning the decide. Present this one consult without it:
-    // the next observation puts it back if it was really needed.
-    // Two dead clicks on one node is enough: withdraw CLICK on it for the
-    // rest of this document. Other operations stand — an element that does
-    // nothing on click may still hover, drag, or accept text.
     const dead = new Set(
       [...this.domDead].flatMap(([node, n]) => (n >= 2 ? [node] : [])),
     );
@@ -369,9 +293,6 @@ export class Agent {
     this.phase = "act";
   }
 
-  /** What the model was given and what it picked. The offered counts expose
-   *  fixed action-space overhead — controls that are listed on every page
-   *  whether or not they can do anything — which step events never show. */
   private reportDecision(page: PageState, repaired: boolean): void {
     if (!this.onEvent) return;
 
@@ -393,19 +314,11 @@ export class Agent {
     });
   }
 
-  /**
-   * A done claim behind an imperative goal is a claim without evidence when
-   * the run barely acted — or when it only navigated (scroll/hover/wait)
-   * and never touched the element the goal names. One confirmation consult
-   * before accepting; a second claim stands. Observe-only goals skip it.
-   */
   private prematureDone(): boolean {
     const acted = this.history.filter((h) => h.operation !== "WAIT");
     const MUTATING = new Set(["click", "context", "select", "fill", "drag", "press"]);
     const unproven = acted.length < 2 || !acted.some((h) => MUTATING.has(h.kind));
 
-    // Consult twice at most: the second consult names this the last check,
-    // then a repeated claim stands. Observe-only goals skip it entirely.
     if (this.doneConsults >= 2 || !unproven) return false;
 
     if (
@@ -432,14 +345,9 @@ export class Agent {
     return true;
   }
 
-  /** Detect a click-toggle loop: the same control clicked twice in a row
-   *  with the page changing each time means it opened then closed — the
-   *  reveal is in the table and the model keeps pressing the switch. */
   private toggleHint(): string | null {
     const tail = this.history.slice(-2);
 
-    // history labels carry a " (dom)" suffix when the in-page retry was the
-    // path that landed — normalize before comparing.
     const norm = (s: string) => s.replace(/ \(dom\)$/, "");
 
     if (
@@ -456,8 +364,6 @@ export class Agent {
     return null;
   }
 
-  /** One-line nudge for a give-up claim, tailored to what the run hasn't
-   *  tried — a taller-than-viewport page never scrolled is the common miss. */
   private giveUpHint(page: PageState): string {
     const base =
       "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";
@@ -471,7 +377,6 @@ export class Agent {
     return base;
   }
 
-  /** Map a speculative follow-up to an action id on the current page. */
   private resolveFollowUp(fu: {
     type: string;
     text: string | null;
@@ -482,14 +387,6 @@ export class Agent {
     }
 
     if (fu.type === "CLICK_MATCH_TYPED") {
-      // Autocomplete suggestions are the elements that appeared in response
-      // to typing — ids are positional and recycle between observations, so
-      // diff by node identity. Without a label match, resolve only an
-      // unambiguous single newcomer — page chrome appearing mid-typing is
-      // not the suggestion.
-      // A pick of its own makes a newcomer appear: the chip's remove control.
-      // It matches the typed text as well as the suggestion did, so without
-      // this the follow-up undoes the selection it was meant to confirm.
       const appeared = this.page.actions.filter(
         (a) =>
           a.kind === "click" &&
@@ -517,18 +414,6 @@ export class Agent {
     return null;
   }
 
-  // --- act -----------------------------------------------------------------
-
-  /**
-   * Confirm a DONE claim. A click-triggered navigation in flight means the
-   * claim verifies the page the action just left: poll freshness through a
-   * commit window — the commit fails fresh() and sends the machine back to
-   * decide on the new page. The deadline falls through, never vetoes: busy
-   * pages (perpetual connections, stuck counters) would otherwise loop a
-   * done claim forever. The stability window below is the real arbiter —
-   * requests in flight (Turbo-style swaps land without navigation events)
-   * widen it, because a swap during the claim fails fresh().
-   */
   private async confirmDone(page: PageState): Promise<void> {
     if (page.pending_nav || this.browser.pendingNav?.()) {
       const deadline = Date.now() + 2500;
@@ -548,8 +433,6 @@ export class Agent {
 
     const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
 
-    // The window exists to let a late swap land before the second compare.
-    // Stillness is the real signal; the window is only its ceiling.
     await (this.browser.settle?.(window_) ?? sleep(window_));
 
     if (!(await this.browser.fresh(page, undefined, "structure"))) {
@@ -562,30 +445,18 @@ export class Agent {
     const page = this.page;
 
     if (!decision) throw new Error("Choose before acting");
-    // Consume once, before any mutation or model call. A retry cannot double-click.
     this.decision = null;
     const selected = decision.choice;
 
     if (selected === "DONE" || selected === "BLOCKED") {
-      // A claim must describe the live page: structure freshness compares
-      // controls, form state, and digit-normalized text — a clock can't
-      // stale-loop DONE, but a "Processing" → "failed" swap can.
       if (!(await this.browser.fresh(page, undefined, "structure"))) {
         throw new StalePage("Page changed since the decision. Choose again.");
       }
 
-      // Any BLOCKED claim is a give-up worth second-guessing: poll until the
-      // page moves (recovery — re-decide) or the patience a WAIT-loop would
-      // buy expires (accept the claim). Bounded by earlyWaits; mutating
-      // retries stay forbidden.
-      // One full patience window per stuck episode: a claim repeated after
-      // the repair consult, with nothing having moved, is accepted as is.
       if (selected === "BLOCKED" && this.earlyWaits < 3 && !this.probeConsulted) {
         this.earlyWaits++;
         const entry = this.waitEntry("Wait for the page to update", page);
         const started = Date.now();
-        // Patience scales with evidence of work: a page with requests in
-        // flight earns the full window; an idle page earns a shorter one.
         let deadline = started + 4_000;
 
         for (;;) {
@@ -607,9 +478,6 @@ export class Agent {
               return;
             }
 
-            // An unchanged page after a full patience window is a real
-            // give-up signal — but a single borderline claim still earns one
-            // hinted re-decide before the claim is accepted.
             this.probeConsulted = true;
             this.repairHint = this.giveUpHint(page);
             this.phase = "decide";
@@ -640,21 +508,15 @@ export class Agent {
 
     if (!action) throw new Error(`Decision selected unknown action ${selected}`);
 
-    // CONTEXT_CLICK shares the click candidate set — re-tag the resolved
-    // element so the driver dispatches a right-button press, not a click.
     if (decision.operation === "CONTEXT_CLICK") {
       action = { ...action, kind: "context" };
     }
 
-    // DRAG resolves two ends: the choice is the source, target2 the
-    // destination. Re-tag with the destination node for the driver.
     if (decision.operation === "DRAG" && decision.target2) {
       const dest = page.actions.find((a) => a.id === decision.target2);
 
       if (!dest?.node) throw new Error(`Drag destination ${decision.target2} is not an element`);
 
-      // Dropping an element on itself is a malformed answer, not an action —
-      // re-decide instead of executing a guaranteed no-op.
       if (dest.node === action.node) {
         throw new StalePage("Drag destination is the source itself. Choose again.");
       }
@@ -673,8 +535,6 @@ export class Agent {
     let helper: { model: string; latency_ms: number; usage?: unknown } | null = null;
 
     if (action.kind === "fill") {
-      // Same document and field state is what the helper's context needs;
-      // ambient text churn is not a reason to re-decide.
       if (!(await this.browser.fresh(page, undefined, "page"))) {
         throw new StalePage("Page changed before text generation. Choose again.");
       }
@@ -686,7 +546,6 @@ export class Agent {
       } else {
         let generated;
 
-        // An empty helper answer hasn't typed anything — fresh asks are safe.
         for (let attempt = 0; ; attempt++) {
           try {
             generated = await fieldText(context);
@@ -703,14 +562,11 @@ export class Agent {
       }
     }
 
-    // act() re-checks freshness immediately before input, after text generation.
     await this.browser.act(action, page, text);
     this.pendingText = null;
     this.earlyWaits = 0;
     this.probeConsulted = false;
 
-    // Record execution before observing; a stale post-action observation must
-    // not erase the action.
     const entry: HistoryEntry = {
       step: this.history.length + 1,
       action: action.label,
@@ -739,8 +595,6 @@ export class Agent {
     this.settleEntry = entry;
   }
 
-  // --- settle --------------------------------------------------------------
-
   private async settleStep(): Promise<void> {
     const ctx = this.settleContext;
     const entry = this.settleEntry;
@@ -750,10 +604,6 @@ export class Agent {
     this.settleContext = null;
     this.settleEntry = null;
 
-    // A navigation the action just triggered may not have committed — an
-    // observation taken mid-flight reads the page the click is leaving and
-    // the change reads as nothing. Watch briefly for the nav to begin, then
-    // wait out the commit before measuring.
     if (["click", "context", "select", "press"].includes(action.kind)) {
       const navDeadline = Date.now() + 2500;
 
@@ -765,8 +615,6 @@ export class Agent {
     this.page = await this.browser.observe();
     entry.page_changed = this.page.fingerprint !== page.fingerprint;
 
-    // Node ids restart at 1 in every document — a retry budget keyed by
-    // node must reset when the document does.
     const doc = String(Array.isArray(page.page_key) ? page.page_key[0] : page.page_key);
 
     if (this.domDoc !== doc) {
@@ -775,10 +623,6 @@ export class Agent {
       this.domDead.clear();
     }
 
-    // Trusted input can silently deliver nothing — seen after a canceled
-    // provisional navigation leaves the renderer's input pipeline dead.
-    // Before counting a no-change strike, retry once via in-page event
-    // synthesis; an element that does nothing on click is unaffected.
     if (
       entry.page_changed === false &&
       (action.kind === "click" ||
@@ -800,15 +644,9 @@ export class Agent {
           entry.action = `${action.label} (dom)`;
         }
       } catch {
-        // StalePage or a dead element — the no-change path below stands.
       }
     }
 
-    // A click that changed nothing, with the in-page retry already spent, is
-    // a dead target. Count it; the second strike takes it out of the CLICK
-    // space in decide(). The prompt already says not to repeat a dead click
-    // and the model does it anyway — as with the key gating, the space is
-    // what it follows, not the advice.
     if (
       entry.page_changed === false &&
       action.kind === "click" &&
@@ -817,9 +655,6 @@ export class Agent {
       this.domDead.set(action.node, (this.domDead.get(action.node) ?? 0) + 1);
     }
 
-    // DONE_AFTER is only honored on actions that can complete a goal —
-    // scroll/hover/wait/navigation only position the view, so a completion
-    // prediction on them is malformed on its face and gets ignored.
     const REVEAL_KINDS = new Set(["scroll", "wait", "hover", "back", "forward"]);
 
     if (
@@ -843,11 +678,6 @@ export class Agent {
 
     const repeated = this.history.slice(-3);
 
-    // Stalemate bounds: quick give-up on repeated no-op actions; a
-    // time-based fuse for idle no-change streaks (a client-side timer is
-    // indistinguishable from a stuck page — only patience and a deadline
-    // separate them); and cycle detection for back-and-forth loops that
-    // evade both. In-flight requests reset the streak: the page is working.
     let idleMs = 0;
     const last = this.history[this.history.length - 1];
 
@@ -858,10 +688,6 @@ export class Agent {
       idleMs = (last?.elapsed_ms ?? 0) - h.elapsed_ms;
     }
 
-    // Revisit fuse: wandering loops need not be periodic — a page seen 4+
-    // times in the last 14 distinct observations means the agent isn't
-    // converging. Consecutive identical fingerprints collapse to one, so
-    // waits during a legit client-side timer don't count as revisits.
     const trail = this.fingerprints
       .slice(-14)
       .filter((f, i, a) => i === 0 || f !== a[i - 1]);
@@ -879,7 +705,6 @@ export class Agent {
       this.fuseConsulted = false;
       this.phase = "decide";
     } else if (!this.fuseConsulted) {
-      // Repair before verdict: one consult with the stuck signal spelled out.
       this.fuseConsulted = true;
       this.repairHint =
         "Your recent actions made no progress. Try a different approach — scroll, hover, a different element — or claim BLOCKED.";
@@ -890,12 +715,10 @@ export class Agent {
     }
   }
 
-  /** True when the recent fingerprint trail is a short cycle repeated whole. */
   private cycling(): boolean {
     const f = this.fingerprints;
     const n = f.length;
 
-    // Period 2 needs the pair thrice (x,y,x,y,x,y); period 3 twice (x,y,z,x,y,z).
     return (
       (n >= 6 && f[n - 1] === f[n - 3] && f[n - 3] === f[n - 5] &&
         f[n - 2] === f[n - 4] && f[n - 4] === f[n - 6] && f[n - 1] !== f[n - 2]) ||
@@ -931,9 +754,6 @@ export class Agent {
     return entry;
   }
 
-  /** A page nothing can be done on: a Chrome error page, or a bot wall that
-   *  offers no control to solve it. A challenge with a checkbox or button is
-   *  still worth attempting, so only the empty case short-circuits. */
   private deadPageReason(page: PageState): string | null {
     if (page.actions.some((a) => a.node !== undefined)) return null;
 
@@ -951,7 +771,6 @@ export class Agent {
     this.onEvent = onEvent;
 
     if (!this.startedAt) this.startedAt = performance.now();
-    // Nothing to read and nothing to click — spend no decisions on it.
     const dead = this.deadPageReason(this.page);
 
     if (dead) {
@@ -991,10 +810,6 @@ export class Agent {
         }
       } catch (error) {
         if (error instanceof StalePage) {
-          // Re-observe and let the machine choose again on the fresh page.
-          // A stale-redo loop records nothing and spends no budget, so the
-          // decisions cap never reaches it — count consecutive cycles and
-          // stop the storm: one hinted consult, then blocked.
           this.decision = null;
           this.staleStreak++;
 
@@ -1025,8 +840,6 @@ export class Agent {
         }
       }
 
-      // One event per recorded action (or terminal transition) — phase
-      // boundaries without a new entry are loop internals, not steps.
       if (this.history.length !== emitted || this.status !== "ready") {
         emitted = this.history.length;
         const last = this.history[this.history.length - 1];
@@ -1043,14 +856,8 @@ export class Agent {
       }
     }
 
-    // Truth before reporting: a committing navigation or a trailing render
-    // can outlive the last observation (SPA URL commits land after the DONE
-    // stability window). One final read so final_url/final_text describe the
-    // page the run actually ended on.
     if (this.status !== "ready" && !this.terminalError) {
       try {
-        // SPA commits can land a beat after the DONE confirm window — re-read
-        // until url/title settle, bounded so reporting never hangs.
         for (let i = 0; i < 8; i++) {
           const latest = await this.browser.observe();
 
@@ -1063,17 +870,12 @@ export class Agent {
 
           if (settled) break;
 
-          // url/title have not agreed yet, so wait for the page to stop
-          // moving rather than for a fixed slice of it.
           await (this.browser.settle?.(350, 120) ?? sleep(350));
         }
       } catch {
-        // keep the last good page
       }
     }
 
-    // Interrogative goals earn a direct answer, not just a done claim —
-    // extraction is best-effort and never fails an otherwise-good run.
     let answer: string | undefined;
     let answerNote: string | undefined;
 
@@ -1089,7 +891,6 @@ export class Agent {
 
         if (answer === undefined) answerNote = "helper read the page and returned no answer";
       } catch (error) {
-        // no configured helper or an unusable answer — report without it
         answerNote = `helper failed: ${String(error).slice(0, 160)}`;
       }
     }
@@ -1122,8 +923,6 @@ export class Agent {
     return result;
   }
 
-  /** True when the goal asks for information rather than only a state —
-   *  those runs extract an answer off the terminal page. */
   private static goalAsksForAnswer(goal: string): boolean {
     return /\?|\b(what|which|who|whom|whose|when|where|why|how (many|much|old|tall|long|far))\b|\b(name|list|report|tell me|find out|extract|read)\b[^\n]{0,80}\b(price|version|date|number|name|title|count|population|email|phone|author|score|address|link|url|size|status|message|text|error|reason|value|winner|top|latest|first|total)s?\b/i.test(
       goal,
@@ -1134,7 +933,6 @@ export class Agent {
     await this.browser?.close();
   }
 
-  /** Introspection for adapters/tests. */
   snapshot() {
     return {
       status: this.status,

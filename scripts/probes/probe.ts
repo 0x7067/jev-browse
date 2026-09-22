@@ -1,5 +1,3 @@
-// Model-free probe: open every task URL through the CDP driver, observe once,
-// and record reachability + extractor stats. No Jev, no text model.
 import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

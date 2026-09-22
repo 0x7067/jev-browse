@@ -5,12 +5,29 @@
 Run these before you call a change to `src/` done. All must be clean.
 
 - `npm run typecheck`
-- `npm run lint`
+- `npm run lint` — oxlint plus `check:comments` (code comments are banned)
 - `npm run check:bundle` — rebuilds `bundled/` and fails if the committed
   bundles drifted. `bundled/` is committed and is what installed copies
   execute, so commit the rebuilt bundles with the source change.
 
 Never commit `dist/`; it is gitignored build output.
+
+## Code comments banned
+
+Implementation source (`.ts` / `.js` / `.mjs` / `.cjs` and siblings under the
+repo, including `src/`, `scripts/`, `integrations/`, and `tools/`) must not
+contain line, block, or JSDoc comments. Shebang lines and `LICENSE` files are
+allowed. Markdown docs and skill `SKILL.md` prose are not code comments — leave
+them alone. String literals that look like comments are fine.
+
+Enforcement:
+
+- oxlint rule `anti-slop/no-comments` (via `npm run lint`)
+- `npm run check:comments` — TypeScript-scanner gate over implementation files
+  (covers paths oxlint ignores, such as `tools/oxlint/**` and `scripts/probes/**`)
+
+Do not reintroduce `SAFETY:` or other justification comments for type
+assertions; prefer clearer types or decoding helpers instead.
 
 ## Eval evidence
 

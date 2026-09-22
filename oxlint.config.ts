@@ -16,8 +16,9 @@ export default defineConfig({
 		"bundled/**",
 		"dist/**",
 		"tools/oxlint/anti-slop/**",
-		// One-off evidence scripts from the 2026-09-20 capability audit; see docs/HANDOFF-2026-09-20.md.
 		"scripts/probes/**",
+		"scripts/check-no-comments.mjs",
+		"scripts/strip-comments.mjs",
 	],
 	jsPlugins: [{ name: "anti-slop", specifier: "./tools/oxlint/anti-slop/index.ts" }],
 	rules: {
@@ -31,7 +32,6 @@ export default defineConfig({
 		"anti-slop/no-object-parameters": "error",
 		"anti-slop/no-reflect-apply": "error",
 		"anti-slop/no-reflect-get": "error",
-		// Type guards are the sanctioned decoding point for boundary values.
 		"anti-slop/no-runtime-typeof": ["error", { allowInTypeGuards: true }],
 		"anti-slop/no-shape-in-symbol-names": "error",
 		"anti-slop/no-unknown-parameters": "error",
@@ -40,6 +40,6 @@ export default defineConfig({
 		"anti-slop/no-unsafe-dictionary-type": "error",
 		"anti-slop/no-widen-then-assert": "error",
 		"anti-slop/require-readable-spacing": "error",
-		"anti-slop/require-safety-comment-for-type-assertion": "error",
+		"anti-slop/no-comments": "error",
 	},
 });

@@ -1,4 +1,3 @@
-// Vendored from ESLint Stylistic; see UPSTREAM.md and LICENSE in this directory.
 import type { ESTree, Context as RuleContext, SourceCode, Token as SyntaxToken, Comment, CreateRule, Location } from '@oxlint/plugins'
 type ASTNode = ESTree.Node
 type Token = SyntaxToken | Comment
@@ -23,20 +22,6 @@ import {
 const CJS_EXPORT = /^(?:module\s*\.\s*)?exports(?:\s*\.|\s*\[|$)/u
 const CJS_IMPORT = /^require\(/u
 
-/**
- * This rule is a replica of padding-line-between-statements.
- *
- * Ideally we would want to extend the rule support typescript specific support.
- * But since not all the state is exposed by the eslint and eslint has frozen stylistic rules,
- * (see - https://eslint.org/blog/2020/05/changes-to-rules-policies for details.)
- * we are forced to re-implement the rule here.
- *
- * We have tried to keep the implementation as close as possible to the eslint implementation, to make
- * patching easier for future contributors.
- *
- * Reference rule - https://github.com/eslint/eslint/blob/main/lib/rules/padding-line-between-statements.js
- */
-
 type NodeTest = (
   node: ASTNode,
   sourceCode: SourceCode,
@@ -56,13 +41,6 @@ function isSelectorOption(option: StatementOption): option is SelectorOption {
   return typeof option === 'object' && !Array.isArray(option)
 }
 
-/**
- * Creates tester which check if a node starts with specific keyword with the
- * appropriate AST_NODE_TYPES.
- * @param keyword The keyword to test.
- * @returns the created tester.
- * @private
- */
 function newKeywordTester(
   type: string | string[],
   keyword: string,
@@ -79,24 +57,12 @@ function newKeywordTester(
   }
 }
 
-/**
- * Creates tester which check if a node is specific type.
- * @param type The node type to test.
- * @returns the created tester.
- * @private
- */
 function newNodeTypeTester(type: string): NodeTestObject {
   return {
     test: (node): boolean => node.type === type,
   }
 }
 
-/**
- * Checks the given node is an expression statement of IIFE.
- * @param node The node to check.
- * @returns `true` if the node is an expression statement of IIFE.
- * @private
- */
 function isIIFEStatement(node: ASTNode): boolean {
   if (node.type === 'ExpressionStatement') {
     let expression = skipChainExpression(node.expression)
@@ -118,12 +84,6 @@ function isIIFEStatement(node: ASTNode): boolean {
   return false
 }
 
-/**
- * Checks the given node is a CommonJS require statement
- * @param node The node to check.
- * @returns `true` if the node is a CommonJS require statement.
- * @private
- */
 function isCJSRequire(node: ASTNode): boolean {
   if (node.type === 'VariableDeclaration') {
     const declaration = node.declarations[0]
@@ -143,19 +103,10 @@ function isCJSRequire(node: ASTNode): boolean {
   return false
 }
 
-/**
- * Checks whether the given node is a block-like statement.
- * This checks the last token of the node is the closing brace of a block.
- * @param sourceCode The source code to get tokens.
- * @param node The node to check.
- * @returns `true` if the node is a block-like statement.
- * @private
- */
 function isBlockLikeStatement(
   node: ASTNode,
   sourceCode: SourceCode,
 ): boolean {
-  // do-while with a block is a block-like statement.
   if (
     node.type === 'DoWhileStatement'
     && node.body.type === 'BlockStatement'
@@ -163,14 +114,9 @@ function isBlockLikeStatement(
     return true
   }
 
-  /**
-   * IIFE is a block-like statement specially from
-   * JSCS#disallowPaddingNewLinesAfterBlocks.
-   */
   if (isIIFEStatement(node))
     return true
 
-  // Checks the last token is a closing brace of blocks.
   const lastToken = sourceCode.getLastToken(node, isNotSemicolonToken)
   const belongingNode
     = lastToken && isClosingBraceToken(lastToken)
@@ -184,12 +130,6 @@ function isBlockLikeStatement(
   )
 }
 
-/**
- * Check whether the given node is a directive or not.
- * @param node The node to check.
- * @param sourceCode The source code object to get tokens.
- * @returns `true` if the node is a directive.
- */
 function isDirective(
   node: ASTNode,
   sourceCode: SourceCode,
@@ -202,12 +142,6 @@ function isDirective(
   )
 }
 
-/**
- * Check whether the given node is a part of directive prologue or not.
- * @param node The node to check.
- * @param sourceCode The source code object to get tokens.
- * @returns `true` if the node is a part of directive prologue.
- */
 function isDirectivePrologue(
   node: ASTNode,
   sourceCode: SourceCode,
@@ -230,12 +164,6 @@ function isDirectivePrologue(
   return false
 }
 
-/**
- * Checks the given node is a CommonJS export statement
- * @param node The node to check.
- * @returns `true` if the node is a CommonJS export statement.
- * @private
- */
 function isCJSExport(node: ASTNode): boolean {
   if (node.type === 'ExpressionStatement') {
     const expression = node.expression
@@ -258,12 +186,6 @@ function isCJSExport(node: ASTNode): boolean {
   return false
 }
 
-/**
- * Check whether the given node is an expression
- * @param node The node to check.
- * @param sourceCode The source code object to get tokens.
- * @returns `true` if the node is an expression
- */
 function isExpression(
   node: ASTNode,
   sourceCode: SourceCode,
@@ -274,19 +196,6 @@ function isExpression(
   )
 }
 
-/**
- * Gets the actual last token.
- *
- * If a semicolon is semicolon-less style's semicolon, this ignores it.
- * For example:
- *
- *     foo()
- *     ;[1, 2, 3].forEach(bar)
- * @param sourceCode The source code to get tokens.
- * @param node The node to get.
- * @returns The actual last token.
- * @private
- */
 function getActualLastToken(
   node: ASTNode,
   sourceCode: SourceCode,
@@ -305,14 +214,6 @@ function getActualLastToken(
   return isSemicolonLessStyle ? prevToken : semiToken
 }
 
-/**
- * This returns the concatenation of the first 2 captured strings.
- * @param _ Unused. Whole matched string.
- * @param trailingSpaces The trailing spaces of the first line.
- * @param indentSpaces The indentation spaces of the last line.
- * @returns The concatenation of trailingSpaces and indentSpaces.
- * @private
- */
 function replacerToRemovePaddingLines(
   _: string,
   trailingSpaces: string,
@@ -339,29 +240,9 @@ function getReportLoc(node: ASTNode, sourceCode: SourceCode): Location {
   }
 }
 
-/**
- * Check and report statements for `any` configuration.
- * It does nothing.
- *
- * @private
- */
 function verifyForAny(): void {
-  // Empty
 }
 
-/**
- * Check and report statements for `never` configuration.
- * This autofix removes blank lines between the given 2 statements.
- * However, if comments exist between 2 blank lines, it does not remove those
- * blank lines automatically.
- * @param context The rule context to report.
- * @param _ Unused. The previous node to check.
- * @param nextNode The next node to check.
- * @param paddingLines The array of token pairs that blank
- * lines exist between the pair.
- *
- * @private
- */
 function verifyForNever(
   context: RuleContext,
   _: ASTNode,
@@ -396,19 +277,6 @@ function verifyForNever(
   })
 }
 
-/**
- * Check and report statements for `always` configuration.
- * This autofix inserts a blank line between the given 2 statements.
- * If the `prevNode` has trailing comments, it inserts a blank line after the
- * trailing comments.
- * @param context The rule context to report.
- * @param prevNode The previous node to check.
- * @param nextNode The next node to check.
- * @param paddingLines The array of token pairs that blank
- * lines exist between the pair.
- *
- * @private
- */
 function verifyForAlways(
   context: RuleContext,
   prevNode: ASTNode,
@@ -429,26 +297,6 @@ function verifyForAlways(
         = sourceCode.getFirstTokenBetween(prevToken, nextNode, {
           includeComments: true,
 
-          /**
-           * Skip the trailing comments of the previous node.
-           * This inserts a blank line after the last trailing comment.
-           *
-           * For example:
-           *
-           *     foo(); // trailing comment.
-           *     // comment.
-           *     bar();
-           *
-           * Get fixed to:
-           *
-           *     foo(); // trailing comment.
-           *
-           *     // comment.
-           *     bar();
-           * @param token The token to check.
-           * @returns `true` if the token is not a trailing comment.
-           * @private
-           */
           filter(token) {
             if (isTokenOnSameLine(prevToken, token)) {
               prevToken = token
@@ -466,12 +314,6 @@ function verifyForAlways(
   })
 }
 
-/**
- * Types of blank lines.
- * `any`, `never`, and `always` are defined.
- * Those have `verify` method to check and report statements.
- * @private
- */
 const PaddingTypes = {
   any: { verify: verifyForAny },
   never: { verify: verifyForNever },
@@ -500,11 +342,6 @@ const MaybeMultilineStatementType: Record<string, NodeTestObject> = {
   'type': newKeywordTester('TSTypeAliasDeclaration', 'type'),
 }
 
-/**
- * Types of statements.
- * Those have `test` method to check it matches to the given statement.
- * @private
- */
 const StatementTypes: Record<string, NodeTestObject> = {
   '*': { test: (): boolean => true },
   'exports': { test: isCJSExport },
@@ -589,7 +426,6 @@ const StatementTypes: Record<string, NodeTestObject> = {
   ),
 }
 
-/** Build the vendored padding rule with caller-owned, typed policy options. */
 export default function createPaddingLineRule(options: RuleOptions): CreateRule {
 return {
   meta: {
@@ -599,7 +435,6 @@ return {
     },
     fixable: 'whitespace',
     hasSuggestions: false,
-    // This is intentionally an array schema as you can pass 0..n config objects
     schema: {
       $defs: {
         paddingType: {
@@ -692,12 +527,6 @@ return {
 
     let scopeInfo: Scope = null
 
-    /**
-     * Processes to enter to new scope.
-     * This manages the current previous statement.
-     *
-     * @private
-     */
     function enterScope(): void {
       scopeInfo = {
         upper: scopeInfo,
@@ -705,23 +534,11 @@ return {
       }
     }
 
-    /**
-     * Processes to exit from the current scope.
-     *
-     * @private
-     */
     function exitScope(): void {
       if (scopeInfo)
         scopeInfo = scopeInfo.upper
     }
 
-    /**
-     * Checks whether the given node matches the given type.
-     * @param node The statement node to check.
-     * @param type The statement type to check.
-     * @returns `true` if the statement node matched the type.
-     * @private
-     */
     function match(node: ASTNode, type: StatementOption): boolean {
       let innerStatementNode = node
 
@@ -753,13 +570,6 @@ return {
       }
     }
 
-    /**
-     * Finds the last matched configure from options.
-     * @param prevNode The previous statement to match.
-     * @param nextNode The current statement to match.
-     * @returns The tester of the last matched configure.
-     * @private
-     */
     function getPaddingType(
       prevNode: ASTNode,
       nextNode: ASTNode,
@@ -778,14 +588,6 @@ return {
       return PaddingTypes.any
     }
 
-    /**
-     * Gets padding line sequences between the given 2 statements.
-     * Comments are separators of the padding line sequences.
-     * @param prevNode The previous statement to count.
-     * @param nextNode The current statement to count.
-     * @returns The array of token pairs.
-     * @private
-     */
     function getPaddingLineSequences(
       prevNode: ASTNode,
       nextNode: ASTNode,
@@ -809,12 +611,6 @@ return {
       return pairs
     }
 
-    /**
-     * Verify padding lines between the given node and the previous node.
-     * @param node The node to verify.
-     *
-     * @private
-     */
     function verify(node: ASTNode): void {
       if (
         !node.parent
@@ -832,10 +628,8 @@ return {
         return
       }
 
-      // Save this node as the current previous statement.
       const prevNode = scopeInfo!.prevNode
 
-      // Verify.
       if (prevNode)
         pendingPairs.push({ prevNode, nextNode: node })
 
@@ -851,13 +645,6 @@ return {
       }
     }
 
-    /**
-     * Verify padding lines between the given node and the previous node.
-     * Then process to enter to new scope.
-     * @param node The node to verify.
-     *
-     * @private
-     */
     function verifyThenEnterScope(node: ASTNode): void {
       verify(node)
       enterScope()
