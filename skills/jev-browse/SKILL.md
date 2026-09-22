@@ -19,8 +19,8 @@ Jev drive a real Chrome tab end-to-end.
 
 - Exploratory browsing where the next step depends on what you find — drive it
   yourself instead.
-- Goals needing uploads, cross-tab flows, or interaction the model can't see
-  (canvas, shadow DOM).
+- Content the model can't see: closed shadow roots, cross-origin iframes,
+  canvas or other bitmap UI.
 - Purchases, credential entry, or other irreversible flows — there is no
   enforced guardrail.
 
@@ -42,12 +42,15 @@ proof — check `final_url` and `history` before reporting success. `blocked`
 means no supported operation could make progress (or the no-change detector
 fired); treat it as "try differently" not "failed".
 
+See [README.md](../../README.md) for engines, env vars, and limits.
+
 ## CLI (direct use)
 
-```
-node <plugin>/src/cli.ts --url URL --goal "GOAL" [--engine cdp|agent-browser] [--max-steps N]
+```bash
+jev-browse --url URL --goal "GOAL" [--engine cdp|agent-browser] [--max-steps N]
 ```
 
-Step events stream to stderr; the result JSON is stdout. Requires Node ≥22.18
-(type stripping). Env: `TYPESAFE_API_KEY` (required), `TEXT_MODEL_API_KEY` +
-`TEXT_MODEL_BASE_URL`/`TEXT_MODEL` (required for text entry).
+Or: `node <plugin>/bundled/cli.mjs …`. Step events stream to stderr; result
+JSON is stdout. Requires Node ≥22. Env: `TYPESAFE_API_KEY` (required),
+`TEXT_MODEL_API_KEY` + `TEXT_MODEL_BASE_URL`/`TEXT_MODEL` (required for text
+entry). Dev checkout: `npm run run` (tsx `src/cli.ts`).
