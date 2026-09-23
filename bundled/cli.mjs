@@ -1183,6 +1183,12 @@ async function settleFirstObservation(browser, page) {
   }
   return latest;
 }
+var STEP_KINDS = [
+  [/\b(type|enter|fill|upload)\b/i, ["fill"]],
+  [/\bdrag\b/i, ["drag"]],
+  [/\bpress\b/i, ["press"]],
+  [/\bwait for\b/i, ["wait"]]
+];
 var UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
 function fold(text) {
   return text.normalize("NFD").replace(new RegExp("\\p{M}", "gu"), "").toLowerCase();
@@ -1368,7 +1374,10 @@ ${repair}` : this.goal;
     const steps = this.goal.match(
       /\b(click|type|press|select|activate|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark|complete|choose|toggle|switch|wait for)\b/gi
     );
-    if ((steps?.length ?? 0) < 2) return false;
+    const skipped = STEP_KINDS.some(
+      ([step, kinds]) => step.test(this.goal) && !this.history.some((h) => kinds.includes(h.kind))
+    );
+    if ((steps?.length ?? 0) < 2 && !skipped) return false;
     this.doneConsults++;
     this.onEvent?.({
       type: "done_consult",
