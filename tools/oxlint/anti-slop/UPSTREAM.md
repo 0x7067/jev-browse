@@ -7,12 +7,11 @@ Copied verbatim on 2026-09-18 via the `install-anti-slop` skill's `scripts/insta
 ## Installed paths
 
 - `tools/oxlint/anti-slop/index.ts` — generic plugin entry, registered in `oxlint.config.ts` as `anti-slop`.
-- `tools/oxlint/anti-slop/effect/index.ts` — opt-in Effect plugin, not registered (no `effect` dependency in this repository).
 - `tools/oxlint/anti-slop/vendor/eslint-stylistic/` — vendored `padding-line-between-statements`; see `vendor/eslint-stylistic/UPSTREAM.md` for its own provenance.
 
 ## Deviations
 
-None. Files are unmodified from the bundled assets.
+- Removed the upstream `effect/` plugin subtree. This repository has no `effect` dependency and never registered that opt-in plugin in `oxlint.config.ts`.
 
 ## Updating
 
