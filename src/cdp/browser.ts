@@ -804,11 +804,13 @@ export class CdpBrowser implements BrowserDriver {
     }
 
     if (kind === "drag" && action.dragTo !== undefined) {
+      const destFrame = page.actions.find((a) => a.node === action.dragTo)?.frame;
+
       const dest = await this.evaluate<{ x: number; y: number } | null>(`(() => {
         const e=window.__jevFast?.node(${action.dragTo});
         if (!e?.isConnected) return null;
         const r=e.getBoundingClientRect();
-        return {x:r.x+r.width/2,y:r.y+r.height/2};
+        return {x:r.x+r.width/2+${destFrame?.x ?? 0},y:r.y+r.height/2+${destFrame?.y ?? 0}};
       })()`);
 
       if (!dest) throw new StalePage("Drag destination changed. Observe again.");
