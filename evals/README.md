@@ -83,9 +83,6 @@ runs through `file_url` tasks for deterministic coverage.
 | tin-file-upload blocked | file inputs were textboxes with a Focus click (native chooser) | fill-only surface, role 'file', TYPE_TEXT → `DOM.setFileInputFiles` |
 | parabank-transfer blocked (intermittent) | the site's transfer page 500s — final_text shows "internal error has occurred" | environmental flake; agent reaches the page and reports honestly |
 | invisible elements were uniformly dropped | `checkVisibility` misses opacity:0 custom controls (iOS toggles, styled checkboxes, material switches) | hit-test rescue in `gather()` — element wins its own center point → indexed |
-| conduit (realworld) unreachable | demo backends are dead — shell renders, no forms | environmental; dropped |
-| opencart blocked post-nav | Cloudflare interstitial | environmental; dropped |
-| tin-shifting-content unverifiable | its Gallery link is a designed 404 — blocked, done, and retreat are all defensible; it verifies nothing | dropped in 3dc4750 |
 
 ## Known limits (not bugs)
 
