@@ -80,3 +80,4 @@ handles, required state, commands, and observable proof.
 - [Fixture hover menu](./fixture-hover-menu.md) covers CSS hover-reveal menus.
 - [Fixture type and redeem](./fixture-type-redeem.md) covers TYPE_TEXT + enable.
 - [CLI missing key](./cli-missing-key.md) covers the unset-`TYPESAFE_API_KEY` error.
+- [Model-free drive paths](./model-free-drive.md) covers verifying snapshot/act behavior when the model is unreachable.
