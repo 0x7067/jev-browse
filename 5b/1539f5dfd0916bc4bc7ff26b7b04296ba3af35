@@ -1,0 +1,42 @@
+.cursor/skills/verify-jev-browse/features/fixture-hover-menu.md
+  s_251ac8f0cfe410::t_449655a83ab21d 23
+.cursor/skills/verify-jev-browse/features/jev-provider.md
+  s_251ac8f0cfe410::t_bd1c122a8c58fb 66-67
+  s_251ac8f0cfe410::t_c9f9f7b7a910d7 1-65,68
+.cursor/skills/verify-jev-browse/bin/control-jev-browse
+  s_251ac8f0cfe410::t_0cd2fd86f79736 102-105,338,340,449,451
+  s_251ac8f0cfe410::t_64ca8e26cd525a 268-270
+.cursor/skills/verify-jev-browse/features/cli-missing-key.md
+  s_251ac8f0cfe410::t_8594453a0d1baf 3,5-6,16-17,25,29,39-42
+.cursor/skills/verify-jev-browse/features/fixture-modal.md
+  s_251ac8f0cfe410::t_449655a83ab21d 24,43-44
+.cursor/skills/verify-jev-browse/SKILL.md
+  s_251ac8f0cfe410::t_b3312d29e65b84 7-9
+  s_251ac8f0cfe410::t_449655a83ab21d 34-36,102-104,131,174
+.cursor/skills/verify-jev-browse/features/fixture-type-redeem.md
+  s_251ac8f0cfe410::t_449655a83ab21d 12,24,38
+.cursor/skills/verify-jev-browse/features/model-free-drive.md
+  s_251ac8f0cfe410::t_449655a83ab21d 3-4,35-36,60-62
+.cursor/skills/verify-jev-browse/features/file-url-gate.md
+  s_251ac8f0cfe410::t_449655a83ab21d 12,29,36-37
+.cursor/skills/verify-jev-browse/features/README.md
+  s_251ac8f0cfe410::t_449655a83ab21d 32-33,59,83-84
+.claude/skills/verify-jev-browse
+  s_251ac8f0cfe410::t_6273724c0e682a 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5b1539f5dfd0916bc4bc7ff26b7b04296ba3af35",
+  "prompts": {},
+  "sessions": {
+    "s_251ac8f0cfe410": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "41b42ed9-875d-4cc4-a042-3dd34d9d7bb1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
