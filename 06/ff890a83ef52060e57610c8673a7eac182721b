@@ -1,0 +1,25 @@
+bundled/cli.mjs
+  s_a89a259cb7f6c5::t_080dd3ef8c5f4d 86,443
+bundled/mcp.mjs
+  s_a89a259cb7f6c5::t_f579a236d9c1fc 92,449
+src/model/text.ts
+  s_a89a259cb7f6c5::t_4c168b613b4618 41-44
+src/questions.ts
+  s_a89a259cb7f6c5::t_43db28d219b72a 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "06ff890a83ef52060e57610c8673a7eac182721b",
+  "prompts": {},
+  "sessions": {
+    "s_a89a259cb7f6c5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ebf17e30-eca2-49eb-bc37-79fa57436611",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
