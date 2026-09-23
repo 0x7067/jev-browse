@@ -24,7 +24,7 @@ Enforcement:
 
 - oxlint rule `anti-slop/no-comments` (via `npm run lint`)
 - `npm run check:comments` — TypeScript-scanner gate over implementation files
-  (covers paths oxlint ignores, such as `tools/oxlint/**` and `scripts/probes/**`)
+  (covers paths oxlint ignores, such as `tools/oxlint/**`)
 
 Do not reintroduce `SAFETY:` or other justification comments for type
 assertions; prefer clearer types or decoding helpers instead.
