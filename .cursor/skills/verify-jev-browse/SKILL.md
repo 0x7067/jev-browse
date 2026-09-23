@@ -16,9 +16,8 @@ or the eval harness `node scripts/eval.mjs`. There is no long-lived app server.
 This skill isolates each verification run under a disposable profile so it never
 shares `~/.jev-browse/profile` with a live session.
 
-Maintain the feature map under `features/` as the app changes. Use
-`/maintain-verification-skill` to refresh entry points, commands, and gotchas
-when the CLI, snapshot, or eval tasks drift.
+Maintain the feature map under `features/` as the app changes when the CLI,
+snapshot, or eval tasks drift.
 
 ## What this skill proves here
 
