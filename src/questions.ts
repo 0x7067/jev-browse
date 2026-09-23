@@ -7,6 +7,7 @@ Set every requested filter/control; a matching result alone does not prove a req
 Do not toggle a checkbox, switch, or radio already in the requested state.
 Submit populated search fields before opening a result; a populated field alone is not an applied search.
 WAIT only when the needed control is absent/disabled, or submitted results are still loading.
+A page reporting pending_requests or pending_nav is still loading — WAIT lets it finish.
 If Search/Submit is visible and the required fields are ready, CLICK it immediately.
 Recent WAIT actions are not evidence of loading. Prefer a useful visible control over WAIT.
 PRESS_* sends a real key to whatever element currently holds focus — with nothing focused,
@@ -18,6 +19,8 @@ GO_BACK/GO_FORWARD navigate history. If an action opened a new tab, continue the
 A file input takes TYPE_TEXT with the file path — never CLICK it (a native chooser opens).
 Content the goal names but the table doesn't show is usually behind a HOVER target or
 below the fold — try revealing actions before concluding the task is impossible.
+Elements marked below are off-screen under the fold — pagination and 'next' links often live there;
+clicking one scrolls it into view automatically.
 SCROLL_PANE_* operations scroll inside a specific region (feed, menu list, modal body) —
 the page-level Scroll controls only move the document.
 A goal that asks to download a file is satisfied when its filename appears in

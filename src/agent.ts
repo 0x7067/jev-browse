@@ -10,6 +10,10 @@ import { StalePage, type BrowserDriver, type JsonValue, type PageState } from ".
 
 const FIRST_SETTLE_MS = 1500;
 
+const FIRST_SETTLE_CONTENT_MS = 4000;
+
+const FIRST_SETTLE_PENDING_MS = 12_000;
+
 const FIRST_SETTLE_POLL_MS = 150;
 
 function hasContent(page: PageState): boolean {
@@ -20,20 +24,21 @@ async function settleFirstObservation(
   browser: BrowserDriver,
   page: PageState,
 ): Promise<PageState> {
-  if (hasContent(page)) return page;
-  const deadline = performance.now() + FIRST_SETTLE_MS;
+  const idleDeadline = performance.now() + FIRST_SETTLE_MS;
+  const contentDeadline = performance.now() + FIRST_SETTLE_CONTENT_MS;
+  const pendingDeadline = performance.now() + FIRST_SETTLE_PENDING_MS;
   let latest = page;
 
-  while (performance.now() < deadline) {
+  for (;;) {
+    const content = hasContent(latest);
+    const pending = Boolean(latest.pending_requests) || Boolean(latest.pending_nav);
+    const deadline = pending ? (content ? contentDeadline : pendingDeadline) : idleDeadline;
+
+    if ((content && !pending) || performance.now() >= deadline) return latest;
+
     await sleep(FIRST_SETTLE_POLL_MS);
     latest = await browser.observe();
-
-    if (hasContent(latest)) break;
-
-    if (!latest.pending_requests && !latest.pending_nav) break;
   }
-
-  return latest;
 }
 
 const STEP_KINDS: [RegExp, string[]][] = [

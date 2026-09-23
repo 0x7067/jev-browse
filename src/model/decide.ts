@@ -157,7 +157,7 @@ async function chooseOnce(
         element: `[${index}] ${a.label}`,
         current_value: a.current_value ?? a.value ?? "",
         ...Object.fromEntries(
-          ["role", "checked", "selected", "expanded", "cls", "draggable", "dropZone"].flatMap(
+          ["role", "checked", "selected", "expanded", "cls", "draggable", "dropZone", "below"].flatMap(
             (k) => (k in a ? [[k, a[k]]] : []),
           ),
         ),
@@ -226,6 +226,9 @@ async function chooseOnce(
     url: state.url,
     title: state.title,
     text: state.text,
+    ...(state.pending_nav === true && { pending_nav: true }),
+    ...(state.pending_requests !== undefined &&
+      state.pending_requests > 0 && { pending_requests: state.pending_requests }),
     ...(state.focused !== undefined && { focused: state.focused }),
     ...(state.dialog !== undefined && { dialog: state.dialog }),
     ...(state.downloads?.length && { downloads: state.downloads }),

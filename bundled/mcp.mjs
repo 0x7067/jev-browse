@@ -53,6 +53,7 @@ Set every requested filter/control; a matching result alone does not prove a req
 Do not toggle a checkbox, switch, or radio already in the requested state.
 Submit populated search fields before opening a result; a populated field alone is not an applied search.
 WAIT only when the needed control is absent/disabled, or submitted results are still loading.
+A page reporting pending_requests or pending_nav is still loading \u2014 WAIT lets it finish.
 If Search/Submit is visible and the required fields are ready, CLICK it immediately.
 Recent WAIT actions are not evidence of loading. Prefer a useful visible control over WAIT.
 PRESS_* sends a real key to whatever element currently holds focus \u2014 with nothing focused,
@@ -64,6 +65,8 @@ GO_BACK/GO_FORWARD navigate history. If an action opened a new tab, continue the
 A file input takes TYPE_TEXT with the file path \u2014 never CLICK it (a native chooser opens).
 Content the goal names but the table doesn't show is usually behind a HOVER target or
 below the fold \u2014 try revealing actions before concluding the task is impossible.
+Elements marked below are off-screen under the fold \u2014 pagination and 'next' links often live there;
+clicking one scrolls it into view automatically.
 SCROLL_PANE_* operations scroll inside a specific region (feed, menu list, modal body) \u2014
 the page-level Scroll controls only move the document.
 A goal that asks to download a file is satisfied when its filename appears in
@@ -138,6 +141,7 @@ function actionSpace(actions, delegatedContextmenu = false) {
         const v = action[k];
         if (v !== void 0) element2[k] = v;
       }
+      if (action.below === true) element2.below = true;
       if (kind === "select") {
         element2.value = action.current_value ?? "";
         element2.options = [];
@@ -266,7 +270,7 @@ async function chooseOnce(client, state, goal, history) {
         element: `[${index}] ${a.label}`,
         current_value: a.current_value ?? a.value ?? "",
         ...Object.fromEntries(
-          ["role", "checked", "selected", "expanded", "cls", "draggable", "dropZone"].flatMap(
+          ["role", "checked", "selected", "expanded", "cls", "draggable", "dropZone", "below"].flatMap(
             (k) => k in a ? [[k, a[k]]] : []
           )
         )
@@ -325,6 +329,8 @@ async function chooseOnce(client, state, goal, history) {
     url: state.url,
     title: state.title,
     text: state.text,
+    ...state.pending_nav === true && { pending_nav: true },
+    ...state.pending_requests !== void 0 && state.pending_requests > 0 && { pending_requests: state.pending_requests },
     ...state.focused !== void 0 && { focused: state.focused },
     ...state.dialog !== void 0 && { dialog: state.dialog },
     ...state.downloads?.length && { downloads: state.downloads },
@@ -1173,21 +1179,25 @@ var StalePage = class extends Error {
 
 // src/agent.ts
 var FIRST_SETTLE_MS = 1500;
+var FIRST_SETTLE_CONTENT_MS = 4e3;
+var FIRST_SETTLE_PENDING_MS = 12e3;
 var FIRST_SETTLE_POLL_MS = 150;
 function hasContent(page) {
   return Boolean(page.text.trim()) || page.actions.some((a) => a.node !== void 0);
 }
 async function settleFirstObservation(browser, page) {
-  if (hasContent(page)) return page;
-  const deadline = performance.now() + FIRST_SETTLE_MS;
+  const idleDeadline = performance.now() + FIRST_SETTLE_MS;
+  const contentDeadline = performance.now() + FIRST_SETTLE_CONTENT_MS;
+  const pendingDeadline = performance.now() + FIRST_SETTLE_PENDING_MS;
   let latest = page;
-  while (performance.now() < deadline) {
+  for (; ; ) {
+    const content = hasContent(latest);
+    const pending = Boolean(latest.pending_requests) || Boolean(latest.pending_nav);
+    const deadline = pending ? content ? contentDeadline : pendingDeadline : idleDeadline;
+    if (content && !pending || performance.now() >= deadline) return latest;
     await sleep(FIRST_SETTLE_POLL_MS);
     latest = await browser.observe();
-    if (hasContent(latest)) break;
-    if (!latest.pending_requests && !latest.pending_nav) break;
   }
-  return latest;
 }
 var STEP_KINDS = [
   [/\b(type|enter|fill|upload)\b/i, ["fill"]],
@@ -2117,7 +2127,7 @@ var PENDING_GRACE_MS = 1e4;
 var VIEWPORT_W = 1120;
 var VIEWPORT_H = 780;
 var SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
-var WAIT_BUDGET_MS = 1500;
+var WAIT_BUDGET_MS = 15e3;
 var QUIET_MS = 250;
 var WAIT_POLL_MS = 100;
 var DRAG_STEPS = 8;
@@ -2545,11 +2555,15 @@ var CdpBrowser = class _CdpBrowser {
     const kind = action.kind;
     if (kind === "wait") {
       const deadline = Date.now() + WAIT_BUDGET_MS;
-      const hadRequests = this.pendingCount(this.session) > 0;
-      while (Date.now() < deadline) {
-        await sleep(WAIT_POLL_MS);
+      for (; ; ) {
         if (!await this.fresh(page)) break;
-        if (hadRequests && this.pendingCount(this.session) === 0) break;
+        if (this.pendingNav() || this.pendingCount(this.session) > 0) {
+          if (Date.now() >= deadline) break;
+          await sleep(WAIT_POLL_MS);
+          continue;
+        }
+        await this.settle(Math.max(0, deadline - Date.now()), QUIET_MS);
+        break;
       }
       return { executed: action.id };
     }
@@ -2670,6 +2684,10 @@ var CdpBrowser = class _CdpBrowser {
       if (kind === "select") {
         throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
       }
+      const why = String(target?.why ?? "");
+      if ((kind === "click" || kind === "context" || kind === "hover") && (why === "offscreen" || why.startsWith("covered"))) {
+        return await this.domDispatch(action, text);
+      }
       throw new StalePage(`Target ${JSON.stringify(action.label.slice(0, 40))} ${target?.why ?? "changed"}. Observe again.`);
     }
     if (kind === "fill" && target.type === "file") {
@@ -2774,6 +2792,9 @@ var CdpBrowser = class _CdpBrowser {
     if (!await this.fresh(page, action)) {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
+    return await this.domDispatch(action, text);
+  }
+  async domDispatch(action, text) {
     if (!action.node) {
       return { executed: action.id };
     }
@@ -2812,13 +2833,13 @@ var CdpBrowser = class _CdpBrowser {
       this.afterInput = action;
       return { executed: action.id };
     }
-    const types = action.kind === "hover" ? ["mouseover", "mousemove"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
+    const types = action.kind === "hover" ? ["mouseover", "mousemove"] : action.kind === "context" ? ["pointerdown", "mousedown", "pointerup", "mouseup", "contextmenu"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
     await this.evaluate(
       `(() => {
         const e=window.__jevFast?.node(${action.node});
         if (!e) return "stale";
         const r=e.getBoundingClientRect();
-        const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};
+        const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:${action.kind === "context" ? 2 : 0}};
         for (const t of ${JSON.stringify(types)}) {
           const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
           e.dispatchEvent(new Ev(t,opts));

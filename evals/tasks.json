@@ -171,6 +171,33 @@
     }
   },
   {
+    "id": "fx-covered-click",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Click the \"Claim the prize\" button and stop when DONE is shown.",
+    "expect": {
+      "text_match": "DONE: prize claimed"
+    }
+  },
+  {
+    "id": "fx-slow-reveal",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Click \"Load the report\", wait for the report to finish loading, and stop when DONE is shown.",
+    "expect": {
+      "text_match": "DONE: report ready"
+    }
+  },
+  {
+    "id": "fx-below-fold-next",
+    "url": "fixture-interactions.html",
+    "file_url": true,
+    "goal": "Go to page 2 using the Next link and stop when DONE is shown.",
+    "expect": {
+      "text_match": "DONE: page 2"
+    }
+  },
+  {
     "id": "tin-checkboxes",
     "url": "https://the-internet.herokuapp.com/checkboxes",
     "goal": "Check both checkboxes and stop.",
