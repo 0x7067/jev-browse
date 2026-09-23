@@ -1790,7 +1790,7 @@ ${repair}` : this.goal;
     return result;
   }
   static goalAsksForAnswer(goal) {
-    return /\?|\b(what|which|who|whom|whose|when|where|why|how (many|much|old|tall|long|far))\b|\b(name|list|report|tell me|find out|extract|read)\b[^\n]{0,80}\b(price|version|date|number|name|title|count|population|email|phone|author|score|address|link|url|size|status|message|text|error|reason|value|winner|top|latest|first|total)s?\b/i.test(
+    return /\?|(?:^|[.;:!,]\s*|\b(?:tell me|find out|report)\s+)(what|which|who|whom|whose|when|where|why|how (many|much|old|tall|long|far))\b|(?:^|[.;:!,]\s*|\b(?:and|then)\s+)(name|list|report|tell me|find out|extract|read)\b[^\n]{0,80}\b(price|version|date|number|name|title|count|population|email|phone|author|score|address|link|url|size|status|message|text|error|reason|value|winner|top|latest|first|total)s?\b/i.test(
       goal
     );
   }
