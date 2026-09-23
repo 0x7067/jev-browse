@@ -501,17 +501,19 @@ async function extractAnswer(goal, page) {
     goal,
     page: { title: page.title, url: page.url, text: page.text.slice(0, 6e3), elements }
   };
-  let output;
-  let helper;
-  try {
-    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
-  } catch (error) {
-    if (String(error).includes("not configured")) throw error;
-    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
+  for (let attempt = 1; ; attempt++) {
+    const lastAttempt = attempt === 2;
+    let result;
+    try {
+      result = await helperJson(ANSWER_VALUE, context, false);
+    } catch (error) {
+      if (String(error).includes("not configured") || lastAttempt) throw error;
+      continue;
+    }
+    const value = result.output.answer;
+    const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2e3) : "";
+    if (text || lastAttempt) return { answer: text || null, helper: result.helper };
   }
-  const value = output.answer;
-  const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2e3) : "";
-  return { answer: text || null, helper };
 }
 
 // src/env.ts

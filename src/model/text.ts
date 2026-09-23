@@ -139,18 +139,20 @@ export async function extractAnswer(
     page: { title: page.title, url: page.url, text: page.text.slice(0, 6000), elements },
   };
 
-  let output: JsonObject;
-  let helper: { model: string; latency_ms: number };
+  for (let attempt = 1; ; attempt++) {
+    const lastAttempt = attempt === 2;
+    let result: { output: JsonObject; helper: { model: string; latency_ms: number } };
 
-  try {
-    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
-  } catch (error) {
-    if (String(error).includes("not configured")) throw error;
-    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
+    try {
+      result = await helperJson(ANSWER_VALUE, context, false);
+    } catch (error) {
+      if (String(error).includes("not configured") || lastAttempt) throw error;
+      continue;
+    }
+
+    const value: JsonValue = result.output.answer;
+    const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2000) : "";
+
+    if (text || lastAttempt) return { answer: text || null, helper: result.helper };
   }
-
-  const value: JsonValue = output.answer;
-  const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2000) : "";
-
-  return { answer: text || null, helper };
 }
