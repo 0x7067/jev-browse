@@ -1,0 +1,27 @@
+evals/tasks-hard.json
+  s_a89a259cb7f6c5::t_daf1c47154e0e7 144
+scripts/lib/dates.mjs
+  s_a89a259cb7f6c5::t_daf1c47154e0e7 1-14
+evals/tasks.json
+  s_a89a259cb7f6c5::t_daf1c47154e0e7 454
+scripts/eval.mjs
+  s_a89a259cb7f6c5::t_daf1c47154e0e7 9,120
+scripts/record_demo.mjs
+  s_a89a259cb7f6c5::t_daf1c47154e0e7 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3f5331855ed741d94c6485207702f1545a56d06c",
+  "prompts": {},
+  "sessions": {
+    "s_a89a259cb7f6c5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ebf17e30-eca2-49eb-bc37-79fa57436611",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
