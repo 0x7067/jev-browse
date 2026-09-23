@@ -16,7 +16,6 @@ export default defineConfig({
 		"bundled/**",
 		"dist/**",
 		"tools/oxlint/anti-slop/**",
-		"scripts/probes/**",
 		"scripts/check-no-comments.mjs",
 		"scripts/strip-comments.mjs",
 	],
