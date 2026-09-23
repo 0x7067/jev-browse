@@ -317,15 +317,13 @@ export class Agent {
     const MUTATING = new Set(["click", "context", "select", "fill", "drag", "press"]);
     const unproven = acted.length < 2 || !acted.some((h) => MUTATING.has(h.kind));
 
-    if (this.doneConsults >= 2 || !unproven) return false;
+    if (this.doneConsults >= 1 || !unproven) return false;
 
-    if (
-      !/\b(click|type|press|select|activate|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark|complete|choose|toggle|switch)\b/i.test(
-        this.goal,
-      )
-    ) {
-      return false;
-    }
+    const steps = this.goal.match(
+      /\b(click|type|press|select|activate|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark|complete|choose|toggle|switch|wait for)\b/gi,
+    );
+
+    if ((steps?.length ?? 0) < 2) return false;
 
     this.doneConsults++;
     this.onEvent?.({
@@ -336,9 +334,7 @@ export class Agent {
       url: this.page.url,
     });
     this.repairHint =
-      this.doneConsults === 1
-        ? "If the goal asks you to interact with the page, do it — a done claim without evidence is premature. Claim DONE again only if the goal state is already visibly satisfied."
-        : "Final check — the goal's action still has no effect on the page. If it is already satisfied, claim DONE; otherwise act on the element now.";
+      "Before claiming DONE, check each part of the goal against the page. If every part is visibly satisfied, claim DONE; if a part remains, act on it.";
 
     return true;
   }
