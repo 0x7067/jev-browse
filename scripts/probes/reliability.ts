@@ -4,10 +4,15 @@ import { join } from "node:path";
 import { CdpBrowser } from "../../src/cdp/browser.ts";
 
 process.env.JEV_ALLOW_FILE_URLS = "1";
+
 const FIXTURE_URL = "file://" + new URL("../../fixture-interactions.html", import.meta.url).pathname;
+
 process.env.JEV_PROFILE = mkdtempSync(join(tmpdir(), "jev-rel-"));
+
 const b = await CdpBrowser.open(FIXTURE_URL, {});
+
 const t0 = performance.now();
+
 const log: string[] = [];
 
 try {
@@ -35,6 +40,7 @@ try {
   if (next) {
     const p = await b.observe();
     const target = p.actions.find((a) => /next/i.test(a.label));
+
     try {
       await b.act(target ?? next, p, null);
       await new Promise((r) => setTimeout(r, 300));
@@ -46,18 +52,22 @@ try {
   }
 
   const slow = page.actions.find((a) => /load the report/i.test(a.label));
+
   if (slow) {
     await b.act(slow, page, null);
     const w0 = performance.now();
     let waits = 0;
     page = await b.observe();
+
     while (!page.text.includes("DONE: report ready") && performance.now() - w0 < 12_000 && waits < 20) {
       const w = page.actions.find((a) => a.kind === "wait");
+
       if (!w) break;
       await b.act(w, page, null);
       waits++;
       page = await b.observe();
     }
+
     log.push(`slow-wait ${page.text.includes("DONE: report ready") ? "PASS" : "FAIL"} waits=${waits} elapsed=${Math.round(performance.now() - w0)}ms`);
   } else {
     log.push("slow button NO TARGET");
@@ -67,4 +77,5 @@ try {
 }
 
 console.log(`[${Math.round(performance.now() - t0)}ms] ` + log.join(" || "));
+
 await b.close().catch(() => {});
