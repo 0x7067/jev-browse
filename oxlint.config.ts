@@ -18,7 +18,6 @@ export default defineConfig({
 		"tools/oxlint/anti-slop/**",
 		"scripts/probes/**",
 		"scripts/check-no-comments.mjs",
-		"scripts/strip-comments.mjs",
 	],
 	jsPlugins: [{ name: "anti-slop", specifier: "./tools/oxlint/anti-slop/index.ts" }],
 	rules: {
