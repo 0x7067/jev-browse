@@ -1,0 +1,21 @@
+evals/tasks-hardest.json
+  s_a89a259cb7f6c5::t_d18b843399b428 54
+evals/tasks-hard.json
+  s_a89a259cb7f6c5::t_d18b843399b428 136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "088c627c01007015f416dc7dac1caa445fbfe9b8",
+  "prompts": {},
+  "sessions": {
+    "s_a89a259cb7f6c5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ebf17e30-eca2-49eb-bc37-79fa57436611",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
