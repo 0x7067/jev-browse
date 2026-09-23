@@ -1566,7 +1566,7 @@ ${repair}` : this.goal;
       while (this.browser.pendingNav?.() && Date.now() < navDeadline) await sleep(120);
     }
     this.page = await this.browser.observe();
-    entry.page_changed = this.page.fingerprint !== page.fingerprint;
+    entry.page_changed = this.page.fingerprint !== page.fingerprint || this.page.dialog !== void 0;
     const doc = String(Array.isArray(page.page_key) ? page.page_key[0] : page.page_key);
     if (this.domDoc !== doc) {
       this.domDoc = doc;
@@ -2674,11 +2674,12 @@ var CdpBrowser = class _CdpBrowser {
       return { executed: action.id };
     }
     if (kind === "drag" && action.dragTo !== void 0) {
+      const destFrame = page.actions.find((a) => a.node === action.dragTo)?.frame;
       const dest = await this.evaluate(`(() => {
         const e=window.__jevFast?.node(${action.dragTo});
         if (!e?.isConnected) return null;
         const r=e.getBoundingClientRect();
-        return {x:r.x+r.width/2,y:r.y+r.height/2};
+        return {x:r.x+r.width/2+${destFrame?.x ?? 0},y:r.y+r.height/2+${destFrame?.y ?? 0}};
       })()`);
       if (!dest) throw new StalePage("Drag destination changed. Observe again.");
       await this.call("Input.dispatchMouseEvent", {

@@ -611,7 +611,7 @@ export class Agent {
     }
 
     this.page = await this.browser.observe();
-    entry.page_changed = this.page.fingerprint !== page.fingerprint;
+    entry.page_changed = this.page.fingerprint !== page.fingerprint || this.page.dialog !== undefined;
 
     const doc = String(Array.isArray(page.page_key) ? page.page_key[0] : page.page_key);
 
