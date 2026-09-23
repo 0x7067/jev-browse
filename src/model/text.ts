@@ -1,5 +1,5 @@
 
-import { isString } from "../json.ts";
+import { isJsonObject, isString } from "../json.ts";
 import { ANSWER_VALUE, TEXT_VALUE } from "../questions.ts";
 import { sleep } from "../sleep.ts";
 import type { JsonObject, JsonValue, ObservedAction, PageState } from "../types.ts";
@@ -89,8 +89,12 @@ async function helperJson(
     ],
   });
 
+  const output: JsonValue = JSON.parse(result.choices[0].message.content);
+
+  if (!isJsonObject(output)) throw new Error("Text helper returned a non-object.");
+
   return {
-    output: JSON.parse(result.choices[0].message.content),
+    output,
     helper: {
       model,
       latency_ms: Math.round(performance.now() - started),

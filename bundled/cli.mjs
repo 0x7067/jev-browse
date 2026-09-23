@@ -471,8 +471,10 @@ async function helperJson(systemPrompt, context, requireKey, reason) {
       { role: "user", content: JSON.stringify(context) }
     ]
   });
+  const output = JSON.parse(result.choices[0].message.content);
+  if (!isJsonObject(output)) throw new Error("Text helper returned a non-object.");
   return {
-    output: JSON.parse(result.choices[0].message.content),
+    output,
     helper: {
       model,
       latency_ms: Math.round(performance.now() - started),
