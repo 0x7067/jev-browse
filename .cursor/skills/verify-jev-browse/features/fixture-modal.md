@@ -26,7 +26,8 @@ Preconditions:
 
 - **Eval path.** Run
   `control-jev-browse eval -- --tasks fx-modal --label verify-modal`.
-  Harness prints `verified:yes` (or summary `verified:1 failed:0`). Copy the
+  Require `verified:1` / `failed:0` (per-run detail shows `verified: true`).
+  Copy the
   written `evals/results/verify-modal-*.json` into evidence as
   `fixture-modal/eval-result.json` (or save a trimmed excerpt with status,
   verified, final_text).

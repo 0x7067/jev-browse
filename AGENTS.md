@@ -77,5 +77,4 @@ control-jev-browse cleanup
 See `.cursor/skills/verify-jev-browse/SKILL.md`. Prefer deterministic
 `file_url` fixture tasks for behavioral proofs; live-site evals flake.
 `evals/results/` stays gitignored — copy proof into the skill
-`artifacts/<RUN_ID>/` tree. Keep the map honest with
-`/maintain-verification-skill` as the CLI and tasks change.
+`artifacts/<RUN_ID>/` tree.

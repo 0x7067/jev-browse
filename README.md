@@ -91,6 +91,7 @@ TEXT_MODEL_API_KEY=...      # required for TYPE_TEXT
 TEXT_MODEL_BASE_URL=...     # OpenAI-compatible endpoint
 TEXT_MODEL=...              # e.g. inception/mercury-2.5 on OpenRouter
 TEXT_MODEL_REASONING=none   # some helper models reject the reasoning field
+JEV_AB_PROFILE=...          # optional — agent-browser engine profile dir (default ~/.jev-browse/agent-browser-profile)
 ```
 
 Keys resolve from the environment first, then `.env` in the package root,
@@ -114,7 +115,8 @@ JSON. Exit 0 on `done`, 2 on `blocked`, 1 on error.
 
 The harnesses call the MCP server, `node bundled/mcp.mjs` on stdio, which
 exposes `jev_browse`. `mcp.json` runs it as `${PLUGIN_ROOT}/bundled/mcp.mjs`.
-On Node ≥ 22.18 you can also run `node src/mcp.ts` directly.
+For local development without a build, use `npm run` (tsx) or rebuild
+`bundled/` with `npm run build` (see Development).
 
 Only `http(s)` start URLs are accepted. Page text flows to external model
 APIs, so `file://` would be an exfiltration path; tests and fixtures opt in
@@ -151,9 +153,9 @@ nothing — a canceled provisional navigation can kill the renderer's input
 pipeline — an executed click or hover retries once through in-page event
 synthesis before it counts as a strike.
 
-Runs are bounded and serialized. `MAX_STEPS` actions (default 60), twice that
-many model calls, or three consecutive no-change non-wait actions ends the run
-in `blocked`. A pid lock at `~/.jev-browse/run.lock` fails fast instead of
+Runs are bounded and serialized. At most `--max-steps` actions (default 60;
+MCP tool: `max_steps`), twice that many model calls, or three consecutive
+no-change non-wait actions ends the run in `blocked`. A pid lock at `~/.jev-browse/run.lock` fails fast instead of
 fighting over Chrome's SingletonLock.
 
 Launching as root is the one place the defaults get weaker. Chrome refuses uid
@@ -234,7 +236,7 @@ Scope goals accordingly.
 git clone https://github.com/0x7067/jev-browse && cd jev-browse
 npm install          # dev tooling (typescript, esbuild, oxlint)
 npm run typecheck    # tsc --noEmit
-npm run lint         # oxlint
+npm run lint         # oxlint plus check:comments
 npm run build        # tsc -> dist/ and rebuilds bundled/
 npm run run -- --url ... --goal ...   # tsx src/cli.ts, no build step
 ```
