@@ -451,7 +451,7 @@
   {
     "id": "flights-zurich-london",
     "url": "https://www.google.com/travel/flights?hl=en",
-    "goal": "Find one-way flights from Zurich to London on September 20, 2026, for one adult in economy. Stop when matching flight options are visible.",
+    "goal": "Find one-way flights from Zurich to London on {{DATE+30d}}, for one adult in economy. Stop when matching flight options are visible.",
     "expect": {
       "url_match": "tfs="
     }

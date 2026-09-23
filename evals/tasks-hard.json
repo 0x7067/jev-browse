@@ -141,7 +141,7 @@
   {
     "id": "flights-boston-denver",
     "url": "https://www.google.com/travel/flights?hl=en",
-    "goal": "Find one-way flights from Boston to Denver on October 3, 2026, for one adult in economy. Stop when matching flight options are visible.",
+    "goal": "Find one-way flights from Boston to Denver on {{DATE+30d}}, for one adult in economy. Stop when matching flight options are visible.",
     "expect": {
       "url_match": "tfs="
     }
