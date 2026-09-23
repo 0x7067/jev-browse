@@ -51,6 +51,7 @@ async function helperJson(
   systemPrompt: string,
   context: JsonValue,
   requireKey: boolean,
+  reason: boolean,
 ): Promise<{ output: JsonObject; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
   const key = process.env.TEXT_MODEL_API_KEY;
 
@@ -69,9 +70,7 @@ async function helperJson(
 
   const reasoning = base.includes("api.deepseek.com/")
     ? { thinking: { type: "disabled" } }
-    : { reasoning: { effort: "low" } };
-
-  const reasoningFinal = process.env.TEXT_MODEL_REASONING === "none" ? { reasoning: { enabled: false } } : reasoning;
+    : { reasoning: reason ? { effort: "low" } : { enabled: false } };
 
   const started = performance.now();
 
@@ -79,7 +78,7 @@ async function helperJson(
     model,
     max_tokens: 1024,
     response_format: { type: "json_object" },
-    ...reasoningFinal,
+    ...reasoning,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: JSON.stringify(context) },
@@ -103,7 +102,7 @@ export async function fieldText(
   let helper: { model: string; latency_ms: number; usage: JsonValue };
 
   try {
-    ({ output, helper } = await helperJson(TEXT_VALUE, context, true));
+    ({ output, helper } = await helperJson(TEXT_VALUE, context, true, false));
   } catch (error) {
     const msg = String(error);
 
@@ -144,7 +143,7 @@ export async function extractAnswer(
     let result: { output: JsonObject; helper: { model: string; latency_ms: number } };
 
     try {
-      result = await helperJson(ANSWER_VALUE, context, false);
+      result = await helperJson(ANSWER_VALUE, context, false, true);
     } catch (error) {
       if (String(error).includes("not configured") || lastAttempt) throw error;
       continue;

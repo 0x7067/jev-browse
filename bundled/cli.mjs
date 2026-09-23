@@ -445,7 +445,7 @@ function fieldContext(goal, action, page, history) {
     )
   };
 }
-async function helperJson(systemPrompt, context, requireKey) {
+async function helperJson(systemPrompt, context, requireKey, reason) {
   const key = process.env.TEXT_MODEL_API_KEY;
   if (!key) {
     if (requireKey) {
@@ -457,14 +457,13 @@ async function helperJson(systemPrompt, context, requireKey) {
   }
   const base = (process.env.TEXT_MODEL_BASE_URL ?? "https://api.deepseek.com/v1").replace(/\/+$/, "");
   const model = process.env.TEXT_MODEL ?? "deepseek-chat";
-  const reasoning = base.includes("api.deepseek.com/") ? { thinking: { type: "disabled" } } : { reasoning: { effort: "low" } };
-  const reasoningFinal = process.env.TEXT_MODEL_REASONING === "none" ? { reasoning: { enabled: false } } : reasoning;
+  const reasoning = base.includes("api.deepseek.com/") ? { thinking: { type: "disabled" } } : { reasoning: reason ? { effort: "low" } : { enabled: false } };
   const started = performance.now();
   const result = await postJson(`${base}/chat/completions`, key, {
     model,
     max_tokens: 1024,
     response_format: { type: "json_object" },
-    ...reasoningFinal,
+    ...reasoning,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: JSON.stringify(context) }
@@ -483,7 +482,7 @@ async function fieldText(context) {
   let output;
   let helper;
   try {
-    ({ output, helper } = await helperJson(TEXT_VALUE, context, true));
+    ({ output, helper } = await helperJson(TEXT_VALUE, context, true, false));
   } catch (error) {
     const msg = String(error);
     if (msg.includes("TEXT_MODEL_API_KEY") || msg.includes("not configured")) throw error;
@@ -505,7 +504,7 @@ async function extractAnswer(goal, page) {
     const lastAttempt = attempt === 2;
     let result;
     try {
-      result = await helperJson(ANSWER_VALUE, context, false);
+      result = await helperJson(ANSWER_VALUE, context, false, true);
     } catch (error) {
       if (String(error).includes("not configured") || lastAttempt) throw error;
       continue;

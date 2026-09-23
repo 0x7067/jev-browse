@@ -90,7 +90,6 @@ TYPESAFE_MODEL=jev-latest   # default
 TEXT_MODEL_API_KEY=...      # required for TYPE_TEXT
 TEXT_MODEL_BASE_URL=...     # OpenAI-compatible endpoint
 TEXT_MODEL=...              # e.g. inception/mercury-2.5 on OpenRouter
-TEXT_MODEL_REASONING=none   # some helper models reject the reasoning field
 ```
 
 Keys resolve from the environment first, then `.env` in the package root,
