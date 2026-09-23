@@ -9,7 +9,7 @@ external model APIs. Without the opt-in, the CLI exits `1` and returns a
 
 - `file-url-denied` refuses `file://` without `--allow-file-urls` (exit `1`).
 - `file-url-allow-reaches-auth` with `--allow-file-urls` passes the scheme check
-  and fails next on missing `TYPESAFE_API_KEY` when no key is set (still in-band).
+  and fails next on the missing-key error when no provider key is set (still in-band).
 
 ## How to get to it (user POV)
 
@@ -26,15 +26,15 @@ Preconditions:
 - `control-jev-browse doctor` reports `doctor=ok` for this run.
 - Disposable verify home is set by `control-jev-browse launch`.
 - `eval "$(control-jev-browse env)"` so `$JEV_BROWSE_ROOT` is set.
-- `TYPESAFE_API_KEY` may be unset.
+- Provider keys may be unset; the allow step empties them itself.
 
 - **Denied.** Run
   `control-jev-browse cli -- --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" --goal "stop"`.
   Exit code `1`. Stdout JSON `status` is `error` and `error` contains
   `only drives http(s) pages`. Save stdout as `file-url-gate/denied.json`.
 - **Allow reaches auth.** Run
-  `control-jev-browse cli -- --allow-file-urls --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" --goal "stop"`
-  with `TYPESAFE_API_KEY` unset. Exit code `1`. Stdout `error` contains
+  `TYPESAFE_API_KEY= OPENROUTER_API_KEY= JEV_PROVIDER= control-jev-browse cli -- --allow-file-urls --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" --goal "stop"`.
+  Exit code `1`. Stdout `error` contains
   `TYPESAFE_API_KEY is not set`. Save stdout as `file-url-gate/allow-nokey.json`.
 - **Proof.** Both artifacts show the exit and error strings above. Do not launch
   a headed browser for this feature.

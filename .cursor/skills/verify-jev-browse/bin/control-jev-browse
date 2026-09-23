@@ -99,7 +99,10 @@ Environment:
   JEV_BROWSE_VERIFY_RUN_ID     Force the run id on launch (default: timestamp-pid);
                                must match [A-Za-z0-9._-]+
   JEV_BROWSE_VERIFY_EVIDENCE   Override evidence root (default: skill artifacts/)
-  TYPESAFE_API_KEY             Required for fixture/live drives that call Jev
+  JEV_PROVIDER                 typesafe or openrouter; unset picks the one whose key is set
+  TYPESAFE_API_KEY             Jev key for the typesafe provider
+  OPENROUTER_API_KEY           Jev key for the openrouter provider
+                               Fixture/live drives that call Jev need the selected provider's key
   TEXT_MODEL_API_KEY           Required for TYPE_TEXT tasks (with BASE_URL/MODEL)
   XDG_RUNTIME_DIR              Preferred private dir for the active-run state file;
                                if unset, uses /tmp/jev-browse-verify-control-<uid> mode 0700
@@ -262,14 +265,9 @@ with_verify_env() {
 }
 
 find_chrome() {
-  local c
-  for c in google-chrome google-chrome-stable chromium chromium-browser; do
-    if command -v "$c" >/dev/null 2>&1; then
-      command -v "$c"
-      return 0
-    fi
-  done
-  return 1
+  node --input-type=module -e \
+    'const { findChrome } = await import(process.argv[1]); console.log(findChrome());' \
+    "$ROOT/src/cdp/chrome.ts" 2>/dev/null
 }
 
 evidence_dest() {
@@ -337,7 +335,9 @@ cmd_doctor() {
     echo "profile=$VERIFY_HOME/profile"
     echo "repo_root=$ROOT"
     echo "node=$(node --version 2>&1)"
+    echo "jev_provider=${JEV_PROVIDER:-auto}"
     echo "typesafe_api_key=$([ -n "${TYPESAFE_API_KEY:-}" ] && echo set || echo unset)"
+    echo "openrouter_api_key=$([ -n "${OPENROUTER_API_KEY:-}" ] && echo set || echo unset)"
     echo "text_model_api_key=$([ -n "${TEXT_MODEL_API_KEY:-}" ] && echo set || echo unset)"
   } >"$report"
 
@@ -446,7 +446,9 @@ home=$VERIFY_HOME
 profile=$VERIFY_HOME/profile
 repo_root=$ROOT
 evidence_dir=$EVIDENCE_DIR
+jev_provider=${JEV_PROVIDER:-auto}
 typesafe_api_key=$([ -n "${TYPESAFE_API_KEY:-}" ] && echo set || echo unset)
+openrouter_api_key=$([ -n "${OPENROUTER_API_KEY:-}" ] && echo set || echo unset)
 text_model_api_key=$([ -n "${TEXT_MODEL_API_KEY:-}" ] && echo set || echo unset)
 EOF
 }

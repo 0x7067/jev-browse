@@ -29,7 +29,8 @@ feature file as the recipe.
 **In-band** (no TypeSafe / text-model keys): doctor checks, `file://` refusal
 without `--allow-file-urls`, missing-key error shape when keys are unset.
 
-**Out-of-band** (needs `TYPESAFE_API_KEY`; TYPE_TEXT also needs
+**Out-of-band** (needs a Jev provider key, `TYPESAFE_API_KEY` or
+`OPENROUTER_API_KEY`; TYPE_TEXT also needs
 `TEXT_MODEL_API_KEY` + `TEXT_MODEL_BASE_URL` + `TEXT_MODEL`): fixture `fx-*`
 eval tasks, live-site tasks, MCP `jev_browse`. Live sites flake — prefer
 fixtures for prove-once. Never count an in-band gate pass as verifying an
@@ -55,7 +56,7 @@ out-of-band fixture or live task.
   present, and exit code.
 - Record the feature ID and entry point used with every artifact.
 - Report an unreachable or out-of-band path with the attempted command and the
-  unmet precondition (usually missing `TYPESAFE_API_KEY`).
+  unmet precondition (usually a missing provider key or a TypeSafe `402`).
 - Do not report a skipped fixture/live entry as verified through the file-URL gate.
 
 ## Feature entry contract
@@ -79,5 +80,6 @@ handles, required state, commands, and observable proof.
 - [Fixture modal](./fixture-modal.md) covers the deterministic modal confirm path.
 - [Fixture hover menu](./fixture-hover-menu.md) covers CSS hover-reveal menus.
 - [Fixture type and redeem](./fixture-type-redeem.md) covers TYPE_TEXT + enable.
-- [CLI missing key](./cli-missing-key.md) covers the unset-`TYPESAFE_API_KEY` error.
+- [CLI missing key](./cli-missing-key.md) covers the error when no provider key is set.
+- [Jev provider](./jev-provider.md) covers choosing TypeSafe or OpenRouter with `JEV_PROVIDER`.
 - [Model-free drive paths](./model-free-drive.md) covers verifying snapshot/act behavior when the model is unreachable.

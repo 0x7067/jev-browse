@@ -21,7 +21,7 @@ and checks `expect.text_match`.
 Preconditions:
 
 - `control-jev-browse doctor` reports `doctor=ok` for this run.
-- `TYPESAFE_API_KEY` is set (out-of-band). TEXT_MODEL keys are not required.
+- A Jev provider key (`TYPESAFE_API_KEY` or `OPENROUTER_API_KEY`) is set (out-of-band). TEXT_MODEL keys are not required.
 - `eval "$(control-jev-browse env)"`.
 
 - **Eval path.** Run
@@ -40,7 +40,7 @@ Preconditions:
 
 ## Gotchas
 
-- Without `TYPESAFE_API_KEY` this feature is unreachable — report
-  `typesafe_api_key=unset` and stop; do not count the file-URL gate as proof.
+- Without a provider key this feature is unreachable — report
+  the unset keys from `doctor` and stop; do not count the file-URL gate as proof.
 - `evals/results/` is gitignored; always copy proof into `$EVIDENCE_DIR`.
 - Do not use `--headed` unless debugging a failure.

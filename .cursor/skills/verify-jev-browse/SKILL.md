@@ -4,8 +4,9 @@ description: >
   Drive and prove jev-browse (CLI browser agent + eval harness) the way a user
   would: isolated Chrome profile, bundled CLI, and scripts/eval.mjs fixture /
   live tasks. Use for /verify-jev-browse, verifying file:// gating, fixture
-  interactions, TYPE_TEXT flows, or eval expect.* verdicts after changing
-  src/, bundled/, or evals/.
+  interactions, TYPE_TEXT flows, Jev provider selection (TypeSafe or
+  OpenRouter), or eval expect.* verdicts after changing src/, bundled/, or
+  evals/.
 ---
 
 # Verify jev-browse
@@ -30,7 +31,9 @@ without live model calls):**
 - `file://` start URLs are refused unless `--allow-file-urls` /
   `JEV_ALLOW_FILE_URLS=1` (CLI exits `1` with the http(s)-only error)
 
-**Out-of-band (needs `TYPESAFE_API_KEY`; TYPE_TEXT also needs `TEXT_MODEL_*`):**
+**Out-of-band (needs a Jev provider key: `TYPESAFE_API_KEY`, or
+`OPENROUTER_API_KEY` with `JEV_PROVIDER=openrouter` or no TypeSafe key;
+TYPE_TEXT also needs `TEXT_MODEL_*`):**
 
 - Fixture `file_url` tasks in `evals/tasks.json` (`fx-*`) that call Jev and
   verify via `expect.*`
@@ -96,8 +99,9 @@ home + profile exist; a no-allow `file://` CLI call exits `1` with the
 http(s)-only error. Writes `$EVIDENCE_DIR/doctor.txt`. Fail the run if
 `doctor=fail`.
 
-`TYPESAFE_API_KEY` / `TEXT_MODEL_API_KEY` may be unset. Doctor reports
-`typesafe_api_key=unset` (and text-model likewise) and still passes — in-band
+Provider keys and `TEXT_MODEL_API_KEY` may be unset. Doctor reports
+`jev_provider`, `typesafe_api_key`, `openrouter_api_key`, and
+`text_model_api_key` from the shell environment and still passes — in-band
 gates do not need keys. Fixture and live drives that call Jev are out-of-band;
 see feature files.
 
@@ -124,7 +128,7 @@ control-jev-browse cli -- \
   --goal "stop"
 # expect exit 1 and stdout JSON error containing "only drives http(s) pages"
 
-# Out-of-band fixture drive via the eval harness (needs TYPESAFE_API_KEY)
+# Out-of-band fixture drive via the eval harness (needs a provider key)
 control-jev-browse eval -- --tasks fx-modal --label verify
 # expect verified:1 failed:0; results under evals/results/ (gitignored)
 
@@ -167,7 +171,7 @@ Standards: exercise the real bundled CLI / eval entry users run — not internal
 agent setters. Capture the action and the resulting state. `DONE` is a claim;
 eval `expect.*` (or an explicit error string for in-band gates) is the proof.
 Mocks only at the production boundary already used by the product (missing
-`TYPESAFE_API_KEY` → error result; missing `--allow-file-urls` → http(s)-only
+provider key → error result; unknown `JEV_PROVIDER` → error result; missing `--allow-file-urls` → http(s)-only
 refusal).
 
 ## Cleanup

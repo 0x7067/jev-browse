@@ -1,8 +1,9 @@
 # CLI missing key
 
-Without `TYPESAFE_API_KEY`, jev-browse cannot call Jev. The CLI returns a
+Without a Jev provider key, jev-browse cannot call Jev. The CLI returns a
 `RunResult` with `status` `error` and an `error` message that tells the user
-to set the key, and exits `1`.
+to set the key, and exits `1`. With no provider named and no key at all, the
+message names `TYPESAFE_API_KEY`.
 
 ## Sub-features
 
@@ -12,7 +13,8 @@ to set the key, and exits `1`.
 
 ## How to get to it (user POV)
 
-- Run `jev-browse --url https://example.com --goal "..."` with the key unset.
+- Run `jev-browse --url https://example.com --goal "..."` with neither
+  `TYPESAFE_API_KEY` nor `OPENROUTER_API_KEY` set.
 - Run the same via `node bundled/cli.mjs`.
 
 ## Driving it with control-jev-browse
@@ -20,11 +22,11 @@ to set the key, and exits `1`.
 Preconditions:
 
 - `control-jev-browse doctor` reports `doctor=ok` for this run.
-- `TYPESAFE_API_KEY` is unset for this drive (in-band).
+- Both keys are empty and `JEV_PROVIDER` is unset for this drive (in-band).
 - `eval "$(control-jev-browse env)"`.
 
 - **Missing key.** Run
-  `control-jev-browse cli -- --url https://example.com --goal "stop"`.
+  `TYPESAFE_API_KEY= OPENROUTER_API_KEY= JEV_PROVIDER= control-jev-browse cli -- --url https://example.com --goal "stop"`.
   Exit code `1`. Stdout JSON `status` is `error` and `error` contains
   `TYPESAFE_API_KEY is not set`. Save as `cli-missing-key/result.json`.
 - **Proof.** The artifact shows exit `1` and the set-key string. Do not retry
@@ -34,6 +36,8 @@ Preconditions:
 
 - Exit `1` with the set-key message is the in-band success proof for this
   feature; do not treat it as a product regression.
-- Loading a repo `.env` that sets the key will skip this path — unset the var
-  for the drive (`env -u TYPESAFE_API_KEY control-jev-browse cli -- ...`).
+- The CLI reloads the repo `.env`, so `env -u TYPESAFE_API_KEY` lets a key in
+  `.env` come back. Assign both keys empty as in the command above.
+- Leaving `OPENROUTER_API_KEY` set sends the run to OpenRouter instead of
+  failing; see [Jev provider](./jev-provider.md).
 - This does not prove fixture or live browsing.

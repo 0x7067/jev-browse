@@ -9,7 +9,7 @@ the enablement gate.
 
 - `fx-disabled-redeem-eval` verifies `DONE: code redeemed` via `expect.text_match`.
 - `type-text-helper` requires `TEXT_MODEL_API_KEY`, `TEXT_MODEL_BASE_URL`, and
-  `TEXT_MODEL` in addition to `TYPESAFE_API_KEY`.
+  `TEXT_MODEL` in addition to a Jev provider key.
 
 ## How to get to it (user POV)
 
@@ -21,7 +21,7 @@ the enablement gate.
 Preconditions:
 
 - `control-jev-browse doctor` reports `doctor=ok` for this run.
-- `TYPESAFE_API_KEY` is set.
+- A Jev provider key (`TYPESAFE_API_KEY` or `OPENROUTER_API_KEY`) is set.
 - `TEXT_MODEL_API_KEY`, `TEXT_MODEL_BASE_URL`, and `TEXT_MODEL` are set
   (out-of-band TYPE_TEXT).
 - `eval "$(control-jev-browse env)"`.
@@ -35,7 +35,7 @@ Preconditions:
 
 ## Gotchas
 
-- Click-only fixtures can pass with only `TYPESAFE_API_KEY`; this one cannot —
+- Click-only fixtures can pass with only a provider key; this one cannot —
   missing text-model keys fail TYPE_TEXT mid-run.
 - Do not hardcode a typed string through an internal setter; the helper model
   must supply the field value on the real CLI path.

@@ -20,7 +20,7 @@ Eval task `fx-hover-menu` covers this interaction.
 Preconditions:
 
 - `control-jev-browse doctor` reports `doctor=ok` for this run.
-- `TYPESAFE_API_KEY` is set (out-of-band).
+- A Jev provider key (`TYPESAFE_API_KEY` or `OPENROUTER_API_KEY`) is set (out-of-band).
 - `eval "$(control-jev-browse env)"`.
 
 - **Eval path.** Run
