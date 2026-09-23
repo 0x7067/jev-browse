@@ -1,10 +1,7 @@
-export function warmModelEndpoints(): void {
+export function warmModelEndpoints(decisionBaseURL: string): void {
   const origins = new Set<string>();
 
-  for (const raw of [
-    process.env.TYPESAFE_BASE_URL ?? "https://api.typesafe.ai",
-    process.env.TEXT_MODEL_BASE_URL,
-  ]) {
+  for (const raw of [decisionBaseURL, process.env.TEXT_MODEL_BASE_URL]) {
     try {
       if (raw) origins.add(new URL(raw).origin);
     } catch {

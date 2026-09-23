@@ -85,7 +85,9 @@ site.
 ### Configure
 
 ```bash
-TYPESAFE_API_KEY=...        # required — console.typesafe.ai/settings/keys
+JEV_PROVIDER=...            # typesafe or openrouter; default picks the provider whose key is set
+TYPESAFE_API_KEY=...        # typesafe provider — console.typesafe.ai/settings/keys
+OPENROUTER_API_KEY=...      # openrouter provider — openrouter.ai/settings/keys
 TYPESAFE_MODEL=jev-latest   # default
 TEXT_MODEL_API_KEY=...      # required for TYPE_TEXT
 TEXT_MODEL_BASE_URL=...     # OpenAI-compatible endpoint

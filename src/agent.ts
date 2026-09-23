@@ -179,8 +179,8 @@ export class Agent {
   }
 
   static async start(opts: AgentOptions): Promise<Agent> {
-    warmModelEndpoints();
     const agent = new Agent(opts);
+    warmModelEndpoints(agent.client.baseURL);
     agent.browser = await agent.openDriver(opts.url);
 
     try {

@@ -398,12 +398,9 @@ async function chooseOnce(client, state, goal, history) {
 }
 
 // src/model/endpoints.ts
-function warmModelEndpoints() {
+function warmModelEndpoints(decisionBaseURL) {
   const origins = /* @__PURE__ */ new Set();
-  for (const raw of [
-    process.env.TYPESAFE_BASE_URL ?? "https://api.typesafe.ai",
-    process.env.TEXT_MODEL_BASE_URL
-  ]) {
+  for (const raw of [decisionBaseURL, process.env.TEXT_MODEL_BASE_URL]) {
     try {
       if (raw) origins.add(new URL(raw).origin);
     } catch {
@@ -1153,14 +1150,47 @@ function loadDotEnv() {
     }
   }
 }
-function makeClient() {
-  loadDotEnv();
-  if (!process.env.TYPESAFE_API_KEY) {
+var PROVIDERS = {
+  typesafe: {
+    keyVar: "TYPESAFE_API_KEY",
+    baseURL: "https://api.typesafe.ai",
+    keysPage: "https://console.typesafe.ai/settings/keys"
+  },
+  openrouter: {
+    keyVar: "OPENROUTER_API_KEY",
+    baseURL: "https://openrouter.ai/api",
+    keysPage: "https://openrouter.ai/settings/keys"
+  }
+};
+function isProvider(name) {
+  return Object.hasOwn(PROVIDERS, name);
+}
+function selectProvider() {
+  const named = process.env.JEV_PROVIDER;
+  if (named === void 0 || named === "") {
+    return process.env.TYPESAFE_API_KEY || !process.env.OPENROUTER_API_KEY ? "typesafe" : "openrouter";
+  }
+  if (!isProvider(named)) {
     throw new Error(
-      "TYPESAFE_API_KEY is not set. Get a key at https://console.typesafe.ai/settings/keys"
+      `JEV_PROVIDER must be one of ${Object.keys(PROVIDERS).join(", ")}; got ${named}`
     );
   }
-  return new TypeSafeClient({ defaultModel: process.env.TYPESAFE_MODEL ?? "jev-latest" });
+  return named;
+}
+function providerConfig() {
+  const provider = PROVIDERS[selectProvider()];
+  const apiKey = process.env[provider.keyVar];
+  if (!apiKey) {
+    throw new Error(`${provider.keyVar} is not set. Get a key at ${provider.keysPage}`);
+  }
+  return { apiKey, baseURL: process.env.TYPESAFE_BASE_URL || provider.baseURL };
+}
+function makeClient() {
+  loadDotEnv();
+  return new TypeSafeClient({
+    ...providerConfig(),
+    defaultModel: process.env.TYPESAFE_MODEL ?? "jev-latest"
+  });
 }
 
 // src/types.ts
@@ -1262,8 +1292,8 @@ var Agent = class _Agent {
     this.maxSteps = opts.maxSteps ?? MAX_STEPS;
   }
   static async start(opts) {
-    warmModelEndpoints();
     const agent = new _Agent(opts);
+    warmModelEndpoints(agent.client.baseURL);
     agent.browser = await agent.openDriver(opts.url);
     try {
       agent.page = await settleFirstObservation(agent.browser, await agent.browser.observe());

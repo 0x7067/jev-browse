@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
-import { TypeSafeClient } from "@typesafe-ai/sdk";
+import { TypeSafeClient, type TypeSafeClientConfig } from "@typesafe-ai/sdk";
 
 const PACKAGE_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
@@ -44,14 +44,59 @@ export function loadDotEnv(): void {
   }
 }
 
-export function makeClient(): TypeSafeClient {
-  loadDotEnv();
+const PROVIDERS = {
+  typesafe: {
+    keyVar: "TYPESAFE_API_KEY",
+    baseURL: "https://api.typesafe.ai",
+    keysPage: "https://console.typesafe.ai/settings/keys",
+  },
+  openrouter: {
+    keyVar: "OPENROUTER_API_KEY",
+    baseURL: "https://openrouter.ai/api",
+    keysPage: "https://openrouter.ai/settings/keys",
+  },
+} as const;
 
-  if (!process.env.TYPESAFE_API_KEY) {
+type Provider = keyof typeof PROVIDERS;
+
+function isProvider(name: string): name is Provider {
+  return Object.hasOwn(PROVIDERS, name);
+}
+
+function selectProvider(): Provider {
+  const named = process.env.JEV_PROVIDER;
+
+  if (named === undefined || named === "") {
+    return process.env.TYPESAFE_API_KEY || !process.env.OPENROUTER_API_KEY
+      ? "typesafe"
+      : "openrouter";
+  }
+
+  if (!isProvider(named)) {
     throw new Error(
-      "TYPESAFE_API_KEY is not set. Get a key at https://console.typesafe.ai/settings/keys",
+      `JEV_PROVIDER must be one of ${Object.keys(PROVIDERS).join(", ")}; got ${named}`,
     );
   }
 
-  return new TypeSafeClient({ defaultModel: process.env.TYPESAFE_MODEL ?? "jev-latest" });
+  return named;
+}
+
+function providerConfig(): Pick<TypeSafeClientConfig, "apiKey" | "baseURL"> {
+  const provider = PROVIDERS[selectProvider()];
+  const apiKey = process.env[provider.keyVar];
+
+  if (!apiKey) {
+    throw new Error(`${provider.keyVar} is not set. Get a key at ${provider.keysPage}`);
+  }
+
+  return { apiKey, baseURL: process.env.TYPESAFE_BASE_URL || provider.baseURL };
+}
+
+export function makeClient(): TypeSafeClient {
+  loadDotEnv();
+
+  return new TypeSafeClient({
+    ...providerConfig(),
+    defaultModel: process.env.TYPESAFE_MODEL ?? "jev-latest",
+  });
 }
