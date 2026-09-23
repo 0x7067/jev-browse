@@ -1188,6 +1188,9 @@ async function settleFirstObservation(browser, page) {
   return latest;
 }
 var UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
+function fold(text) {
+  return text.normalize("NFD").replace(new RegExp("\\p{M}", "gu"), "").toLowerCase();
+}
 function atWordBoundary(haystack, needle) {
   let i = haystack.indexOf(needle);
   while (i !== -1) {
@@ -1406,9 +1409,9 @@ ${repair}` : this.goal;
         (a) => a.kind === "click" && a.node !== void 0 && !fu.prevNodes.has(a.node) && !UNDO_LABEL.test(a.label)
       );
       if (fu.text && fu.text.length >= 3) {
-        const tokens = fu.text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 3);
+        const tokens = fold(fu.text).split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 3);
         const matched = appeared.find(
-          (a) => tokens.some((t) => atWordBoundary(a.label.toLowerCase(), t))
+          (a) => tokens.some((t) => atWordBoundary(fold(a.label), t))
         );
         if (matched) return matched.id;
       }

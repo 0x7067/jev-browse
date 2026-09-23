@@ -38,6 +38,10 @@ async function settleFirstObservation(
 
 const UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
 
+function fold(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
 function atWordBoundary(haystack: string, needle: string): boolean {
   let i = haystack.indexOf(needle);
 
@@ -390,13 +394,12 @@ export class Agent {
       );
 
       if (fu.text && fu.text.length >= 3) {
-        const tokens = fu.text
-          .toLowerCase()
+        const tokens = fold(fu.text)
           .split(/[^\p{L}\p{N}]+/u)
           .filter((t) => t.length >= 3);
 
         const matched = appeared.find((a) =>
-          tokens.some((t) => atWordBoundary(a.label.toLowerCase(), t)),
+          tokens.some((t) => atWordBoundary(fold(a.label), t)),
         );
 
         if (matched) return matched.id;
