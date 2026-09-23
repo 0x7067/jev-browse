@@ -51,7 +51,7 @@
   {
     "id": "github-search-repo",
     "url": "https://github.com/",
-    "goal": "Search GitHub for 'jev-browse' and open the 0x7067/jev-browse repository page.",
+    "goal": "Search GitHub for '0x7067/jev-browse' and open the 0x7067/jev-browse repository page.",
     "expect": {
       "url_match": "github\\.com/0x7067/jev-browse"
     }
