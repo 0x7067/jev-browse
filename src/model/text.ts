@@ -1,5 +1,5 @@
 
-import { isString } from "../json.ts";
+import { isJsonObject, isString } from "../json.ts";
 import { ANSWER_VALUE, TEXT_VALUE } from "../questions.ts";
 import { sleep } from "../sleep.ts";
 import type { JsonObject, JsonValue, ObservedAction, PageState } from "../types.ts";
@@ -38,6 +38,10 @@ export function fieldContext(goal: string, action: ObservedAction, page: PageSta
   return {
     goal,
     field: { label: action.label, role: action.role, value: action.value },
+    other_fields: page.actions
+      .filter((a) => a.kind === "fill" && a.node !== action.node)
+      .slice(0, 20)
+      .map((a) => ({ label: a.label, value: a.value ?? "" })),
     page: { title: page.title, text: page.text.slice(0, 6000) },
     recent_actions: history
       .slice(-6)
@@ -51,6 +55,7 @@ async function helperJson(
   systemPrompt: string,
   context: JsonValue,
   requireKey: boolean,
+  reason: boolean,
 ): Promise<{ output: JsonObject; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
   const key = process.env.TEXT_MODEL_API_KEY;
 
@@ -69,9 +74,7 @@ async function helperJson(
 
   const reasoning = base.includes("api.deepseek.com/")
     ? { thinking: { type: "disabled" } }
-    : { reasoning: { effort: "low" } };
-
-  const reasoningFinal = process.env.TEXT_MODEL_REASONING === "none" ? { reasoning: { enabled: false } } : reasoning;
+    : { reasoning: reason ? { effort: "low" } : { enabled: false } };
 
   const started = performance.now();
 
@@ -79,15 +82,19 @@ async function helperJson(
     model,
     max_tokens: 1024,
     response_format: { type: "json_object" },
-    ...reasoningFinal,
+    ...reasoning,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: JSON.stringify(context) },
     ],
   });
 
+  const output: JsonValue = JSON.parse(result.choices[0].message.content);
+
+  if (!isJsonObject(output)) throw new Error("Text helper returned a non-object.");
+
   return {
-    output: JSON.parse(result.choices[0].message.content),
+    output,
     helper: {
       model,
       latency_ms: Math.round(performance.now() - started),
@@ -103,7 +110,7 @@ export async function fieldText(
   let helper: { model: string; latency_ms: number; usage: JsonValue };
 
   try {
-    ({ output, helper } = await helperJson(TEXT_VALUE, context, true));
+    ({ output, helper } = await helperJson(TEXT_VALUE, context, true, false));
   } catch (error) {
     const msg = String(error);
 
@@ -139,18 +146,20 @@ export async function extractAnswer(
     page: { title: page.title, url: page.url, text: page.text.slice(0, 6000), elements },
   };
 
-  let output: JsonObject;
-  let helper: { model: string; latency_ms: number };
+  for (let attempt = 1; ; attempt++) {
+    const lastAttempt = attempt === 2;
+    let result: { output: JsonObject; helper: { model: string; latency_ms: number } };
 
-  try {
-    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
-  } catch (error) {
-    if (String(error).includes("not configured")) throw error;
-    ({ output, helper } = await helperJson(ANSWER_VALUE, context, false));
+    try {
+      result = await helperJson(ANSWER_VALUE, context, false, true);
+    } catch (error) {
+      if (String(error).includes("not configured") || lastAttempt) throw error;
+      continue;
+    }
+
+    const value: JsonValue = result.output.answer;
+    const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2000) : "";
+
+    if (text || lastAttempt) return { answer: text || null, helper: result.helper };
   }
-
-  const value: JsonValue = output.answer;
-  const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2000) : "";
-
-  return { answer: text || null, helper };
 }

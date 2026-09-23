@@ -1,5 +1,5 @@
 {
   "name": "jev-browse",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Jev drives a real browser: one goal, an indexed action space, one TypeSafe systemOne decision per step. Exposes the jev_browse MCP tool."
 }

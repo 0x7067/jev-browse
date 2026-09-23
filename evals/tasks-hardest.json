@@ -51,7 +51,7 @@
   {
     "id": "github-search-repo",
     "url": "https://github.com/",
-    "goal": "Search GitHub for 'jev-browse' and open the 0x7067/jev-browse repository page.",
+    "goal": "Search GitHub for '0x7067/jev-browse' and open the 0x7067/jev-browse repository page.",
     "expect": {
       "url_match": "github\\.com/0x7067/jev-browse"
     }
@@ -89,7 +89,7 @@
     }
   },
   {
-    "id": "tin-js-prompt",
+    "id": "tin-js-confirm",
     "url": "https://the-internet.herokuapp.com/javascript_alerts",
     "goal": "Click 'Click for JS Confirm' and accept the confirmation dialog.",
     "expect": {
@@ -105,7 +105,7 @@
     }
   },
   {
-    "id": "wikipedia-lang-switch",
+    "id": "wikipedia-kubernetes-de",
     "url": "https://en.wikipedia.org/wiki/Kubernetes",
     "goal": "Switch the article to its German version (Deutsch) using the language list.",
     "expect": {

@@ -13,26 +13,12 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cliEntryPath } from "./lib/cli-entry.mjs";
+import { expandDates } from "./lib/dates.mjs";
 import { loadEnvFile } from "./lib/env.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-const DATE_TOKEN = /\{\{DATE\+(\d+)d\}\}/g;
-
-function expandDates(text, now) {
-  return text.replace(DATE_TOKEN, (_, days) => {
-    const date = new Date(now);
-    date.setDate(date.getDate() + Number(days));
-
-    return date.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  });
-}
 
 function parseArgs(argv) {
   const args = { goals: [], out: join(ROOT, "docs"), name: "demo", maxSteps: 60 };

@@ -10,6 +10,10 @@ import { StalePage, type BrowserDriver, type JsonValue, type PageState } from ".
 
 const FIRST_SETTLE_MS = 1500;
 
+const FIRST_SETTLE_CONTENT_MS = 4000;
+
+const FIRST_SETTLE_PENDING_MS = 12_000;
+
 const FIRST_SETTLE_POLL_MS = 150;
 
 function hasContent(page: PageState): boolean {
@@ -20,23 +24,35 @@ async function settleFirstObservation(
   browser: BrowserDriver,
   page: PageState,
 ): Promise<PageState> {
-  if (hasContent(page)) return page;
-  const deadline = performance.now() + FIRST_SETTLE_MS;
+  const idleDeadline = performance.now() + FIRST_SETTLE_MS;
+  const contentDeadline = performance.now() + FIRST_SETTLE_CONTENT_MS;
+  const pendingDeadline = performance.now() + FIRST_SETTLE_PENDING_MS;
   let latest = page;
 
-  while (performance.now() < deadline) {
+  for (;;) {
+    const content = hasContent(latest);
+    const pending = Boolean(latest.pending_requests) || Boolean(latest.pending_nav);
+    const deadline = pending ? (content ? contentDeadline : pendingDeadline) : idleDeadline;
+
+    if ((content && !pending) || performance.now() >= deadline) return latest;
+
     await sleep(FIRST_SETTLE_POLL_MS);
     latest = await browser.observe();
-
-    if (hasContent(latest)) break;
-
-    if (!latest.pending_requests && !latest.pending_nav) break;
   }
-
-  return latest;
 }
 
+const STEP_KINDS: [RegExp, string[]][] = [
+  [/\b(type|enter|fill|upload)\b/i, ["fill"]],
+  [/\bdrag\b/i, ["drag"]],
+  [/\bpress\b/i, ["press"]],
+  [/\bwait for\b/i, ["wait"]],
+];
+
 const UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
+
+function fold(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
 
 function atWordBoundary(haystack: string, needle: string): boolean {
   let i = haystack.indexOf(needle);
@@ -317,15 +333,17 @@ export class Agent {
     const MUTATING = new Set(["click", "context", "select", "fill", "drag", "press"]);
     const unproven = acted.length < 2 || !acted.some((h) => MUTATING.has(h.kind));
 
-    if (this.doneConsults >= 2 || !unproven) return false;
+    if (this.doneConsults >= 1 || !unproven) return false;
 
-    if (
-      !/\b(click|type|press|select|activate|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark|complete|choose|toggle|switch)\b/i.test(
-        this.goal,
-      )
-    ) {
-      return false;
-    }
+    const steps = this.goal.match(
+      /\b(click|type|press|select|activate|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark|complete|choose|toggle|switch|wait for)\b/gi,
+    );
+
+    const skipped = STEP_KINDS.some(
+      ([step, kinds]) => step.test(this.goal) && !this.history.some((h) => kinds.includes(h.kind)),
+    );
+
+    if ((steps?.length ?? 0) < 2 && !skipped) return false;
 
     this.doneConsults++;
     this.onEvent?.({
@@ -336,9 +354,7 @@ export class Agent {
       url: this.page.url,
     });
     this.repairHint =
-      this.doneConsults === 1
-        ? "If the goal asks you to interact with the page, do it — a done claim without evidence is premature. Claim DONE again only if the goal state is already visibly satisfied."
-        : "Final check — the goal's action still has no effect on the page. If it is already satisfied, claim DONE; otherwise act on the element now.";
+      "Before claiming DONE, check each part of the goal against the page. If every part is visibly satisfied, claim DONE; if a part remains, act on it.";
 
     return true;
   }
@@ -394,13 +410,12 @@ export class Agent {
       );
 
       if (fu.text && fu.text.length >= 3) {
-        const tokens = fu.text
-          .toLowerCase()
+        const tokens = fold(fu.text)
           .split(/[^\p{L}\p{N}]+/u)
           .filter((t) => t.length >= 3);
 
         const matched = appeared.find((a) =>
-          tokens.some((t) => atWordBoundary(a.label.toLowerCase(), t)),
+          tokens.some((t) => atWordBoundary(fold(a.label), t)),
         );
 
         if (matched) return matched.id;
@@ -611,7 +626,7 @@ export class Agent {
     }
 
     this.page = await this.browser.observe();
-    entry.page_changed = this.page.fingerprint !== page.fingerprint;
+    entry.page_changed = this.page.fingerprint !== page.fingerprint || this.page.dialog !== undefined;
 
     const doc = String(Array.isArray(page.page_key) ? page.page_key[0] : page.page_key);
 
@@ -922,7 +937,7 @@ export class Agent {
   }
 
   private static goalAsksForAnswer(goal: string): boolean {
-    return /\?|\b(what|which|who|whom|whose|when|where|why|how (many|much|old|tall|long|far))\b|\b(name|list|report|tell me|find out|extract|read)\b[^\n]{0,80}\b(price|version|date|number|name|title|count|population|email|phone|author|score|address|link|url|size|status|message|text|error|reason|value|winner|top|latest|first|total)s?\b/i.test(
+    return /\?|(?:^|[.;:!,]\s*|\b(?:tell me|find out|report)\s+)(what|which|who|whom|whose|when|where|why|how (many|much|old|tall|long|far))\b|(?:^|[.;:!,]\s*|\b(?:and|then)\s+)(name|list|report|tell me|find out|extract|read)\b[^\n]{0,80}\b(price|version|date|number|name|title|count|population|email|phone|author|score|address|link|url|size|status|message|text|error|reason|value|winner|top|latest|first|total)s?\b/i.test(
       goal,
     );
   }

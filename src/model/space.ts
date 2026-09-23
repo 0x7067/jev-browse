@@ -11,6 +11,7 @@ export type ElementChoice = {
   selected?: string;
   expanded?: string;
   position?: string;
+  below?: boolean;
   options?: { index: string; label: string; value: JsonValue }[];
 };
 
@@ -54,6 +55,8 @@ export function actionSpace(actions: ObservedAction[], delegatedContextmenu = fa
 
         if (v !== undefined) element[k] = v;
       }
+
+      if (action.below === true) element.below = true;
 
       if (kind === "select") {
         element.value = action.current_value ?? "";

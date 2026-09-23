@@ -104,6 +104,22 @@ dialog::backdrop{background:#0006}
 <a href="data:text/plain;base64,ZnhpdHVyZSBwYXlsb2FkIG9uZQo=" download="fixture-report.txt">Download fixture-report.txt</a>
 <a href="data:text/plain;base64,ZnhpdHVyZSBwYXlsb2FkIHR3bwo=" download="fixture-evidence.txt">Download fixture-evidence.txt</a></section>
 
+<section><h2>21. Covered click</h2>
+<div style="position:relative;display:inline-block">
+<button id="covered-btn">Claim the prize</button>
+<div style="position:absolute;inset:0"></div>
+</div>
+<output class="out" id="r-covered" style="position:fixed;top:8px;left:8px;z-index:50"></output></section>
+
+<section><h2>22. Slow reveal</h2>
+<button id="slow-btn">Load the report</button>
+<output class="out" id="r-slow" style="position:fixed;top:32px;left:8px;z-index:50"></output></section>
+
+<section style="min-height:860px"><h2>23. Below-fold pagination</h2>
+<p>Page 1 of the results. The next-page control sits below the fold.</p>
+<nav class="pagination" style="position:absolute;top:1500px"><a id="next-page" rel="next" href="#page2">Next</a></nav>
+<output class="out" id="r-next" style="position:fixed;top:56px;left:8px;z-index:50"></output></section>
+
 <script>
 const show=(id,msg)=>{const e=document.getElementById(id);e.style.display="block";e.textContent=msg;};
 sel.onchange=e=>show("r-select","DONE: region="+e.target.value);
@@ -137,6 +153,9 @@ card.ondragstart=e=>e.dataTransfer.setData("text/plain","postcard");
 bin.ondragover=e=>e.preventDefault();
 bin.ondrop=e=>{e.preventDefault();show("r-drag","DONE: postcard dropped");};
 ctx.oncontextmenu=e=>{e.preventDefault();show("r-ctx","DONE: context menu opened");};
+document.getElementById("covered-btn").onclick=()=>show("r-covered","DONE: prize claimed");
+document.getElementById("slow-btn").onclick=()=>{show("r-slow","Loading…");setTimeout(()=>show("r-slow","DONE: report ready"),3500);};
+document.getElementById("next-page").onclick=e=>{e.preventDefault();show("r-next","DONE: page 2");};
 </script>
 </main>
 </body></html>

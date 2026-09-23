@@ -24,7 +24,7 @@ Enforcement:
 
 - oxlint rule `anti-slop/no-comments` (via `npm run lint`)
 - `npm run check:comments` — TypeScript-scanner gate over implementation files
-  (covers paths oxlint ignores, such as `tools/oxlint/**` and `scripts/probes/**`)
+  (covers paths oxlint ignores, such as `tools/oxlint/**`)
 
 Do not reintroduce `SAFETY:` or other justification comments for type
 assertions; prefer clearer types or decoding helpers instead.
@@ -77,5 +77,4 @@ control-jev-browse cleanup
 See `.cursor/skills/verify-jev-browse/SKILL.md`. Prefer deterministic
 `file_url` fixture tasks for behavioral proofs; live-site evals flake.
 `evals/results/` stays gitignored — copy proof into the skill
-`artifacts/<RUN_ID>/` tree. Keep the map honest with
-`/maintain-verification-skill` as the CLI and tasks change.
+`artifacts/<RUN_ID>/` tree.

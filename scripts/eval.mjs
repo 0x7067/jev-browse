@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cliEntryPath } from "./lib/cli-entry.mjs";
+import { expandDates } from "./lib/dates.mjs";
 import { loadEnvFile } from "./lib/env.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -116,7 +117,7 @@ function runOnce(task, env, engine) {
       [
         cliEntryPath(ROOT),
         "--url", url,
-        "--goal", task.goal,
+        "--goal", expandDates(task.goal, new Date()),
         ...(engine ? ["--engine", engine] : []),
         ...(task.file_url ? ["--allow-file-urls"] : []),
       ],
