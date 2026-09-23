@@ -38,6 +38,10 @@ export function fieldContext(goal: string, action: ObservedAction, page: PageSta
   return {
     goal,
     field: { label: action.label, role: action.role, value: action.value },
+    other_fields: page.actions
+      .filter((a) => a.kind === "fill" && a.node !== action.node)
+      .slice(0, 20)
+      .map((a) => ({ label: a.label, value: a.value ?? "" })),
     page: { title: page.title, text: page.text.slice(0, 6000) },
     recent_actions: history
       .slice(-6)
