@@ -73,7 +73,7 @@ const VIEWPORT_H = 780;
 
 const SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
 
-const WAIT_BUDGET_MS = 1500;
+const WAIT_BUDGET_MS = 15_000;
 
 const QUIET_MS = 250;
 
@@ -629,14 +629,18 @@ export class CdpBrowser implements BrowserDriver {
 
     if (kind === "wait") {
       const deadline = Date.now() + WAIT_BUDGET_MS;
-      const hadRequests = this.pendingCount(this.session) > 0;
 
-      while (Date.now() < deadline) {
-        await sleep(WAIT_POLL_MS);
-
+      for (;;) {
         if (!(await this.fresh(page))) break;
 
-        if (hadRequests && this.pendingCount(this.session) === 0) break;
+        if (this.pendingNav() || this.pendingCount(this.session) > 0) {
+          if (Date.now() >= deadline) break;
+          await sleep(WAIT_POLL_MS);
+          continue;
+        }
+
+        await this.settle(Math.max(0, deadline - Date.now()), QUIET_MS);
+        break;
       }
 
       return { executed: action.id };
@@ -778,6 +782,15 @@ export class CdpBrowser implements BrowserDriver {
         throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
       }
 
+      const why = String(target?.why ?? "");
+
+      if (
+        (kind === "click" || kind === "context" || kind === "hover") &&
+        (why === "offscreen" || why.startsWith("covered"))
+      ) {
+        return await this.domDispatch(action, text);
+      }
+
       throw new StalePage(`Target ${JSON.stringify(action.label.slice(0, 40))} ${target?.why ?? "changed"}. Observe again.`);
     }
 
@@ -804,11 +817,13 @@ export class CdpBrowser implements BrowserDriver {
     }
 
     if (kind === "drag" && action.dragTo !== undefined) {
+      const destFrame = page.actions.find((a) => a.node === action.dragTo)?.frame;
+
       const dest = await this.evaluate<{ x: number; y: number } | null>(`(() => {
         const e=window.__jevFast?.node(${action.dragTo});
         if (!e?.isConnected) return null;
         const r=e.getBoundingClientRect();
-        return {x:r.x+r.width/2,y:r.y+r.height/2};
+        return {x:r.x+r.width/2+${destFrame?.x ?? 0},y:r.y+r.height/2+${destFrame?.y ?? 0}};
       })()`);
 
       if (!dest) throw new StalePage("Drag destination changed. Observe again.");
@@ -903,6 +918,13 @@ export class CdpBrowser implements BrowserDriver {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
 
+    return await this.domDispatch(action, text);
+  }
+
+  private async domDispatch(
+    action: ObservedAction,
+    text?: string | null,
+  ): Promise<ActResult> {
     if (!action.node) {
       return { executed: action.id };
     }
@@ -949,14 +971,16 @@ export class CdpBrowser implements BrowserDriver {
     const types =
       action.kind === "hover"
         ? ["mouseover", "mousemove"]
-        : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
+        : action.kind === "context"
+          ? ["pointerdown", "mousedown", "pointerup", "mouseup", "contextmenu"]
+          : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
 
     await this.evaluate(
       `(() => {
         const e=window.__jevFast?.node(${action.node});
         if (!e) return "stale";
         const r=e.getBoundingClientRect();
-        const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};
+        const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:${action.kind === "context" ? 2 : 0}};
         for (const t of ${JSON.stringify(types)}) {
           const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
           e.dispatchEvent(new Ev(t,opts));

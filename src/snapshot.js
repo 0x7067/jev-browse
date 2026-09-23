@@ -278,9 +278,16 @@ return s?[s]:[]}).join(' ') ||
 
       const r=e.getBoundingClientRect(), rname=role(e);
 
-      if (!rname || r.width<=0 || r.height<=0 ||
-          fx+r.x>=innerWidth || fy+r.y>=innerHeight ||
-          fx+r.x+r.width<=0 || fy+r.y+r.height<=0) continue;
+      if (!rname || r.width<=0 || r.height<=0) continue;
+
+      if (fx+r.x>=innerWidth || fy+r.y>=innerHeight ||
+          fx+r.x+r.width<=0 || fy+r.y+r.height<=0) {
+        if (fy+r.y>=innerHeight && belowFold.length<64 &&
+            (rname==='link' || rname==='button'))
+          belowFold.push({e,root,r,rname,fx,fy});
+
+        continue;
+      }
 
       if (rname==='gridcell' && e.querySelector('button,[role="button"]')) continue;
 
@@ -383,7 +390,43 @@ return s?[s]:[]}).join(' ') ||
 
   const panes=new Map();
 
+  const belowFold=[];
+
   gather(document,0,0,0);
+
+  {
+    const NAV_WORD=/^\s*(next|next page|more|older|newer|previous|prev|prev page|back|load more|show more|see more|view more|»|›|→|←|«|‹|\d+|[<>‹›«»]\s*\d+|\d+\s*[<>‹›«»]?)\s*$/i;
+
+    const navScore=(e)=>{
+      const rel=e.getAttribute('rel');
+
+      if (rel==='next' || rel==='prev') return 0;
+
+      if (NAV_WORD.test(name(e).trim())) return 1;
+
+      if (e.closest('[rel~="next"],[rel~="prev"],[class*="paginat"],nav')) return 2;
+
+      return 3;
+    };
+
+    belowFold.sort((a,b)=>navScore(a.e)-navScore(b.e));
+
+    for (const {e,root,r,rname,fx,fy} of belowFold.slice(0,16)) {
+      const accessibleName=name(e);
+      const frame=(fx||fy)?{x:fx,y:fy}:undefined;
+
+      const base={node:identity(e),role:rname,label:(accessibleName||rname).slice(0,240),
+        rect:{x:fx+r.x,y:fy+r.y,w:r.width,h:r.height},below:true};
+
+      cache.sig.set(base.node,[root,rname,accessibleName]);
+
+      if (frame) base.frame=frame;
+
+      if (e.getRootNode() instanceof ShadowRoot) base.shadow=true;
+
+      actions.push({...base,kind:'click'});
+    }
+  }
 
   for (const [e,off] of panes) {
     const r=e.getBoundingClientRect();
