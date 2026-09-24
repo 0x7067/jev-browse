@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -132,6 +132,7 @@ function runOnce(task, env, engine) {
     const killer = setTimeout(() => cli.kill("SIGKILL"), TASK_TIMEOUT_MS);
     cli.on("exit", () => {
       clearTimeout(killer);
+      rmSync(profile, { recursive: true, force: true });
       let result = null;
 
       try { result = JSON.parse(stdout.trim()); } catch {}

@@ -3,7 +3,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { StringEnum } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 
-import { runAgent } from "../../src/cli.ts";
+import { runAgent } from "../../bundled/cli.mjs";
 
 export default function (pi: ExtensionAPI) {
   pi.registerTool({
