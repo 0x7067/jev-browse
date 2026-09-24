@@ -1,0 +1,20 @@
+.claude-plugin/marketplace.json
+  h_29be57c0addd47 8,15
+AGENTS.md
+  h_29be57c0addd47 60-65
+README.md
+  h_29be57c0addd47 250-255
+package-lock.json
+  h_29be57c0addd47 3,9,18,22,821,956
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "62fac69414fc4108c5e48e324fc08cbcae551e4c",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
