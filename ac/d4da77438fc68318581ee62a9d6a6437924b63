@@ -1,0 +1,19 @@
+scripts/eval.mjs
+  s_43368fabb82bef::t_65556d3f332c14 4,135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "acd4da77438fc68318581ee62a9d6a6437924b63",
+  "prompts": {},
+  "sessions": {
+    "s_43368fabb82bef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc3616e9-fc90-45f7-8cce-f7d843882df4",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
