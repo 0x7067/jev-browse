@@ -1,9 +1,8 @@
 {
   "name": "jev-browse",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Jev drives a real browser: one goal, an indexed action space, one systemOne decision per step.",
   "type": "module",
-  "private": true,
   "keywords": [
     "pi-package"
   ],
@@ -20,7 +19,7 @@
     "jev-browse-mcp": "bundled/mcp.mjs"
   },
   "scripts": {
-    "build": "tsc && cp src/snapshot.js dist/snapshot.js && npm run build:bundle",
+    "compile": "tsc && cp src/snapshot.js dist/snapshot.js && npm run build:bundle",
     "build:bundle": "esbuild src/cli.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/cli.mjs && esbuild src/mcp.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/mcp.mjs && cp src/snapshot.js bundled/snapshot.js",
     "check:bundle": "npm run --silent build:bundle && git diff --exit-code -- bundled/",
     "check:comments": "node scripts/check-no-comments.mjs",
@@ -33,16 +32,14 @@
   "engines": {
     "node": ">=22"
   },
-  "dependencies": {
-    "@typesafe-ai/sdk": "^0.6.0",
-    "typebox": "^1.3.33"
-  },
   "devDependencies": {
     "@oxlint/plugins": "^1.83.0",
     "@types/node": "^22.0.0",
+    "@typesafe-ai/sdk": "^0.6.0",
     "esbuild": "^0.28.2",
     "oxlint": "^1.83.0",
     "tsx": "^4.0.0",
+    "typebox": "^1.3.33",
     "typescript": "^5.0.0"
   },
   "license": "MIT"

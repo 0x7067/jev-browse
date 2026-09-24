@@ -117,7 +117,7 @@ JSON. Exit 0 on `done`, 2 on `blocked`, 1 on error.
 The harnesses call the MCP server, `node bundled/mcp.mjs` on stdio, which
 exposes `jev_browse`. `mcp.json` runs it as `${PLUGIN_ROOT}/bundled/mcp.mjs`.
 For local development without a build, use `npm run` (tsx) or rebuild
-`bundled/` with `npm run build` (see Development).
+`bundled/` with `npm run compile` (see Development).
 
 Only `http(s)` start URLs are accepted. Page text flows to external model
 APIs, so `file://` would be an exfiltration path; tests and fixtures opt in
@@ -238,11 +238,11 @@ git clone https://github.com/0x7067/jev-browse && cd jev-browse
 npm install          # dev tooling (typescript, esbuild, oxlint)
 npm run typecheck    # tsc --noEmit
 npm run lint         # oxlint plus check:comments
-npm run build        # tsc -> dist/ and rebuilds bundled/
+npm run compile      # tsc -> dist/ and rebuilds bundled/
 npm run run -- --url ... --goal ...   # tsx src/cli.ts, no build step
 ```
 
-Rebuild `bundled/` with `npm run build` before committing changes to `src/`;
+Rebuild `bundled/` with `npm run compile` before committing changes to `src/`;
 the bundles are what installed copies execute. `npm run check:bundle`
 rebuilds and fails if the committed bundles drifted from `src/` (safe to
 run as a pre-commit gate).
