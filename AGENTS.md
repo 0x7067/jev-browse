@@ -57,6 +57,12 @@ for the flags, the expectation types, and the result format.
 - The `cdp` and `agent-browser` engines share one snapshot and the
   `markerMatches` freshness contract in `src/json.ts`. Any freshness or
   marker change must keep both engines coherent.
+- Git installs must stay script-free: no runtime `dependencies`, and no
+  script named `build`, `install`, `prepare`, `prepack`, or
+  `pre`/`postinstall` (npm runs dependency preparation when those exist and
+  forces `--include=dev`, which breaks `npx -p github:...` installs). The
+  full local build is `npm run compile`; installed copies execute only the
+  committed `bundled/`.
 
 ## Verify
 

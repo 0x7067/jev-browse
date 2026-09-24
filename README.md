@@ -247,6 +247,12 @@ the bundles are what installed copies execute. `npm run check:bundle`
 rebuilds and fails if the committed bundles drifted from `src/` (safe to
 run as a pre-commit gate).
 
+The build script is called `compile` on purpose: npm runs install-time
+preparation for git dependencies when a script named `build` (or
+`install`/`prepare`/etc.) exists, which breaks `npx -p github:...`
+installs. Installed copies only ever run the committed `bundled/`, which
+needs no dependencies.
+
 The demo is recorded with:
 
 ```bash
