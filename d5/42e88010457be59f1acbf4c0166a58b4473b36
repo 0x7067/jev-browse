@@ -1,0 +1,20 @@
+.claude-plugin/plugin.json
+  h_29be57c0addd47 3
+README.md
+  h_29be57c0addd47 120,241,245
+package.json
+  h_29be57c0addd47 3,22,38,42
+plugin.json
+  h_29be57c0addd47 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d542e88010457be59f1acbf4c0166a58b4473b36",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
