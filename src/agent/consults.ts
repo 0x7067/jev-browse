@@ -48,6 +48,10 @@ export async function confirmDone(browser: BrowserDriver, page: PageState): Prom
       await sleep(120);
     }
 
+    if (browser.pendingNav?.()) {
+      throw new StalePage("Navigation still in flight while confirming DONE. Choose again.");
+    }
+
     if (!(await browser.fresh(page, undefined, "structure"))) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }

@@ -135,7 +135,13 @@ separate CDP screencast.
 
 The page is read once per step. `snapshot.js` pulls visible controls, names,
 values, and text in a single browser call, atomically, keeping references to
-real DOM nodes.
+real DOM nodes. Observation prefers platform semantics over guesswork: ARIA
+IDL reflection (`ariaCurrent`, `ariaModal`, `ariaLive`, `ariaRequired`),
+`computedRole()`/`computedName()` where the browser ships them, the HTML-AAM
+implicit tag mappings, native `<dialog>` plus the ARIA dialog pattern, and
+verbatim `rel`/`href` tokens for sequential links. What remains heuristic
+exists only where no standard signal does, and each case is listed with its
+reason in [docs/standards.md](docs/standards.md).
 
 Then it checks the page hasn't moved under it. Fill, wait, scroll, and `DONE`
 get a full marker compare. Click and select get a scoped guard covering the
@@ -183,16 +189,28 @@ table rather than offer dead targets.
 
 ## Small enough to read
 
+Every implementation file stays under 500 lines; `npm run lint` enforces the
+cap with oxlint's `max-lines`.
+
 | File | Job |
 | --- | --- |
-| [src/agent.ts](src/agent.ts) | The complete loop and text-helper handoff |
-| [src/snapshot.js](src/snapshot.js) | Atomic DOM snapshot, indexed controls, freshness guards |
+| [src/agent.ts](src/agent.ts) | Run loop, state bag, result assembly |
+| [src/agent/steps.ts](src/agent/steps.ts) | The phase machine: observe, decide, act, settle |
+| [src/agent/consults.ts](src/agent/consults.ts) | DONE confirmation, blocked probes, repair consults |
+| [src/agent/fuses.ts](src/agent/fuses.ts) | No-progress fuses: cycles, revisits, idle streaks |
+| [src/agent/followup.ts](src/agent/followup.ts) | Predicted continuations and toggle detection |
+| [src/agent/observe.ts](src/agent/observe.ts) | First-observation settle and state summary |
+| [src/snapshot/](src/snapshot/) → [src/snapshot.js](src/snapshot.js) | Ordered fragments concatenated into the injected atomic snapshot |
 | [src/model/decide.ts](src/model/decide.ts) | Dynamic operation/target heads and the decision request |
 | [src/model/space.ts](src/model/space.ts) | The indexed action space |
 | [src/model/text.ts](src/model/text.ts) | Text-helper handoff for `TYPE_TEXT` |
 | [src/model/endpoints.ts](src/model/endpoints.ts) | Model-endpoint warm-up |
 | [src/questions.ts](src/questions.ts) | Model instructions |
-| [src/cdp/browser.ts](src/cdp/browser.ts) | Chrome launch/attach, trusted input, network tracking |
+| [src/cdp/browser.ts](src/cdp/browser.ts) | Session shell: attach, observe, tab adoption |
+| [src/cdp/input.ts](src/cdp/input.ts) | Trusted input synthesis and DOM-event fallbacks |
+| [src/cdp/events.ts](src/cdp/events.ts) | Network, navigation, dialog, and download event state |
+| [src/cdp/fresh.ts](src/cdp/fresh.ts) | Freshness guards and settle over the shared marker contract |
+| [src/cdp/launch.ts](src/cdp/launch.ts) | Chrome spawn and ws-url resolution |
 | [src/cdp/socket.ts](src/cdp/socket.ts) | Minimal CDP client over a browser WebSocket |
 | [src/cdp/chrome.ts](src/cdp/chrome.ts) | Chrome/Chromium discovery |
 | [src/abrowser.ts](src/abrowser.ts) | agent-browser engine over the same driver interface |
@@ -243,9 +261,12 @@ npm run run -- --url ... --goal ...   # tsx src/cli.ts, no build step
 ```
 
 Rebuild `bundled/` with `npm run compile` before committing changes to `src/`;
-the bundles are what installed copies execute. `npm run check:bundle`
+the bundles are what installed copies execute. `npm run compile` first
+concatenates the `src/snapshot/` fragments into the generated
+`src/snapshot.js`, then typechecks and bundles. `npm run check:bundle`
 rebuilds and fails if the committed bundles drifted from `src/` (safe to
-run as a pre-commit gate).
+run as a pre-commit gate). `npm run lint` includes the 500-line `max-lines`
+gate and the no-comments gate.
 
 The build script is called `compile` on purpose: npm runs install-time
 preparation for git dependencies when a script named `build` (or

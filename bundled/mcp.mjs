@@ -82,6 +82,9 @@ async function confirmDone(browser, page) {
       }
       await sleep(120);
     }
+    if (browser.pendingNav?.()) {
+      throw new StalePage("Navigation still in flight while confirming DONE. Choose again.");
+    }
     if (!await browser.fresh(page, void 0, "structure")) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }
