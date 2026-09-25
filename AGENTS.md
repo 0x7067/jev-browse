@@ -5,7 +5,9 @@
 Run these before you call a change to `src/` done. All must be clean.
 
 - `npm run typecheck`
-- `npm run lint` — oxlint plus `check:comments` (code comments are banned)
+- `npm run lint` — oxlint plus `check:comments` (code comments are banned);
+  oxlint enforces a 500-line cap on implementation files (`max-lines`), with
+  `bundled/**` and the generated `src/snapshot.js` ignored
 - `npm run check:bundle` — rebuilds `bundled/` and fails if the committed
   bundles drifted. `bundled/` is committed and is what installed copies
   execute, so commit the rebuilt bundles with the source change.

@@ -1,6 +1,6 @@
 {
   "name": "jev-browse",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "description": "Jev drives a real browser: one goal, an indexed action space, one systemOne decision per step.",
   "type": "module",
   "keywords": [
