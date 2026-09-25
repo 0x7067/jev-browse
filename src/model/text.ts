@@ -163,3 +163,18 @@ export async function extractAnswer(
     if (text || lastAttempt) return { answer: text || null, helper: result.helper };
   }
 }
+
+export function fold(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+export function atWordBoundary(haystack: string, needle: string): boolean {
+  let i = haystack.indexOf(needle);
+
+  while (i !== -1) {
+    if (i === 0 || !/[\p{L}\p{N}]/u.test(haystack[i - 1])) return true;
+    i = haystack.indexOf(needle, i + 1);
+  }
+
+  return false;
+}

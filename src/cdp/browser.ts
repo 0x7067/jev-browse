@@ -1,246 +1,55 @@
 
-import { execSync, spawn, type ChildProcess } from "node:child_process";
+import { type ChildProcess } from "node:child_process";
 import { mkdtempSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { fingerprint, markerMatches } from "../json.ts";
+import { fingerprint } from "../json.ts";
 import { loadSnapshotJs } from "../snapshot-loader.ts";
 import {
   StalePage,
   type ActResult,
   type BrowserDriver,
   type JsonObject,
-  type JsonValue,
   type ObservedAction,
   type PageState,
 } from "../types.ts";
-import { findChrome } from "./chrome.ts";
-import {
-  browserWsUrl,
-  CdpSocket,
-  freePort,
-  sleep,
-  type TargetList,
-} from "./socket.ts";
+import { CdpEvents } from "./events.ts";
+import { fresh, settle } from "./fresh.ts";
+import { act, domClick, QUIET_MS, VIEWPORT_H, VIEWPORT_W } from "./input.ts";
+import { resolveWsUrl, spawnChrome, type CdpOptions } from "./launch.ts";
+import { CdpSocket, sleep, type TargetList } from "./socket.ts";
 
 const READ_STATE = loadSnapshotJs();
 
-const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
-
-interface KeyEventParams {
-  key: string;
-  code: string;
-  windowsVirtualKeyCode: number;
-  text?: string;
-}
-
-const KEYS: ReadonlyMap<string, KeyEventParams> = new Map(
-  Object.entries({
-    enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" },
-    tab: { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 },
-    escape: { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 },
-    backspace: { key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 },
-    delete: { key: "Delete", code: "Delete", windowsVirtualKeyCode: 46 },
-    arrowup: { key: "ArrowUp", code: "ArrowUp", windowsVirtualKeyCode: 38 },
-    arrowdown: { key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 },
-    arrowleft: { key: "ArrowLeft", code: "ArrowLeft", windowsVirtualKeyCode: 37 },
-    arrowright: { key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 },
-    home: { key: "Home", code: "Home", windowsVirtualKeyCode: 36 },
-    end: { key: "End", code: "End", windowsVirtualKeyCode: 35 },
-    pageup: { key: "PageUp", code: "PageUp", windowsVirtualKeyCode: 33 },
-    pagedown: { key: "PageDown", code: "PageDown", windowsVirtualKeyCode: 34 },
-    space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " },
-  }),
-);
-
-const KEY_TYPED_INPUTS = new Set(["date", "time", "datetime-local", "month", "week"]);
-
-const LONG_LIVED_REQUESTS = new Set([
-  "WebSocket",
-  "EventSource",
-  "Media",
-  "Ping",
-  "CSPViolationReport",
-  "Other",
-]);
-
-const PENDING_GRACE_MS = 10_000;
-
-const VIEWPORT_W = 1120;
-
-const VIEWPORT_H = 780;
-
-const SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
-
-const WAIT_BUDGET_MS = 15_000;
-
-const QUIET_MS = 250;
-
-const WAIT_POLL_MS = 100;
-
-const DRAG_STEPS = 8;
-
-function splitShellWords(input: string): string[] {
-  const out: string[] = [];
-
-  let cur = "",
-    quote: string | null = null,
-    started = false;
-
-  for (let i = 0; i < input.length; i++) {
-    const ch = input[i];
-
-    if (quote !== null) {
-      if (ch === quote) quote = null;
-      else cur += ch;
-    } else if (ch === '"' || ch === "'") {
-      quote = ch;
-      started = true;
-    } else if (ch === "\\" && i + 1 < input.length) {
-      cur += input[++i];
-      started = true;
-    } else if (/\s/.test(ch)) {
-      if (started || cur) {
-        out.push(cur);
-        cur = "";
-        started = false;
-      }
-    } else {
-      cur += ch;
-      started = true;
-    }
-  }
-
-  if (started || cur) out.push(cur);
-
-  return out;
-}
-
-function reapProfileChrome(profileDir: string): boolean {
-  try {
-    const escaped = profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-    const out = execSync(`pgrep -f "user-data-dir=${escaped}([[:space:]]|$)"`, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-
-    const pids = out.trim().split(/\s+/).filter(Boolean);
-
-    for (const pid of pids) {
-      try {
-        process.kill(Number(pid), "SIGKILL");
-      } catch {
-      }
-    }
-
-    return pids.length > 0;
-  } catch {
-    return false;
-  }
-}
-
-export interface CdpOptions {
-  cdpUrl?: string;
-  headed?: boolean;
-  profileDir?: string;
-}
-
 export class CdpBrowser implements BrowserDriver {
   private socket!: CdpSocket;
-  private session!: string;
-  private target!: string;
+  session!: string;
+  target!: string;
   private proc: ChildProcess | null = null;
   private launchProfileDir: string | null = null;
-  private afterInput: ObservedAction | null = null;
+  afterInput: ObservedAction | null = null;
   private seen = new Set<string>();
   private adopted: string[] = [];
   private sessions = new Map<string, string>();
-  private pending = new Map<string, Map<string, number>>();
-  private navPending = new Map<string, number>();
-  private mainFrame = new Map<string, string>();
-  private lastDialog: { type: string; message: string } | null = null;
-  private selectAllModifier = 2;
-  private downloadGuids = new Map<string, string>();
-  private downloads: string[] = [];
+  readonly events = new CdpEvents();
+  selectAllModifier = 2;
 
   private constructor() {}
 
   static async open(url: string, opts: CdpOptions = {}): Promise<CdpBrowser> {
     const browser = new CdpBrowser();
-    let port: number | null = null;
+    const spawned = await spawnChrome(opts);
 
-    if (!opts.cdpUrl) {
-      port = await freePort();
-
-      const profileDir =
-        opts.profileDir ?? process.env.JEV_PROFILE ?? join(homedir(), ".jev-browse", "profile");
-
-      const args = [
-        `--remote-debugging-port=${port}`,
-        `--user-data-dir=${profileDir}`,
-        "--no-first-run",
-        "--no-default-browser-check",
-        "--disable-session-crashed-bubble",
-        "--hide-crash-restore-bubble",
-      ];
-
-      if (!opts.headed) args.push("--headless=new");
-      else
-        args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
-
-      if (process.getuid?.() === 0) {
-        args.push("--no-sandbox");
-        process.stderr.write(
-          "jev-browse: running as root — Chrome launched with --no-sandbox, " +
-            "renderer containment is off. Attach to a non-root Chrome via JEV_CDP_URL to keep it.\n",
-        );
-      }
-
-      for (const extra of splitShellWords(process.env.JEV_CHROME_ARGS ?? "")) {
-        args.push(extra);
-      }
-
-      browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
-      browser.proc.on("error", () => {});
-      browser.launchProfileDir = profileDir;
+    if (spawned) {
+      browser.proc = spawned.proc;
+      browser.launchProfileDir = spawned.profileDir;
     }
 
     try {
-      let wsUrl: string;
+      const wsUrl = await resolveWsUrl(opts, spawned);
 
-      if (opts.cdpUrl) {
-        const base = opts.cdpUrl.replace(/\/+$/, "");
-
-        const info = (await (await fetch(`${base}/json/version`)).json()) as {
-          webSocketDebuggerUrl?: string;
-        };
-
-        if (!info.webSocketDebuggerUrl) {
-          throw new Error(`${base} did not report a webSocketDebuggerUrl`);
-        }
-
-        wsUrl = info.webSocketDebuggerUrl;
-      } else {
-        try {
-          wsUrl = await browserWsUrl(port!);
-        } catch (error) {
-          if (!browser.launchProfileDir || !reapProfileChrome(browser.launchProfileDir)) {
-            throw error;
-          }
-
-          port = await freePort();
-
-          const args2 = browser.proc!.spawnargs.map((a) =>
-            a.startsWith("--remote-debugging-port=") ? `--remote-debugging-port=${port}` : a,
-          );
-
-          browser.proc = spawn(args2[0], args2.slice(1), { stdio: "ignore" });
-          browser.proc.on("error", () => {});
-          wsUrl = await browserWsUrl(port);
-        }
-      }
+      if (spawned) browser.proc = spawned.proc;
 
       browser.socket = await CdpSocket.connect(wsUrl);
 
@@ -254,56 +63,7 @@ export class CdpBrowser implements BrowserDriver {
           .catch(() => {});
       }
 
-      browser.socket.onEvent("Page.javascriptDialogOpening", (p, sessionId) => {
-        if (!sessionId) return;
-
-        browser.lastDialog = {
-          type: String(p.type ?? "dialog"),
-          message: String(p.message ?? ""),
-        };
-        browser.socket
-          .call("Page.handleJavaScriptDialog", { accept: true }, sessionId)
-          .catch(() => {});
-      });
-      browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
-        if (sessionId && !LONG_LIVED_REQUESTS.has(String(p.type))) {
-          (
-            browser.pending.get(sessionId) ??
-            browser.pending.set(sessionId, new Map()).get(sessionId)!
-          ).set(p.requestId, Date.now());
-        }
-      });
-      browser.socket.onEvent("Network.loadingFinished", (p, sessionId) => {
-        if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
-      });
-      browser.socket.onEvent("Network.loadingFailed", (p, sessionId) => {
-        if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
-      });
-      browser.socket.onEvent("Page.frameStartedNavigating", (p, sessionId) => {
-        if (sessionId && p.frameId === browser.mainFrame.get(sessionId)) {
-          browser.navPending.set(sessionId, (browser.navPending.get(sessionId) ?? 0) + 1);
-        }
-      });
-      browser.socket.onEvent("Page.frameNavigated", (p, sessionId) => {
-        if (sessionId && p.frame?.id === browser.mainFrame.get(sessionId)) {
-          browser.navPending.set(sessionId, Math.max(0, (browser.navPending.get(sessionId) ?? 0) - 1));
-        }
-      });
-      browser.socket.onEvent("Page.frameStoppedLoading", (p, sessionId) => {
-        if (sessionId && p.frameId === browser.mainFrame.get(sessionId)) {
-          browser.navPending.set(sessionId, 0);
-        }
-      });
-      browser.socket.onEvent("Browser.downloadWillBegin", (p) => {
-        browser.downloadGuids.set(String(p.guid), String(p.suggestedFilename ?? p.url ?? "download"));
-      });
-      browser.socket.onEvent("Browser.downloadProgress", (p) => {
-        const name = browser.downloadGuids.get(String(p.guid));
-
-        if (name && p.state === "completed") browser.downloads.push(name);
-
-        if (name && p.state !== "inProgress") browser.downloadGuids.delete(String(p.guid));
-      });
+      browser.events.wire(browser.socket);
 
       browser.target = (
         await browser.socket.call<{ targetId: string }>("Target.createTarget", {
@@ -381,7 +141,7 @@ export class CdpBrowser implements BrowserDriver {
     }
   }
 
-  private async call<T>(method: string, params: JsonObject = {}): Promise<T> {
+  async call<T>(method: string, params: JsonObject = {}): Promise<T> {
     try {
       return await this.socket.call<T>(method, params, this.session);
     } catch (error) {
@@ -403,10 +163,10 @@ export class CdpBrowser implements BrowserDriver {
       "Page.getFrameTree",
     ).catch(() => null);
 
-    if (tree?.frameTree?.frame?.id) this.mainFrame.set(this.session, tree.frameTree.frame.id);
+    if (tree?.frameTree?.frame?.id) this.events.setMainFrame(this.session, tree.frameTree.frame.id);
   }
 
-  private async evaluate<T>(expression: string, awaitPromise = false): Promise<T | undefined> {
+  async evaluate<T>(expression: string, awaitPromise = false): Promise<T | undefined> {
     const response = await this.call<{
       exceptionDetails?: { exception?: { description?: string }; text?: string };
       result?: { value?: T };
@@ -519,10 +279,10 @@ export class CdpBrowser implements BrowserDriver {
 
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
-        info.pending_requests = this.pendingCount(this.session);
-        info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
+        info.pending_requests = this.events.pendingCount(this.session);
+        info.pending_nav = this.events.pendingNav(this.session);
 
-        if (this.downloads.length) info.downloads = [...this.downloads];
+        if (this.events.downloads.length) info.downloads = [...this.events.downloads];
 
         const tabs = await this.listTabs();
 
@@ -543,10 +303,9 @@ export class CdpBrowser implements BrowserDriver {
           });
         }
 
-        if (this.lastDialog) {
-          info.dialog = `${this.lastDialog.type}: ${this.lastDialog.message}`.slice(0, 240);
-          this.lastDialog = null;
-        }
+        const dialog = this.events.takeDialog();
+
+        if (dialog) info.dialog = dialog;
 
         return info;
       } catch (error) {
@@ -558,36 +317,12 @@ export class CdpBrowser implements BrowserDriver {
     throw new StalePage("Page did not settle");
   }
 
-  private pendingCount(session: string): number {
-    const requests = this.pending.get(session);
-
-    if (!requests) return 0;
-
-    const now = Date.now();
-    let count = 0;
-
-    for (const [id, started] of requests) {
-      if (now - started > PENDING_GRACE_MS) requests.delete(id);
-      else count++;
-    }
-
-    return count;
-  }
-
   async settle(budgetMs: number, quietMs: number = QUIET_MS): Promise<void> {
-    const quiet = await this.evaluate<boolean>(
-      `(() => {const w = window.__jevFast && window.__jevFast.wake;
-        if (!w || !w.quiet) return false;
-
-        return w.quiet(${Math.min(quietMs, budgetMs)}, ${budgetMs}).then(() => true);})()`,
-      true,
-    ).catch(() => false);
-
-    if (quiet !== true) await sleep(budgetMs);
+    return settle(this, budgetMs, quietMs);
   }
 
   pendingNav(): boolean {
-    return (this.navPending.get(this.session) ?? 0) > 0;
+    return this.events.pendingNav(this.session);
   }
 
   async fresh(
@@ -595,110 +330,11 @@ export class CdpBrowser implements BrowserDriver {
     action?: ObservedAction,
     level: "full" | "page" | "structure" = "full",
   ): Promise<boolean> {
-    if (action && (action.kind === "click" || action.kind === "select")) {
-      const node = action.node;
-
-      if (node === undefined) return false;
-
-      const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`,
-      );
-
-      return (
-        JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]])
-      );
-    }
-
-    if (level === "page") {
-      const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? c.pageKey() : null; })()`,
-      );
-
-      return JSON.stringify(current) === JSON.stringify(page.page_key);
-    }
-
-    return markerMatches(level, await this.evaluate<JsonValue>(MARKER), page.marker);
+    return fresh(this, page, action, level);
   }
 
   async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {
-    if (!(await this.fresh(page, action, "page"))) {
-      throw new StalePage("Page changed since this decision. Observe again.");
-    }
-
-    const kind = action.kind;
-
-    if (kind === "wait") {
-      const deadline = Date.now() + WAIT_BUDGET_MS;
-
-      for (;;) {
-        if (!(await this.fresh(page))) break;
-
-        if (this.pendingNav() || this.pendingCount(this.session) > 0) {
-          if (Date.now() >= deadline) break;
-          await sleep(WAIT_POLL_MS);
-          continue;
-        }
-
-        await this.settle(Math.max(0, deadline - Date.now()), QUIET_MS);
-        break;
-      }
-
-      return { executed: action.id };
-    }
-
-    if (kind === "scroll" && action.node !== undefined) {
-      const moved = await this.evaluate(
-        `(() => {
-          const e=window.__jevFast?.node(${JSON.stringify(action.node)});
-          if (!e?.isConnected) return null;
-          const b=e.scrollTop;
-          e.scrollBy({top:${JSON.stringify(action.delta ?? SCROLL_DELTA)},behavior:'instant'});
-          return e.scrollTop!==b;
-        })()`,
-      ).catch(() => null);
-
-      if (moved === null) throw new StalePage("Scroll region is gone. Observe again.");
-
-      this.afterInput = action;
-
-      return { executed: action.id };
-    }
-
-    if (kind === "scroll") {
-      await this.evaluate(
-        `(delta => {
-          const sign=Math.sign(delta)||1;
-          const dy=Math.round(sign*innerHeight*0.8);
-          const moved=(n,by)=>{const b=n.scrollTop;n.scrollBy({top:by,behavior:'instant'});return n.scrollTop!==b;};
-          for (const fx of [0.5,0.3,0.7,0.15,0.85]) {
-            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.6);
-            const e=window.__jevFast?.deepHit(document,x,y);
-            for (let n=e; n && n!==document.documentElement && n!==document.body; n=n.parentElement||n.getRootNode()?.host) {
-              if (n.tagName==='IFRAME') {
-                try { const w=n.contentWindow, b=w.scrollY; w.scrollBy({top:dy,behavior:'instant'}); if (w.scrollY!==b) return 'iframe'; } catch {}
-                continue;
-              }
-              const cs=getComputedStyle(n);
-              if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight>n.clientHeight+1 && moved(n,dy)) return 'element';
-            }
-          }
-          const b=scrollY; scrollBy({top:dy,behavior:'instant'});
-          return scrollY!==b ? 'window' : 'none';
-        })(${JSON.stringify(action.delta ?? SCROLL_DELTA)})`,
-      ).catch(() => null);
-
-      this.afterInput = action;
-
-      return { executed: action.id };
-    }
-
-    if (kind === "back" || kind === "forward") {
-      await this.evaluate(`history.${kind === "back" ? "back" : "forward"}()`);
-
-      return { executed: action.id };
-    }
-
-    if (kind === "focus_tab") {
+    if (action.kind === "focus_tab") {
       const targetId = String(action.value ?? "");
       const sessionId = this.sessions.get(targetId);
 
@@ -711,202 +347,7 @@ export class CdpBrowser implements BrowserDriver {
       return { executed: action.id };
     }
 
-    if (kind === "press") {
-      const key = KEYS.get(String(action.key));
-
-      if (!key) throw new Error(`Unknown key ${action.key}`);
-      await this.call("Input.dispatchKeyEvent", { type: "keyDown", ...key });
-      await this.call("Input.dispatchKeyEvent", { type: "keyUp", ...key });
-      this.afterInput = action;
-
-      return { executed: action.id };
-    }
-
-    if (action.node === undefined) throw new Error("Invalid observed node");
-    let target: { x: number; y: number; type?: string; why?: string } | null | undefined;
-
-    try {
-      target = await this.evaluate(`(action => {
-        const e=window.__jevFast?.node(action.node);
-        // Visibility alone doesn't decide clickability — opacity:0 custom
-        // controls fail checkVisibility yet win their own hit test. The
-        // covered check below is the real arbiter.
-        if (!e?.isConnected) return {why:'gone'};
-        if (e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return {why:'disabled'};
-        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return {why:'readonly'};
-        const d=e.ownerDocument, w=d.defaultView||window;
-        let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
-        // Observed targets drift out of the viewport between snapshot and input
-        // (async layout, sticky chrome). One instant re-scroll beats a stale-page
-        // re-decision; a still-offscreen or covered target stays fatal.
-        if (r.width && r.height && (lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight)) {
-          e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
-          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
-        }
-        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return {why:'offscreen'};
-        const c=window.__jevFast, deepHit=()=>c.deepHit(d,lx,ly);
-        let hit=deepHit();
-        // A hit on the target's own ancestor is clipping by a scroll
-        // container (a long suggestion list, an overflow pane), not cover:
-        // bring the target into view once and test again.
-        if (hit && hit!==e && c.composedContains(hit,e)) {
-          e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
-          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
-          hit=deepHit();
-        }
-        // Not covered when the hit is the target or inside it across shadow
-        // boundaries, or is one of e's own shadow hosts. An unrelated overlay
-        // in the same shadow root still counts as covered.
-        const hosts=new Set(); for (let sr=e.getRootNode();sr instanceof ShadowRoot;sr=sr.host.getRootNode()) hosts.add(sr.host);
-        if (!c.composedContains(e,hit) && !hosts.has(hit)) return {why:'covered by '+(hit?hit.tagName.toLowerCase():'nothing')};
-        if (action.kind==='select') {
-          if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
-              !o.disabled && !o.closest('optgroup[disabled]'))) return {why:'no such option'};
-          e.value=action.value;
-          e.dispatchEvent(new Event('input',{bubbles:true}));
-          e.dispatchEvent(new Event('change',{bubbles:true}));
-        }
-        const fx=action.frame?.x||0, fy=action.frame?.y||0;
-        return {x:lx+fx,y:ly+fy,type:e.tagName==='INPUT'?e.type:''};
-      })(${JSON.stringify(action)})`);
-    } catch (error) {
-      if (kind === "select") {
-        throw new Error("Dropdown execution was interrupted; inspect before retrying.");
-      }
-
-      throw error;
-    }
-
-    if (target === null || target === undefined || target.why !== undefined) {
-      if (kind === "select") {
-        throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
-      }
-
-      const why = String(target?.why ?? "");
-
-      if (
-        (kind === "click" || kind === "context" || kind === "hover") &&
-        (why === "offscreen" || why.startsWith("covered"))
-      ) {
-        return await this.domDispatch(action, text);
-      }
-
-      throw new StalePage(`Target ${JSON.stringify(action.label.slice(0, 40))} ${target?.why ?? "changed"}. Observe again.`);
-    }
-
-    if (kind === "fill" && target.type === "file") {
-      const doc = await this.call<{ root: { nodeId: number } }>("DOM.getDocument", { depth: 1 });
-
-      const found = await this.call<{ nodeId: number }>("DOM.querySelector", {
-        nodeId: doc.root.nodeId,
-        selector: `input[data-jev-node="${action.node}"]`,
-      });
-
-      if (!found.nodeId) throw new StalePage("File input no longer addressable. Observe again.");
-      await this.call("DOM.setFileInputFiles", { files: [text ?? ""], nodeId: found.nodeId });
-      this.afterInput = action;
-
-      return { executed: action.id };
-    }
-
-    if (kind === "hover") {
-      await this.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: target.x, y: target.y });
-      this.afterInput = action;
-
-      return { executed: action.id };
-    }
-
-    if (kind === "drag" && action.dragTo !== undefined) {
-      const destFrame = page.actions.find((a) => a.node === action.dragTo)?.frame;
-
-      const dest = await this.evaluate<{ x: number; y: number } | null>(`(() => {
-        const e=window.__jevFast?.node(${action.dragTo});
-        if (!e?.isConnected) return null;
-        const r=e.getBoundingClientRect();
-        return {x:r.x+r.width/2+${destFrame?.x ?? 0},y:r.y+r.height/2+${destFrame?.y ?? 0}};
-      })()`);
-
-      if (!dest) throw new StalePage("Drag destination changed. Observe again.");
-
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mousePressed",
-        x: target.x,
-        y: target.y,
-        button: "left",
-        clickCount: 1,
-      });
-
-      for (let i = 1; i <= DRAG_STEPS; i++) {
-        await this.call("Input.dispatchMouseEvent", {
-          type: "mouseMoved",
-          x: target.x + ((dest.x - target.x) * i) / DRAG_STEPS,
-          y: target.y + ((dest.y - target.y) * i) / DRAG_STEPS,
-          button: "left",
-          buttons: 1,
-        });
-      }
-
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mouseReleased",
-        x: dest.x,
-        y: dest.y,
-        button: "left",
-        clickCount: 1,
-      });
-      this.afterInput = action;
-
-      return { executed: action.id };
-    }
-
-    if (kind !== "select") {
-      for (const type of ["mousePressed", "mouseReleased"]) {
-        await this.call("Input.dispatchMouseEvent", {
-          type,
-          x: target.x,
-          y: target.y,
-          button: kind === "context" ? "right" : "left",
-          clickCount: 1,
-        });
-      }
-
-      if (kind === "click" || kind === "context" || kind === "fill") {
-        await this.evaluate(`(() => {
-          const e=window.__jevFast?.node(${action.node});
-          if (!e?.isConnected) return;
-          const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView||window;
-          if (r.top<0 || r.left<0 || r.bottom>w.innerHeight || r.right>w.innerWidth)
-            e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
-        })()`).catch(() => {});
-      }
-
-      if (kind === "fill") {
-        if (target.type && KEY_TYPED_INPUTS.has(target.type)) {
-          for (const ch of text ?? "") {
-            await this.call("Input.dispatchKeyEvent", { type: "char", text: ch });
-          }
-        } else {
-          const modifiers = this.selectAllModifier;
-          await this.call("Input.dispatchKeyEvent", {
-            type: "keyDown",
-            key: "a",
-            code: "KeyA",
-            modifiers,
-            commands: ["selectAll"],
-          });
-          await this.call("Input.dispatchKeyEvent", {
-            type: "keyUp",
-            key: "a",
-            code: "KeyA",
-            modifiers,
-          });
-          await this.call("Input.insertText", { text: text ?? "" });
-        }
-      }
-    }
-
-    this.afterInput = action;
-
-    return { executed: action.id };
+    return act(this, action, page, text);
   }
 
   async domClick(
@@ -914,83 +355,7 @@ export class CdpBrowser implements BrowserDriver {
     page: PageState,
     text?: string | null,
   ): Promise<ActResult> {
-    if (!(await this.fresh(page, action))) {
-      throw new StalePage("Page changed since this decision. Observe again.");
-    }
-
-    return await this.domDispatch(action, text);
-  }
-
-  private async domDispatch(
-    action: ObservedAction,
-    text?: string | null,
-  ): Promise<ActResult> {
-    if (!action.node) {
-      return { executed: action.id };
-    }
-
-    if (action.kind === "fill") {
-      await this.evaluate(
-        `(() => {
-          const e=window.__jevFast?.node(${action.node});
-          if (!e?.isConnected) return "stale";
-          if (e.isContentEditable) {
-            e.innerText=${JSON.stringify(text ?? "")};
-          } else {
-            const proto=e.tagName==='TEXTAREA'?HTMLTextAreaElement:HTMLInputElement;
-            Object.getOwnPropertyDescriptor(proto.prototype,'value').set.call(e,${JSON.stringify(text ?? "")});
-          }
-          e.dispatchEvent(new Event('input',{bubbles:true}));
-          e.dispatchEvent(new Event('change',{bubbles:true}));
-          return "ok";
-        })()`,
-      );
-      this.afterInput = action;
-
-      return { executed: action.id };
-    }
-
-    if (action.kind === "drag" && action.dragTo !== undefined) {
-      await this.evaluate(
-        `(() => {
-          const c=window.__jevFast;
-          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
-          if (!src || !dst) return "stale";
-          const dt=new DataTransfer();
-          const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
-          fire("dragstart",src); fire("dragenter",dst); fire("dragover",dst);
-          fire("drop",dst); fire("dragend",src);
-          return "ok";
-        })()`,
-      );
-      this.afterInput = action;
-
-      return { executed: action.id };
-    }
-
-    const types =
-      action.kind === "hover"
-        ? ["mouseover", "mousemove"]
-        : action.kind === "context"
-          ? ["pointerdown", "mousedown", "pointerup", "mouseup", "contextmenu"]
-          : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
-
-    await this.evaluate(
-      `(() => {
-        const e=window.__jevFast?.node(${action.node});
-        if (!e) return "stale";
-        const r=e.getBoundingClientRect();
-        const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:${action.kind === "context" ? 2 : 0}};
-        for (const t of ${JSON.stringify(types)}) {
-          const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
-          e.dispatchEvent(new Ev(t,opts));
-        }
-        return "ok";
-      })()`,
-    );
-    this.afterInput = action;
-
-    return { executed: action.id };
+    return domClick(this, action, page, text);
   }
 
   async close(): Promise<void> {

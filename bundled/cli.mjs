@@ -3,9 +3,106 @@
 // src/cli.ts
 import { mkdirSync, readFileSync as readFileSync3, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { homedir as homedir4 } from "node:os";
-import { join as join5 } from "node:path";
+import { join as join6 } from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 import { createHash as createHash2 } from "node:crypto";
+
+// src/sleep.ts
+var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// src/types.ts
+var StalePage = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "StalePage";
+  }
+};
+
+// src/agent/fuses.ts
+function cycling(f) {
+  const n = f.length;
+  return n >= 6 && f[n - 1] === f[n - 3] && f[n - 3] === f[n - 5] && f[n - 2] === f[n - 4] && f[n - 4] === f[n - 6] && f[n - 1] !== f[n - 2] || n >= 6 && f[n - 1] === f[n - 4] && f[n - 4] !== f[n - 2] && f[n - 2] === f[n - 5] && f[n - 3] === f[n - 6] && f[n - 1] !== f[n - 3];
+}
+function fusedNow(history, fingerprints, current) {
+  const repeated = history.slice(-3);
+  let idleMs = 0;
+  const last = history[history.length - 1];
+  for (let i = history.length - 1; i >= 0; i--) {
+    const h = history[i];
+    if (h.page_changed !== false || (h.pending_requests ?? 0) > 0) break;
+    idleMs = (last?.elapsed_ms ?? 0) - h.elapsed_ms;
+  }
+  const trail = fingerprints.slice(-14).filter((f, i, a) => i === 0 || f !== a[i - 1]);
+  const seen = trail.filter((f) => f === current).length;
+  return repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || seen >= 4 || cycling(fingerprints);
+}
+function giveUpHint(history, page) {
+  const base = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
+  const scrolled = history.some((h) => h.kind === "scroll");
+  if (!scrolled && (page.scroll?.height ?? 0) > page.h * 1.1) {
+    return base + " The page extends below the visible area and you have not scrolled \u2014 the goal's content is likely below the fold.";
+  }
+  return base;
+}
+
+// src/agent/consults.ts
+var STEP_KINDS = [
+  [/\b(type|enter|fill|upload)\b/i, ["fill"]],
+  [/\bdrag\b/i, ["drag"]],
+  [/\bpress\b/i, ["press"]],
+  [/\bwait for\b/i, ["wait"]]
+];
+var REPAIR_DONE = "Before claiming DONE, check each part of the goal against the page. If every part is visibly satisfied, claim DONE; if a part remains, act on it.";
+function prematureDone(history, goal, doneConsults) {
+  const acted = history.filter((h) => h.operation !== "WAIT");
+  const MUTATING = /* @__PURE__ */ new Set(["click", "context", "select", "fill", "drag", "press"]);
+  const unproven = acted.length < 2 || !acted.some((h) => MUTATING.has(h.kind));
+  if (doneConsults >= 1 || !unproven) return null;
+  const steps = goal.match(
+    /\b(click|type|press|select|activate|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark|complete|choose|toggle|switch|wait for)\b/gi
+  );
+  const skipped = STEP_KINDS.some(
+    ([step, kinds]) => step.test(goal) && !history.some((h) => kinds.includes(h.kind))
+  );
+  if ((steps?.length ?? 0) < 2 && !skipped) return null;
+  return REPAIR_DONE;
+}
+async function confirmDone(browser, page) {
+  if (page.pending_nav || browser.pendingNav?.()) {
+    const deadline = Date.now() + 2500;
+    while (Date.now() < deadline && browser.pendingNav?.()) {
+      if (!await browser.fresh(page, void 0, "structure")) {
+        throw new StalePage("Navigation committed while confirming DONE. Choose again.");
+      }
+      await sleep(120);
+    }
+    if (!await browser.fresh(page, void 0, "structure")) {
+      throw new StalePage("Page changed while confirming DONE. Choose again.");
+    }
+  }
+  const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
+  await (browser.settle?.(window_) ?? sleep(window_));
+  if (!await browser.fresh(page, void 0, "structure")) {
+    throw new StalePage("Page changed while confirming DONE. Choose again.");
+  }
+}
+async function blockedProbe(browser, page, history, elapsed, waitEntry) {
+  const entry = waitEntry("Wait for the page to update", page);
+  const started = Date.now();
+  let deadline = started + 4e3;
+  for (; ; ) {
+    await sleep(800);
+    const latest = await browser.observe();
+    if ((latest.pending_requests ?? 0) > 0) deadline = started + 1e4;
+    const changed = latest.fingerprint !== page.fingerprint;
+    if (changed || Date.now() >= deadline) {
+      entry.page_changed = changed;
+      entry.url = latest.url;
+      entry.elapsed_ms = elapsed();
+      return { changed, entry, latest, hint: changed ? null : giveUpHint(history, page) };
+    }
+  }
+}
 
 // src/json.ts
 import { createHash } from "node:crypto";
@@ -186,6 +283,187 @@ function actionSpace(actions, delegatedContextmenu = false) {
   }
   const dragDestinations = { ...targets.CLICK, ...targets.DRAG };
   return { elements, targets, controls, dragDestinations };
+}
+
+// src/model/text.ts
+async function postJson(url, key, body) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+        body: JSON.stringify(body)
+      });
+    } catch {
+      throw new Error("Model connection failed; no action executed.");
+    }
+    if ([429, 529, 503].includes(response.status) && attempt < 2) {
+      await sleep(500 * 2 ** attempt);
+      continue;
+    }
+    if (!response.ok) {
+      throw new Error(`Model provider returned HTTP ${response.status}; no action executed.`);
+    }
+    return response.json();
+  }
+  throw new Error("Model unavailable");
+}
+function fieldContext(goal, action, page, history) {
+  return {
+    goal,
+    field: { label: action.label, role: action.role, value: action.value },
+    other_fields: page.actions.filter((a) => a.kind === "fill" && a.node !== action.node).slice(0, 20).map((a) => ({ label: a.label, value: a.value ?? "" })),
+    page: { title: page.title, text: page.text.slice(0, 6e3) },
+    recent_actions: history.slice(-6).map(
+      (h) => Object.fromEntries(["action", "text"].flatMap((k) => k in h ? [[k, h[k]]] : []))
+    )
+  };
+}
+async function helperJson(systemPrompt, context, requireKey, reason) {
+  const key = process.env.TEXT_MODEL_API_KEY;
+  if (!key) {
+    if (requireKey) {
+      throw new Error(
+        "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor."
+      );
+    }
+    throw new Error("Text helper is not configured.");
+  }
+  const base = (process.env.TEXT_MODEL_BASE_URL ?? "https://api.deepseek.com/v1").replace(/\/+$/, "");
+  const model = process.env.TEXT_MODEL ?? "deepseek-chat";
+  const reasoning = base.includes("api.deepseek.com/") ? { thinking: { type: "disabled" } } : { reasoning: reason ? { effort: "low" } : { enabled: false } };
+  const started = performance.now();
+  const result = await postJson(`${base}/chat/completions`, key, {
+    model,
+    max_tokens: 1024,
+    response_format: { type: "json_object" },
+    ...reasoning,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: JSON.stringify(context) }
+    ]
+  });
+  const output = JSON.parse(result.choices[0].message.content);
+  if (!isJsonObject(output)) throw new Error("Text helper returned a non-object.");
+  return {
+    output,
+    helper: {
+      model,
+      latency_ms: Math.round(performance.now() - started),
+      usage: result.usage ?? {}
+    }
+  };
+}
+async function fieldText(context) {
+  let output;
+  let helper;
+  try {
+    ({ output, helper } = await helperJson(TEXT_VALUE, context, true, false));
+  } catch (error) {
+    const msg = String(error);
+    if (msg.includes("TEXT_MODEL_API_KEY") || msg.includes("not configured")) throw error;
+    throw new Error("Text helper returned no valid field value; nothing typed.");
+  }
+  const value = output.text;
+  if (Object.keys(output).join() !== "text" || !isString(value) || !value.trim() || value.length > 2e3) {
+    throw new Error("Text helper returned no valid field value; nothing typed.");
+  }
+  return { text: value, helper };
+}
+async function extractAnswer(goal, page) {
+  const elements = actionSpace(page.actions).elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = ")).join("\n").slice(0, 2e3);
+  const context = {
+    goal,
+    page: { title: page.title, url: page.url, text: page.text.slice(0, 6e3), elements }
+  };
+  for (let attempt = 1; ; attempt++) {
+    const lastAttempt = attempt === 2;
+    let result;
+    try {
+      result = await helperJson(ANSWER_VALUE, context, false, true);
+    } catch (error) {
+      if (String(error).includes("not configured") || lastAttempt) throw error;
+      continue;
+    }
+    const value = result.output.answer;
+    const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2e3) : "";
+    if (text || lastAttempt) return { answer: text || null, helper: result.helper };
+  }
+}
+function fold(text) {
+  return text.normalize("NFD").replace(new RegExp("\\p{M}", "gu"), "").toLowerCase();
+}
+function atWordBoundary(haystack, needle) {
+  let i = haystack.indexOf(needle);
+  while (i !== -1) {
+    if (i === 0 || !/[\p{L}\p{N}]/u.test(haystack[i - 1])) return true;
+    i = haystack.indexOf(needle, i + 1);
+  }
+  return false;
+}
+
+// src/agent/followup.ts
+var UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
+function resolveFollowUp(fu, actions) {
+  if (fu.type === "PRESS_ENTER") {
+    return actions.find((a) => a.id === "press_enter")?.id ?? null;
+  }
+  if (fu.type === "CLICK_MATCH_TYPED") {
+    const appeared = actions.filter(
+      (a) => a.kind === "click" && a.node !== void 0 && !fu.prevNodes.has(a.node) && !UNDO_LABEL.test(a.label)
+    );
+    if (fu.text && fu.text.length >= 3) {
+      const tokens = fold(fu.text).split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 3);
+      const matched = appeared.find(
+        (a) => tokens.some((t) => atWordBoundary(fold(a.label), t))
+      );
+      if (matched) return matched.id;
+    }
+    if (appeared.length === 1) return appeared[0].id;
+  }
+  return null;
+}
+function toggleHint(history) {
+  const tail = history.slice(-2);
+  const norm = (s) => s.replace(/ \(dom\)$/, "");
+  if (tail.length === 2 && tail[0].kind === "click" && tail[1].kind === "click" && norm(tail[0].action) === norm(tail[1].action) && tail[0].page_changed === true && tail[1].page_changed === true) {
+    return `"${norm(tail[1].action)}" is a toggle: clicking it again just re-closes what it opened. The items it revealed are in the table \u2014 act on one of them instead.`;
+  }
+  return null;
+}
+
+// src/agent/observe.ts
+var FIRST_SETTLE_MS = 1500;
+var FIRST_SETTLE_CONTENT_MS = 4e3;
+var FIRST_SETTLE_PENDING_MS = 12e3;
+var FIRST_SETTLE_POLL_MS = 150;
+function hasContent(page) {
+  return Boolean(page.text.trim()) || page.actions.some((a) => a.node !== void 0);
+}
+async function settleFirstObservation(browser, page) {
+  const idleDeadline = performance.now() + FIRST_SETTLE_MS;
+  const contentDeadline = performance.now() + FIRST_SETTLE_CONTENT_MS;
+  const pendingDeadline = performance.now() + FIRST_SETTLE_PENDING_MS;
+  let latest = page;
+  for (; ; ) {
+    const content = hasContent(latest);
+    const pending = Boolean(latest.pending_requests) || Boolean(latest.pending_nav);
+    const deadline = pending ? content ? contentDeadline : pendingDeadline : idleDeadline;
+    if (content && !pending || performance.now() >= deadline) return latest;
+    await sleep(FIRST_SETTLE_POLL_MS);
+    latest = await browser.observe();
+  }
+}
+function stateSummary(page) {
+  const lines = [];
+  for (const element of actionSpace(page.actions).elements) {
+    const state = ["checked", "selected", "expanded", "value", "position"].flatMap(
+      (k) => element[k] === void 0 || element[k] === "" ? [] : [`${k}=${element[k]}`]
+    );
+    if (state.length) lines.push(`${String(element.label).slice(0, 60)} ${state.join(" ")}`);
+  }
+  return lines.join("\n");
 }
 
 // src/model/decide.ts
@@ -407,128 +685,274 @@ async function chooseOnce(client, state, goal, history) {
   };
 }
 
-// src/model/endpoints.ts
-function warmModelEndpoints(decisionBaseURL) {
-  const origins = /* @__PURE__ */ new Set();
-  for (const raw of [decisionBaseURL, process.env.TEXT_MODEL_BASE_URL]) {
-    try {
-      if (raw) origins.add(new URL(raw).origin);
-    } catch {
-    }
-  }
-  for (const origin of origins) {
-    fetch(origin, { method: "HEAD" }).then((r) => r.arrayBuffer()).catch(() => {
-    });
-  }
+// src/agent/steps.ts
+async function observeStep(a) {
+  a.page = await a.browser.observe();
+  a.phase = "decide";
 }
-
-// src/sleep.ts
-var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// src/model/text.ts
-async function postJson(url, key, body) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    let response;
-    try {
-      response = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-        body: JSON.stringify(body)
-      });
-    } catch {
-      throw new Error("Model connection failed; no action executed.");
-    }
-    if ([429, 529, 503].includes(response.status) && attempt < 2) {
-      await sleep(500 * 2 ** attempt);
-      continue;
-    }
-    if (!response.ok) {
-      throw new Error(`Model provider returned HTTP ${response.status}; no action executed.`);
-    }
-    return response.json();
+async function decideStep(a) {
+  if (!a.startedAt) a.startedAt = performance.now();
+  if (a.decisions.length >= a.maxSteps * 2) {
+    a.blockedCause = "decision_budget";
+    a.phase = "blocked";
+    return;
   }
-  throw new Error("Model unavailable");
-}
-function fieldContext(goal, action, page, history) {
-  return {
-    goal,
-    field: { label: action.label, role: action.role, value: action.value },
-    other_fields: page.actions.filter((a) => a.kind === "fill" && a.node !== action.node).slice(0, 20).map((a) => ({ label: a.label, value: a.value ?? "" })),
-    page: { title: page.title, text: page.text.slice(0, 6e3) },
-    recent_actions: history.slice(-6).map(
-      (h) => Object.fromEntries(["action", "text"].flatMap((k) => k in h ? [[k, h[k]]] : []))
+  if (!await a.browser.fresh(a.page)) {
+    throw new StalePage("Page changed since the last observation. Choose again.");
+  }
+  a.decision = null;
+  if (a.followUp) {
+    const fu = a.followUp;
+    a.followUp = null;
+    if (fu.type === "DONE") {
+      if (a.prematureDone()) {
+        a.phase = "decide";
+        return;
+      }
+      await a.confirmDone(a.page);
+      a.phase = "done";
+      return;
+    }
+    const resolved = a.resolveFollowUp(fu);
+    if (resolved) {
+      a.lastOperation = "FOLLOW_UP";
+      a.decision = {
+        choice: resolved,
+        operation: "FOLLOW_UP",
+        target: null,
+        confidence: 1,
+        probabilities: { [resolved]: 1 },
+        operation_probabilities: {},
+        target_probabilities: {},
+        target_confidence: null,
+        raw_answers: null,
+        model: "follow-up",
+        usage: null,
+        latency_ms: 0
+      };
+      a.phase = "act";
+      return;
+    }
+  }
+  const toggle = a.toggleHint();
+  const repair = a.repairHint ?? toggle;
+  a.repairHint = null;
+  const goal = repair ? `${a.goal}
+
+${repair}` : a.goal;
+  const dead = new Set(
+    [...a.domDead].flatMap(([node, n]) => n >= 2 ? [node] : [])
+  );
+  const live = dead.size === 0 ? a.page : {
+    ...a.page,
+    actions: a.page.actions.filter(
+      (a2) => !(a2.kind === "click" && a2.node !== void 0 && dead.has(a2.node))
     )
   };
+  const page = toggle ? {
+    ...live,
+    actions: live.actions.filter(
+      (el) => el.label !== a.history[a.history.length - 1]?.action.replace(/ \(dom\)$/, "")
+    )
+  } : live;
+  a.decision = await choose(a.client, page, goal, a.history);
+  a.decisions.push(a.decision);
+  reportDecision(a, page, Boolean(repair));
+  a.lastOperation = a.decision.operation;
+  a.phase = "act";
 }
-async function helperJson(systemPrompt, context, requireKey, reason) {
-  const key = process.env.TEXT_MODEL_API_KEY;
-  if (!key) {
-    if (requireKey) {
-      throw new Error(
-        "TYPE_TEXT needs TEXT_MODEL_API_KEY; no text is hardcoded or guessed by the executor."
-      );
-    }
-    throw new Error("Text helper is not configured.");
-  }
-  const base = (process.env.TEXT_MODEL_BASE_URL ?? "https://api.deepseek.com/v1").replace(/\/+$/, "");
-  const model = process.env.TEXT_MODEL ?? "deepseek-chat";
-  const reasoning = base.includes("api.deepseek.com/") ? { thinking: { type: "disabled" } } : { reasoning: reason ? { effort: "low" } : { enabled: false } };
-  const started = performance.now();
-  const result = await postJson(`${base}/chat/completions`, key, {
-    model,
-    max_tokens: 1024,
-    response_format: { type: "json_object" },
-    ...reasoning,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: JSON.stringify(context) }
-    ]
+function reportDecision(a, page, repaired) {
+  if (!a.onEvent) return;
+  const space = actionSpace(page.actions);
+  const decision = a.decision;
+  a.onEvent({
+    type: "decision",
+    elapsed_ms: a.elapsed(),
+    choice: decision.choice,
+    operation: decision.operation,
+    confidence: decision.confidence,
+    follow_up: decision.follow_up ?? null,
+    offered_elements: space.elements.length,
+    offered_controls: Object.keys(space.controls).length,
+    offered_operations: Object.keys(space.targets).length,
+    repaired,
+    url: page.url
   });
-  const output = JSON.parse(result.choices[0].message.content);
-  if (!isJsonObject(output)) throw new Error("Text helper returned a non-object.");
-  return {
-    output,
-    helper: {
-      model,
-      latency_ms: Math.round(performance.now() - started),
-      usage: result.usage ?? {}
+}
+async function actStep(a) {
+  const decision = a.decision;
+  const page = a.page;
+  if (!decision) throw new Error("Choose before acting");
+  a.decision = null;
+  const selected = decision.choice;
+  if (selected === "DONE" || selected === "BLOCKED") {
+    if (!await a.browser.fresh(page, void 0, "structure")) {
+      throw new StalePage("Page changed since the decision. Choose again.");
     }
-  };
-}
-async function fieldText(context) {
-  let output;
-  let helper;
-  try {
-    ({ output, helper } = await helperJson(TEXT_VALUE, context, true, false));
-  } catch (error) {
-    const msg = String(error);
-    if (msg.includes("TEXT_MODEL_API_KEY") || msg.includes("not configured")) throw error;
-    throw new Error("Text helper returned no valid field value; nothing typed.");
+    if (selected === "BLOCKED" && a.earlyWaits < 3 && !a.probeConsulted) {
+      a.earlyWaits++;
+      const outcome = await blockedProbe(
+        a.browser,
+        page,
+        a.history,
+        () => a.elapsed(),
+        (action2, p) => a.waitEntry(action2, p)
+      );
+      a.page = outcome.latest;
+      if (outcome.changed) {
+        a.phase = "decide";
+        return;
+      }
+      a.probeConsulted = true;
+      a.repairHint = outcome.hint;
+      a.phase = "decide";
+      return;
+    }
+    if (selected === "DONE") {
+      if (a.prematureDone()) {
+        a.phase = "decide";
+        return;
+      }
+      await a.confirmDone(page);
+    }
+    if (selected === "BLOCKED") a.blockedCause = "model_claim";
+    a.phase = selected === "DONE" ? "done" : "blocked";
+    return;
   }
-  const value = output.text;
-  if (Object.keys(output).join() !== "text" || !isString(value) || !value.trim() || value.length > 2e3) {
-    throw new Error("Text helper returned no valid field value; nothing typed.");
+  let action = page.actions.find((a2) => a2.id === selected);
+  if (!action) throw new Error(`Decision selected unknown action ${selected}`);
+  if (decision.operation === "CONTEXT_CLICK") {
+    action = { ...action, kind: "context" };
   }
-  return { text: value, helper };
-}
-async function extractAnswer(goal, page) {
-  const elements = actionSpace(page.actions).elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = ")).join("\n").slice(0, 2e3);
-  const context = {
-    goal,
-    page: { title: page.title, url: page.url, text: page.text.slice(0, 6e3), elements }
+  if (decision.operation === "DRAG" && decision.target2) {
+    const dest = page.actions.find((a2) => a2.id === decision.target2);
+    if (!dest?.node) throw new Error(`Drag destination ${decision.target2} is not an element`);
+    if (dest.node === action.node) {
+      throw new StalePage("Drag destination is the source itself. Choose again.");
+    }
+    action = { ...action, kind: "drag", dragTo: dest.node };
+  }
+  if (a.history.length >= a.maxSteps) {
+    a.blockedCause = "step_budget";
+    a.phase = "blocked";
+    return;
+  }
+  let text = null;
+  let helper = null;
+  if (action.kind === "fill") {
+    if (!await a.browser.fresh(page, void 0, "page")) {
+      throw new StalePage("Page changed before text generation. Choose again.");
+    }
+    const context = fieldContext(a.goal, action, page, a.history);
+    if (a.pendingText && JSON.stringify(a.pendingText[0]) === JSON.stringify(context)) {
+      [, text, helper] = a.pendingText;
+    } else {
+      let generated;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          generated = await fieldText(context);
+          break;
+        } catch (error) {
+          if (!String(error).includes("no valid field value") || attempt >= 2) throw error;
+        }
+      }
+      text = generated.text;
+      helper = generated.helper;
+      a.pendingText = [context, text, helper];
+      a.textCalls.push({ ...helper, field: action.label, value: text });
+    }
+  }
+  await a.browser.act(action, page, text);
+  a.pendingText = null;
+  a.earlyWaits = 0;
+  a.probeConsulted = false;
+  const entry = {
+    step: a.history.length + 1,
+    action: action.label,
+    kind: action.kind,
+    choice: selected,
+    probability: decision.probabilities[selected],
+    confidence: decision.confidence,
+    latency_ms: decision.latency_ms,
+    text,
+    text_helper: helper?.model ?? null,
+    text_latency_ms: helper?.latency_ms ?? 0,
+    operation: decision.operation,
+    target: decision.target,
+    follow_up: decision.follow_up,
+    page_changed: null,
+    url: page.url,
+    usage: decision.usage,
+    executed_ms: a.elapsed(),
+    elapsed_ms: a.elapsed()
   };
-  for (let attempt = 1; ; attempt++) {
-    const lastAttempt = attempt === 2;
-    let result;
+  a.history.push(entry);
+  a.staleStreak = 0;
+  a.phase = "settle";
+  a.settleContext = { action, page, text, decision };
+  a.settleEntry = entry;
+}
+async function settleStep(a) {
+  const ctx = a.settleContext;
+  const entry = a.settleEntry;
+  if (!ctx || !entry) throw new Error("Settle without an executed action");
+  const { action, page, text, decision } = ctx;
+  a.settleContext = null;
+  a.settleEntry = null;
+  if (["click", "context", "select", "press"].includes(action.kind)) {
+    const navDeadline = Date.now() + 2500;
+    for (let i = 0; i < 2 && !a.browser.pendingNav?.(); i++) await sleep(80);
+    while (a.browser.pendingNav?.() && Date.now() < navDeadline) await sleep(120);
+  }
+  a.page = await a.browser.observe();
+  entry.page_changed = a.page.fingerprint !== page.fingerprint || a.page.dialog !== void 0;
+  const doc = String(Array.isArray(page.page_key) ? page.page_key[0] : page.page_key);
+  if (a.domDoc !== doc) {
+    a.domDoc = doc;
+    a.domRetried.clear();
+    a.domDead.clear();
+  }
+  if (entry.page_changed === false && (action.kind === "click" || action.kind === "hover" || action.kind === "drag" || action.kind === "fill") && action.node !== void 0 && !a.domRetried.has(action.node)) {
+    a.domRetried.add(action.node);
     try {
-      result = await helperJson(ANSWER_VALUE, context, false, true);
-    } catch (error) {
-      if (String(error).includes("not configured") || lastAttempt) throw error;
-      continue;
+      await a.browser.domClick(action, page, text);
+      const retried = await a.browser.observe();
+      if (retried.fingerprint !== page.fingerprint) {
+        a.page = retried;
+        entry.page_changed = true;
+        entry.action = `${action.label} (dom)`;
+      }
+    } catch {
     }
-    const value = result.output.answer;
-    const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2e3) : "";
-    if (text || lastAttempt) return { answer: text || null, helper: result.helper };
+  }
+  if (entry.page_changed === false && action.kind === "click" && action.node !== void 0) {
+    a.domDead.set(action.node, (a.domDead.get(action.node) ?? 0) + 1);
+  }
+  const REVEAL_KINDS = /* @__PURE__ */ new Set(["scroll", "wait", "hover", "back", "forward"]);
+  if (decision.follow_up && decision.follow_up !== "NONE" && !(decision.follow_up === "DONE_AFTER" && REVEAL_KINDS.has(action.kind))) {
+    a.followUp = {
+      type: decision.follow_up === "DONE_AFTER" ? "DONE" : decision.follow_up,
+      text,
+      prevNodes: new Set(
+        page.actions.flatMap((a2) => a2.node === void 0 ? [] : [a2.node])
+      )
+    };
+  }
+  entry.pending_requests = a.page.pending_requests ?? 0;
+  entry.url = a.page.url;
+  entry.elapsed_ms = a.elapsed();
+  a.fingerprints.push(a.page.fingerprint);
+  const fused = fusedNow(a.history, a.fingerprints, a.page.fingerprint);
+  if (!fused) {
+    a.fuseConsulted = false;
+    a.phase = "decide";
+  } else if (!a.fuseConsulted) {
+    a.fuseConsulted = true;
+    a.repairHint = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
+    a.phase = "decide";
+  } else {
+    a.blockedCause = "no_progress";
+    a.phase = "blocked";
   }
 }
 
@@ -1203,64 +1627,22 @@ function makeClient() {
   });
 }
 
-// src/types.ts
-var StalePage = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "StalePage";
+// src/model/endpoints.ts
+function warmModelEndpoints(decisionBaseURL) {
+  const origins = /* @__PURE__ */ new Set();
+  for (const raw of [decisionBaseURL, process.env.TEXT_MODEL_BASE_URL]) {
+    try {
+      if (raw) origins.add(new URL(raw).origin);
+    } catch {
+    }
   }
-};
+  for (const origin of origins) {
+    fetch(origin, { method: "HEAD" }).then((r) => r.arrayBuffer()).catch(() => {
+    });
+  }
+}
 
 // src/agent.ts
-var FIRST_SETTLE_MS = 1500;
-var FIRST_SETTLE_CONTENT_MS = 4e3;
-var FIRST_SETTLE_PENDING_MS = 12e3;
-var FIRST_SETTLE_POLL_MS = 150;
-function hasContent(page) {
-  return Boolean(page.text.trim()) || page.actions.some((a) => a.node !== void 0);
-}
-async function settleFirstObservation(browser, page) {
-  const idleDeadline = performance.now() + FIRST_SETTLE_MS;
-  const contentDeadline = performance.now() + FIRST_SETTLE_CONTENT_MS;
-  const pendingDeadline = performance.now() + FIRST_SETTLE_PENDING_MS;
-  let latest = page;
-  for (; ; ) {
-    const content = hasContent(latest);
-    const pending = Boolean(latest.pending_requests) || Boolean(latest.pending_nav);
-    const deadline = pending ? content ? contentDeadline : pendingDeadline : idleDeadline;
-    if (content && !pending || performance.now() >= deadline) return latest;
-    await sleep(FIRST_SETTLE_POLL_MS);
-    latest = await browser.observe();
-  }
-}
-var STEP_KINDS = [
-  [/\b(type|enter|fill|upload)\b/i, ["fill"]],
-  [/\bdrag\b/i, ["drag"]],
-  [/\bpress\b/i, ["press"]],
-  [/\bwait for\b/i, ["wait"]]
-];
-var UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
-function fold(text) {
-  return text.normalize("NFD").replace(new RegExp("\\p{M}", "gu"), "").toLowerCase();
-}
-function atWordBoundary(haystack, needle) {
-  let i = haystack.indexOf(needle);
-  while (i !== -1) {
-    if (i === 0 || !/[\p{L}\p{N}]/u.test(haystack[i - 1])) return true;
-    i = haystack.indexOf(needle, i + 1);
-  }
-  return false;
-}
-function stateSummary(page) {
-  const lines = [];
-  for (const element of actionSpace(page.actions).elements) {
-    const state = ["checked", "selected", "expanded", "value", "position"].flatMap(
-      (k) => element[k] === void 0 || element[k] === "" ? [] : [`${k}=${element[k]}`]
-    );
-    if (state.length) lines.push(`${String(element.label).slice(0, 60)} ${state.join(" ")}`);
-  }
-  return lines.join("\n");
-}
 var Agent = class _Agent {
   goal;
   browser;
@@ -1324,371 +1706,42 @@ var Agent = class _Agent {
     return "ready";
   }
   async observeStep() {
-    this.page = await this.browser.observe();
-    this.phase = "decide";
+    return observeStep(this);
   }
   async decideStep() {
-    if (!this.startedAt) this.startedAt = performance.now();
-    if (this.decisions.length >= this.maxSteps * 2) {
-      this.blockedCause = "decision_budget";
-      this.phase = "blocked";
-      return;
-    }
-    if (!await this.browser.fresh(this.page)) {
-      throw new StalePage("Page changed since the last observation. Choose again.");
-    }
-    this.decision = null;
-    if (this.followUp) {
-      const fu = this.followUp;
-      this.followUp = null;
-      if (fu.type === "DONE") {
-        if (this.prematureDone()) {
-          this.phase = "decide";
-          return;
-        }
-        await this.confirmDone(this.page);
-        this.phase = "done";
-        return;
-      }
-      const resolved = this.resolveFollowUp(fu);
-      if (resolved) {
-        this.lastOperation = "FOLLOW_UP";
-        this.decision = {
-          choice: resolved,
-          operation: "FOLLOW_UP",
-          target: null,
-          confidence: 1,
-          probabilities: { [resolved]: 1 },
-          operation_probabilities: {},
-          target_probabilities: {},
-          target_confidence: null,
-          raw_answers: null,
-          model: "follow-up",
-          usage: null,
-          latency_ms: 0
-        };
-        this.phase = "act";
-        return;
-      }
-    }
-    const toggle = this.toggleHint();
-    const repair = this.repairHint ?? toggle;
-    this.repairHint = null;
-    const goal = repair ? `${this.goal}
-
-${repair}` : this.goal;
-    const dead = new Set(
-      [...this.domDead].flatMap(([node, n]) => n >= 2 ? [node] : [])
-    );
-    const live = dead.size === 0 ? this.page : {
-      ...this.page,
-      actions: this.page.actions.filter(
-        (a) => !(a.kind === "click" && a.node !== void 0 && dead.has(a.node))
-      )
-    };
-    const page = toggle ? {
-      ...live,
-      actions: live.actions.filter(
-        (a) => a.label !== this.history[this.history.length - 1]?.action.replace(/ \(dom\)$/, "")
-      )
-    } : live;
-    this.decision = await choose(this.client, page, goal, this.history);
-    this.decisions.push(this.decision);
-    this.reportDecision(page, Boolean(repair));
-    this.lastOperation = this.decision.operation;
-    this.phase = "act";
+    return decideStep(this);
   }
-  reportDecision(page, repaired) {
-    if (!this.onEvent) return;
-    const space = actionSpace(page.actions);
-    const decision = this.decision;
-    this.onEvent({
-      type: "decision",
-      elapsed_ms: this.elapsed(),
-      choice: decision.choice,
-      operation: decision.operation,
-      confidence: decision.confidence,
-      follow_up: decision.follow_up ?? null,
-      offered_elements: space.elements.length,
-      offered_controls: Object.keys(space.controls).length,
-      offered_operations: Object.keys(space.targets).length,
-      repaired,
-      url: page.url
-    });
+  async actStep() {
+    return actStep(this);
+  }
+  async settleStep() {
+    return settleStep(this);
   }
   prematureDone() {
-    const acted = this.history.filter((h) => h.operation !== "WAIT");
-    const MUTATING = /* @__PURE__ */ new Set(["click", "context", "select", "fill", "drag", "press"]);
-    const unproven = acted.length < 2 || !acted.some((h) => MUTATING.has(h.kind));
-    if (this.doneConsults >= 1 || !unproven) return false;
-    const steps = this.goal.match(
-      /\b(click|type|press|select|activate|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark|complete|choose|toggle|switch|wait for)\b/gi
-    );
-    const skipped = STEP_KINDS.some(
-      ([step, kinds]) => step.test(this.goal) && !this.history.some((h) => kinds.includes(h.kind))
-    );
-    if ((steps?.length ?? 0) < 2 && !skipped) return false;
+    const hint = prematureDone(this.history, this.goal, this.doneConsults);
+    if (!hint) return false;
     this.doneConsults++;
     this.onEvent?.({
       type: "done_consult",
       elapsed_ms: this.elapsed(),
       consult: this.doneConsults,
-      acted: acted.length,
+      acted: this.history.filter((h) => h.operation !== "WAIT").length,
       url: this.page.url
     });
-    this.repairHint = "Before claiming DONE, check each part of the goal against the page. If every part is visibly satisfied, claim DONE; if a part remains, act on it.";
+    this.repairHint = hint;
     return true;
   }
   toggleHint() {
-    const tail = this.history.slice(-2);
-    const norm = (s) => s.replace(/ \(dom\)$/, "");
-    if (tail.length === 2 && tail[0].kind === "click" && tail[1].kind === "click" && norm(tail[0].action) === norm(tail[1].action) && tail[0].page_changed === true && tail[1].page_changed === true) {
-      return `"${norm(tail[1].action)}" is a toggle: clicking it again just re-closes what it opened. The items it revealed are in the table \u2014 act on one of them instead.`;
-    }
-    return null;
+    return toggleHint(this.history);
   }
   giveUpHint(page) {
-    const base = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
-    const scrolled = this.history.some((h) => h.kind === "scroll");
-    if (!scrolled && (page.scroll?.height ?? 0) > page.h * 1.1) {
-      return base + " The page extends below the visible area and you have not scrolled \u2014 the goal's content is likely below the fold.";
-    }
-    return base;
+    return giveUpHint(this.history, page);
   }
   resolveFollowUp(fu) {
-    if (fu.type === "PRESS_ENTER") {
-      return this.page.actions.find((a) => a.id === "press_enter")?.id ?? null;
-    }
-    if (fu.type === "CLICK_MATCH_TYPED") {
-      const appeared = this.page.actions.filter(
-        (a) => a.kind === "click" && a.node !== void 0 && !fu.prevNodes.has(a.node) && !UNDO_LABEL.test(a.label)
-      );
-      if (fu.text && fu.text.length >= 3) {
-        const tokens = fold(fu.text).split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 3);
-        const matched = appeared.find(
-          (a) => tokens.some((t) => atWordBoundary(fold(a.label), t))
-        );
-        if (matched) return matched.id;
-      }
-      if (appeared.length === 1) return appeared[0].id;
-    }
-    return null;
+    return resolveFollowUp(fu, this.page.actions);
   }
   async confirmDone(page) {
-    if (page.pending_nav || this.browser.pendingNav?.()) {
-      const deadline = Date.now() + 2500;
-      while (Date.now() < deadline && this.browser.pendingNav?.()) {
-        if (!await this.browser.fresh(page, void 0, "structure")) {
-          throw new StalePage("Navigation committed while confirming DONE. Choose again.");
-        }
-        await sleep(120);
-      }
-      if (!await this.browser.fresh(page, void 0, "structure")) {
-        throw new StalePage("Page changed while confirming DONE. Choose again.");
-      }
-    }
-    const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
-    await (this.browser.settle?.(window_) ?? sleep(window_));
-    if (!await this.browser.fresh(page, void 0, "structure")) {
-      throw new StalePage("Page changed while confirming DONE. Choose again.");
-    }
-  }
-  async actStep() {
-    const decision = this.decision;
-    const page = this.page;
-    if (!decision) throw new Error("Choose before acting");
-    this.decision = null;
-    const selected = decision.choice;
-    if (selected === "DONE" || selected === "BLOCKED") {
-      if (!await this.browser.fresh(page, void 0, "structure")) {
-        throw new StalePage("Page changed since the decision. Choose again.");
-      }
-      if (selected === "BLOCKED" && this.earlyWaits < 3 && !this.probeConsulted) {
-        this.earlyWaits++;
-        const entry2 = this.waitEntry("Wait for the page to update", page);
-        const started = Date.now();
-        let deadline = started + 4e3;
-        for (; ; ) {
-          await sleep(800);
-          this.page = await this.browser.observe();
-          if ((this.page.pending_requests ?? 0) > 0) deadline = started + 1e4;
-          const changed = this.page.fingerprint !== page.fingerprint;
-          if (changed || Date.now() >= deadline) {
-            entry2.page_changed = changed;
-            entry2.url = this.page.url;
-            entry2.elapsed_ms = this.elapsed();
-            if (changed) {
-              this.phase = "decide";
-              return;
-            }
-            this.probeConsulted = true;
-            this.repairHint = this.giveUpHint(page);
-            this.phase = "decide";
-            return;
-          }
-        }
-      }
-      if (selected === "DONE") {
-        if (this.prematureDone()) {
-          this.phase = "decide";
-          return;
-        }
-        await this.confirmDone(page);
-      }
-      if (selected === "BLOCKED") this.blockedCause = "model_claim";
-      this.phase = selected === "DONE" ? "done" : "blocked";
-      return;
-    }
-    let action = page.actions.find((a) => a.id === selected);
-    if (!action) throw new Error(`Decision selected unknown action ${selected}`);
-    if (decision.operation === "CONTEXT_CLICK") {
-      action = { ...action, kind: "context" };
-    }
-    if (decision.operation === "DRAG" && decision.target2) {
-      const dest = page.actions.find((a) => a.id === decision.target2);
-      if (!dest?.node) throw new Error(`Drag destination ${decision.target2} is not an element`);
-      if (dest.node === action.node) {
-        throw new StalePage("Drag destination is the source itself. Choose again.");
-      }
-      action = { ...action, kind: "drag", dragTo: dest.node };
-    }
-    if (this.history.length >= this.maxSteps) {
-      this.blockedCause = "step_budget";
-      this.phase = "blocked";
-      return;
-    }
-    let text = null;
-    let helper = null;
-    if (action.kind === "fill") {
-      if (!await this.browser.fresh(page, void 0, "page")) {
-        throw new StalePage("Page changed before text generation. Choose again.");
-      }
-      const context = fieldContext(this.goal, action, page, this.history);
-      if (this.pendingText && JSON.stringify(this.pendingText[0]) === JSON.stringify(context)) {
-        [, text, helper] = this.pendingText;
-      } else {
-        let generated;
-        for (let attempt = 0; ; attempt++) {
-          try {
-            generated = await fieldText(context);
-            break;
-          } catch (error) {
-            if (!String(error).includes("no valid field value") || attempt >= 2) throw error;
-          }
-        }
-        text = generated.text;
-        helper = generated.helper;
-        this.pendingText = [context, text, helper];
-        this.textCalls.push({ ...helper, field: action.label, value: text });
-      }
-    }
-    await this.browser.act(action, page, text);
-    this.pendingText = null;
-    this.earlyWaits = 0;
-    this.probeConsulted = false;
-    const entry = {
-      step: this.history.length + 1,
-      action: action.label,
-      kind: action.kind,
-      choice: selected,
-      probability: decision.probabilities[selected],
-      confidence: decision.confidence,
-      latency_ms: decision.latency_ms,
-      text,
-      text_helper: helper?.model ?? null,
-      text_latency_ms: helper?.latency_ms ?? 0,
-      operation: decision.operation,
-      target: decision.target,
-      follow_up: decision.follow_up,
-      page_changed: null,
-      url: page.url,
-      usage: decision.usage,
-      executed_ms: this.elapsed(),
-      elapsed_ms: this.elapsed()
-    };
-    this.history.push(entry);
-    this.staleStreak = 0;
-    this.phase = "settle";
-    this.settleContext = { action, page, text, decision };
-    this.settleEntry = entry;
-  }
-  async settleStep() {
-    const ctx = this.settleContext;
-    const entry = this.settleEntry;
-    if (!ctx || !entry) throw new Error("Settle without an executed action");
-    const { action, page, text, decision } = ctx;
-    this.settleContext = null;
-    this.settleEntry = null;
-    if (["click", "context", "select", "press"].includes(action.kind)) {
-      const navDeadline = Date.now() + 2500;
-      for (let i = 0; i < 2 && !this.browser.pendingNav?.(); i++) await sleep(80);
-      while (this.browser.pendingNav?.() && Date.now() < navDeadline) await sleep(120);
-    }
-    this.page = await this.browser.observe();
-    entry.page_changed = this.page.fingerprint !== page.fingerprint || this.page.dialog !== void 0;
-    const doc = String(Array.isArray(page.page_key) ? page.page_key[0] : page.page_key);
-    if (this.domDoc !== doc) {
-      this.domDoc = doc;
-      this.domRetried.clear();
-      this.domDead.clear();
-    }
-    if (entry.page_changed === false && (action.kind === "click" || action.kind === "hover" || action.kind === "drag" || action.kind === "fill") && action.node !== void 0 && !this.domRetried.has(action.node)) {
-      this.domRetried.add(action.node);
-      try {
-        await this.browser.domClick(action, page, text);
-        const retried = await this.browser.observe();
-        if (retried.fingerprint !== page.fingerprint) {
-          this.page = retried;
-          entry.page_changed = true;
-          entry.action = `${action.label} (dom)`;
-        }
-      } catch {
-      }
-    }
-    if (entry.page_changed === false && action.kind === "click" && action.node !== void 0) {
-      this.domDead.set(action.node, (this.domDead.get(action.node) ?? 0) + 1);
-    }
-    const REVEAL_KINDS = /* @__PURE__ */ new Set(["scroll", "wait", "hover", "back", "forward"]);
-    if (decision.follow_up && decision.follow_up !== "NONE" && !(decision.follow_up === "DONE_AFTER" && REVEAL_KINDS.has(action.kind))) {
-      this.followUp = {
-        type: decision.follow_up === "DONE_AFTER" ? "DONE" : decision.follow_up,
-        text,
-        prevNodes: new Set(
-          page.actions.flatMap((a) => a.node === void 0 ? [] : [a.node])
-        )
-      };
-    }
-    entry.pending_requests = this.page.pending_requests ?? 0;
-    entry.url = this.page.url;
-    entry.elapsed_ms = this.elapsed();
-    this.fingerprints.push(this.page.fingerprint);
-    const repeated = this.history.slice(-3);
-    let idleMs = 0;
-    const last = this.history[this.history.length - 1];
-    for (let i = this.history.length - 1; i >= 0; i--) {
-      const h = this.history[i];
-      if (h.page_changed !== false || (h.pending_requests ?? 0) > 0) break;
-      idleMs = (last?.elapsed_ms ?? 0) - h.elapsed_ms;
-    }
-    const trail = this.fingerprints.slice(-14).filter((f, i, a) => i === 0 || f !== a[i - 1]);
-    const seen = trail.filter((f) => f === this.page.fingerprint).length;
-    const fused = repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || seen >= 4 || this.cycling();
-    if (!fused) {
-      this.fuseConsulted = false;
-      this.phase = "decide";
-    } else if (!this.fuseConsulted) {
-      this.fuseConsulted = true;
-      this.repairHint = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
-      this.phase = "decide";
-    } else {
-      this.blockedCause = "no_progress";
-      this.phase = "blocked";
-    }
-  }
-  cycling() {
-    const f = this.fingerprints;
-    const n = f.length;
-    return n >= 6 && f[n - 1] === f[n - 3] && f[n - 3] === f[n - 5] && f[n - 2] === f[n - 4] && f[n - 4] === f[n - 6] && f[n - 1] !== f[n - 2] || n >= 6 && f[n - 1] === f[n - 4] && f[n - 4] !== f[n - 2] && f[n - 2] === f[n - 5] && f[n - 3] === f[n - 6] && f[n - 1] !== f[n - 3];
+    return confirmDone(this.browser, page);
   }
   waitEntry(action, page) {
     const entry = {
@@ -1871,10 +1924,9 @@ ${repair}` : this.goal;
 };
 
 // src/cdp/browser.ts
-import { execSync, spawn } from "node:child_process";
 import { mkdtempSync } from "node:fs";
-import { homedir as homedir2, tmpdir } from "node:os";
-import { join as join3 } from "node:path";
+import { tmpdir } from "node:os";
+import { join as join4 } from "node:path";
 
 // src/snapshot-loader.ts
 import { existsSync, readFileSync as readFileSync2 } from "node:fs";
@@ -1887,120 +1939,92 @@ function loadSnapshotJs() {
   return readFileSync2(path, "utf8");
 }
 
-// src/cdp/chrome.ts
-import { existsSync as existsSync2, readdirSync } from "node:fs";
-import { homedir, platform } from "node:os";
-import { join as join2 } from "node:path";
-function systemCandidates() {
-  switch (platform()) {
-    case "darwin":
-      return [
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        "/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta",
-        "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
-        "/Applications/Chromium.app/Contents/MacOS/Chromium",
-        "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-      ];
-    case "linux":
-      return [
-        "/usr/bin/google-chrome",
-        "/usr/bin/google-chrome-stable",
-        "/usr/bin/google-chrome-beta",
-        "/usr/bin/google-chrome-unstable",
-        "/usr/bin/chromium",
-        "/usr/bin/chromium-browser",
-        "/usr/bin/microsoft-edge",
-        "/snap/bin/chromium"
-      ];
-    case "win32": {
-      const roots = [
-        process.env.PROGRAMFILES,
-        process.env["PROGRAMFILES(X86)"],
-        process.env.LOCALAPPDATA
-      ].filter((r) => r !== void 0);
-      return roots.flatMap(
-        (root) => [
-          "Google\\Chrome\\Application\\chrome.exe",
-          "Google\\Chrome Beta\\Application\\chrome.exe",
-          "Google\\Chrome SxS\\Application\\chrome.exe",
-          "Microsoft\\Edge\\Application\\msedge.exe",
-          "Chromium\\Application\\chrome.exe",
-          "BraveSoftware\\Brave-Browser\\Application\\brave.exe"
-        ].map((rel) => join2(root, rel))
-      );
-    }
-    default:
-      return [];
-  }
-}
-function cacheRoots() {
-  const roots = [];
-  if (process.env.PLAYWRIGHT_BROWSERS_PATH) roots.push(process.env.PLAYWRIGHT_BROWSERS_PATH);
-  roots.push(
-    join2(homedir(), "Library", "Caches", "ms-playwright"),
-    join2(homedir(), ".cache", "ms-playwright"),
-    join2(homedir(), ".cache", "puppeteer")
-  );
-  return roots;
-}
-var CACHE_BINARY = /* @__PURE__ */ new Set([
-  "chrome",
-  "chrome.exe",
-  "chromium",
-  "Chromium",
-  "Google Chrome for Testing",
-  "msedge.exe"
+// src/cdp/events.ts
+var LONG_LIVED_REQUESTS = /* @__PURE__ */ new Set([
+  "WebSocket",
+  "EventSource",
+  "Media",
+  "Ping",
+  "CSPViolationReport",
+  "Other"
 ]);
-function cacheCandidates() {
-  const found = [];
-  const walk = (dir, depth) => {
-    if (depth > 6) return;
-    let entries;
-    try {
-      entries = readdirSync(dir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      const path = join2(dir, entry.name);
-      if (entry.isDirectory()) walk(path, depth + 1);
-      else if (CACHE_BINARY.has(entry.name)) found.push(path);
-    }
-  };
-  for (const root of cacheRoots()) walk(root, 0);
-  return found.sort();
-}
-function findChrome() {
-  if (process.env.CHROME_PATH && existsSync2(process.env.CHROME_PATH)) {
-    return process.env.CHROME_PATH;
-  }
-  for (const candidate of systemCandidates()) {
-    if (existsSync2(candidate)) return candidate;
-  }
-  for (const candidate of cacheCandidates()) {
-    if (existsSync2(candidate)) return candidate;
-  }
-  for (const name of [
-    "google-chrome",
-    "google-chrome-stable",
-    "chromium",
-    "chromium-browser",
-    "chrome",
-    "msedge",
-    "brave-browser"
-  ]) {
-    for (const dir of (process.env.PATH ?? "").split(process.platform === "win32" ? ";" : ":")) {
-      for (const bin of platform() === "win32" ? [name, `${name}.exe`] : [name]) {
-        const candidate = join2(dir, bin);
-        if (existsSync2(candidate)) return candidate;
+var PENDING_GRACE_MS = 1e4;
+var CdpEvents = class {
+  pending = /* @__PURE__ */ new Map();
+  navPending = /* @__PURE__ */ new Map();
+  mainFrame = /* @__PURE__ */ new Map();
+  lastDialog = null;
+  downloadGuids = /* @__PURE__ */ new Map();
+  downloads = [];
+  wire(socket) {
+    socket.onEvent("Page.javascriptDialogOpening", (p, sessionId) => {
+      if (!sessionId) return;
+      this.lastDialog = {
+        type: String(p.type ?? "dialog"),
+        message: String(p.message ?? "")
+      };
+      socket.call("Page.handleJavaScriptDialog", { accept: true }, sessionId).catch(() => {
+      });
+    });
+    socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
+      if (sessionId && !LONG_LIVED_REQUESTS.has(String(p.type))) {
+        (this.pending.get(sessionId) ?? this.pending.set(sessionId, /* @__PURE__ */ new Map()).get(sessionId)).set(p.requestId, Date.now());
       }
-    }
+    });
+    socket.onEvent("Network.loadingFinished", (p, sessionId) => {
+      if (sessionId) this.pending.get(sessionId)?.delete(p.requestId);
+    });
+    socket.onEvent("Network.loadingFailed", (p, sessionId) => {
+      if (sessionId) this.pending.get(sessionId)?.delete(p.requestId);
+    });
+    socket.onEvent("Page.frameStartedNavigating", (p, sessionId) => {
+      if (sessionId && p.frameId === this.mainFrame.get(sessionId)) {
+        this.navPending.set(sessionId, (this.navPending.get(sessionId) ?? 0) + 1);
+      }
+    });
+    socket.onEvent("Page.frameNavigated", (p, sessionId) => {
+      if (sessionId && p.frame?.id === this.mainFrame.get(sessionId)) {
+        this.navPending.set(sessionId, Math.max(0, (this.navPending.get(sessionId) ?? 0) - 1));
+      }
+    });
+    socket.onEvent("Page.frameStoppedLoading", (p, sessionId) => {
+      if (sessionId && p.frameId === this.mainFrame.get(sessionId)) {
+        this.navPending.set(sessionId, 0);
+      }
+    });
+    socket.onEvent("Browser.downloadWillBegin", (p) => {
+      this.downloadGuids.set(String(p.guid), String(p.suggestedFilename ?? p.url ?? "download"));
+    });
+    socket.onEvent("Browser.downloadProgress", (p) => {
+      const name = this.downloadGuids.get(String(p.guid));
+      if (name && p.state === "completed") this.downloads.push(name);
+      if (name && p.state !== "inProgress") this.downloadGuids.delete(p.guid);
+    });
   }
-  throw new Error(
-    `No Chrome/Chromium found. Set CHROME_PATH, or attach to a running browser with --cdp http://host:9222`
-  );
-}
+  setMainFrame(session, frameId) {
+    this.mainFrame.set(session, frameId);
+  }
+  pendingCount(session) {
+    const requests = this.pending.get(session);
+    if (!requests) return 0;
+    const now = Date.now();
+    let count = 0;
+    for (const [id, started] of requests) {
+      if (now - started > PENDING_GRACE_MS) requests.delete(id);
+      else count++;
+    }
+    return count;
+  }
+  pendingNav(session) {
+    return (this.navPending.get(session) ?? 0) > 0;
+  }
+  takeDialog() {
+    if (!this.lastDialog) return null;
+    const text = `${this.lastDialog.type}: ${this.lastDialog.message}`.slice(0, 240);
+    this.lastDialog = null;
+    return text;
+  }
+};
 
 // src/cdp/socket.ts
 import { createServer } from "node:net";
@@ -2127,9 +2151,7 @@ async function browserWsUrl(port, timeoutMs = 15e3) {
   throw new Error(`Chrome did not expose CDP on port ${port}`);
 }
 
-// src/cdp/browser.ts
-var READ_STATE = loadSnapshotJs();
-var MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
+// src/cdp/input.ts
 var KEYS = new Map(
   Object.entries({
     enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" },
@@ -2149,15 +2171,6 @@ var KEYS = new Map(
   })
 );
 var KEY_TYPED_INPUTS = /* @__PURE__ */ new Set(["date", "time", "datetime-local", "month", "week"]);
-var LONG_LIVED_REQUESTS = /* @__PURE__ */ new Set([
-  "WebSocket",
-  "EventSource",
-  "Media",
-  "Ping",
-  "CSPViolationReport",
-  "Other"
-]);
-var PENDING_GRACE_MS = 1e4;
 var VIEWPORT_W = 1120;
 var VIEWPORT_H = 780;
 var SCROLL_DELTA = Math.round(VIEWPORT_H * 0.8);
@@ -2165,6 +2178,451 @@ var WAIT_BUDGET_MS = 15e3;
 var QUIET_MS = 250;
 var WAIT_POLL_MS = 100;
 var DRAG_STEPS = 8;
+async function act(host, action, page, text) {
+  if (!await host.fresh(page, action, "page")) {
+    throw new StalePage("Page changed since this decision. Observe again.");
+  }
+  const kind = action.kind;
+  if (kind === "wait") {
+    const deadline = Date.now() + WAIT_BUDGET_MS;
+    for (; ; ) {
+      if (!await host.fresh(page)) break;
+      if (host.pendingNav() || host.events.pendingCount(host.session) > 0) {
+        if (Date.now() >= deadline) break;
+        await sleep(WAIT_POLL_MS);
+        continue;
+      }
+      await host.settle(Math.max(0, deadline - Date.now()), QUIET_MS);
+      break;
+    }
+    return { executed: action.id };
+  }
+  if (kind === "scroll" && action.node !== void 0) {
+    const moved = await host.evaluate(
+      `(() => {
+          const e=window.__jevFast?.node(${JSON.stringify(action.node)});
+          if (!e?.isConnected) return null;
+          const b=e.scrollTop;
+          e.scrollBy({top:${JSON.stringify(action.delta ?? SCROLL_DELTA)},behavior:'instant'});
+          return e.scrollTop!==b;
+        })()`
+    ).catch(() => null);
+    if (moved === null) throw new StalePage("Scroll region is gone. Observe again.");
+    host.afterInput = action;
+    return { executed: action.id };
+  }
+  if (kind === "scroll") {
+    await host.evaluate(
+      `(delta => {
+          const sign=Math.sign(delta)||1;
+          const dy=Math.round(sign*innerHeight*0.8);
+          const moved=(n,by)=>{const b=n.scrollTop;n.scrollBy({top:by,behavior:'instant'});return n.scrollTop!==b;};
+          for (const fx of [0.5,0.3,0.7,0.15,0.85]) {
+            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.6);
+            const e=window.__jevFast?.deepHit(document,x,y);
+            for (let n=e; n && n!==document.documentElement && n!==document.body; n=n.parentElement||n.getRootNode()?.host) {
+              if (n.tagName==='IFRAME') {
+                try { const w=n.contentWindow, b=w.scrollY; w.scrollBy({top:dy,behavior:'instant'}); if (w.scrollY!==b) return 'iframe'; } catch {}
+                continue;
+              }
+              const cs=getComputedStyle(n);
+              if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight>n.clientHeight+1 && moved(n,dy)) return 'element';
+            }
+          }
+          const b=scrollY; scrollBy({top:dy,behavior:'instant'});
+          return scrollY!==b ? 'window' : 'none';
+        })(${JSON.stringify(action.delta ?? SCROLL_DELTA)})`
+    ).catch(() => null);
+    host.afterInput = action;
+    return { executed: action.id };
+  }
+  if (kind === "back" || kind === "forward") {
+    await host.evaluate(`history.${kind === "back" ? "back" : "forward"}()`);
+    return { executed: action.id };
+  }
+  if (kind === "press") {
+    const key = KEYS.get(String(action.key));
+    if (!key) throw new Error(`Unknown key ${action.key}`);
+    await host.call("Input.dispatchKeyEvent", { type: "keyDown", ...key });
+    await host.call("Input.dispatchKeyEvent", { type: "keyUp", ...key });
+    host.afterInput = action;
+    return { executed: action.id };
+  }
+  if (action.node === void 0) throw new Error("Invalid observed node");
+  let target;
+  try {
+    target = await host.evaluate(`(action => {
+        const e=window.__jevFast?.node(action.node);
+        // Visibility alone doesn't decide clickability \u2014 opacity:0 custom
+        // controls fail checkVisibility yet win their own hit test. The
+        // covered check below is the real arbiter.
+        if (!e?.isConnected) return {why:'gone'};
+        if (e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return {why:'disabled'};
+        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return {why:'readonly'};
+        const d=e.ownerDocument, w=d.defaultView||window;
+        let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
+        // Observed targets drift out of the viewport between snapshot and input
+        // (async layout, sticky chrome). One instant re-scroll beats a stale-page
+        // re-decision; a still-offscreen or covered target stays fatal.
+        if (r.width && r.height && (lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight)) {
+          e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
+        }
+        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return {why:'offscreen'};
+        const c=window.__jevFast, deepHit=()=>c.deepHit(d,lx,ly);
+        let hit=deepHit();
+        // A hit on the target's own ancestor is clipping by a scroll
+        // container (a long suggestion list, an overflow pane), not cover:
+        // bring the target into view once and test again.
+        if (hit && hit!==e && c.composedContains(hit,e)) {
+          e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
+          hit=deepHit();
+        }
+        // Not covered when the hit is the target or inside it across shadow
+        // boundaries, or is one of e's own shadow hosts. An unrelated overlay
+        // in the same shadow root still counts as covered.
+        const hosts=new Set(); for (let sr=e.getRootNode();sr instanceof ShadowRoot;sr=sr.host.getRootNode()) hosts.add(sr.host);
+        if (!c.composedContains(e,hit) && !hosts.has(hit)) return {why:'covered by '+(hit?hit.tagName.toLowerCase():'nothing')};
+        if (action.kind==='select') {
+          if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
+              !o.disabled && !o.closest('optgroup[disabled]'))) return {why:'no such option'};
+          e.value=action.value;
+          e.dispatchEvent(new Event('input',{bubbles:true}));
+          e.dispatchEvent(new Event('change',{bubbles:true}));
+        }
+        const fx=action.frame?.x||0, fy=action.frame?.y||0;
+        return {x:lx+fx,y:ly+fy,type:e.tagName==='INPUT'?e.type:''};
+      })(${JSON.stringify(action)})`);
+  } catch (error) {
+    if (kind === "select") {
+      throw new Error("Dropdown execution was interrupted; inspect before retrying.");
+    }
+    throw error;
+  }
+  if (target === null || target === void 0 || target.why !== void 0) {
+    if (kind === "select") {
+      throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
+    }
+    const why = String(target?.why ?? "");
+    if ((kind === "click" || kind === "context" || kind === "hover") && (why === "offscreen" || why.startsWith("covered"))) {
+      return await domDispatch(host, action, text);
+    }
+    throw new StalePage(`Target ${JSON.stringify(action.label.slice(0, 40))} ${target?.why ?? "changed"}. Observe again.`);
+  }
+  if (kind === "fill" && target.type === "file") {
+    const doc = await host.call("DOM.getDocument", { depth: 1 });
+    const found = await host.call("DOM.querySelector", {
+      nodeId: doc.root.nodeId,
+      selector: `input[data-jev-node="${action.node}"]`
+    });
+    if (!found.nodeId) throw new StalePage("File input no longer addressable. Observe again.");
+    await host.call("DOM.setFileInputFiles", { files: [text ?? ""], nodeId: found.nodeId });
+    host.afterInput = action;
+    return { executed: action.id };
+  }
+  if (kind === "hover") {
+    await host.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: target.x, y: target.y });
+    host.afterInput = action;
+    return { executed: action.id };
+  }
+  if (kind === "drag" && action.dragTo !== void 0) {
+    const destFrame = page.actions.find((a) => a.node === action.dragTo)?.frame;
+    const dest = await host.evaluate(`(() => {
+        const e=window.__jevFast?.node(${action.dragTo});
+        if (!e?.isConnected) return null;
+        const r=e.getBoundingClientRect();
+        return {x:r.x+r.width/2+${destFrame?.x ?? 0},y:r.y+r.height/2+${destFrame?.y ?? 0}};
+      })()`);
+    if (!dest) throw new StalePage("Drag destination changed. Observe again.");
+    await host.call("Input.dispatchMouseEvent", {
+      type: "mousePressed",
+      x: target.x,
+      y: target.y,
+      button: "left",
+      clickCount: 1
+    });
+    for (let i = 1; i <= DRAG_STEPS; i++) {
+      await host.call("Input.dispatchMouseEvent", {
+        type: "mouseMoved",
+        x: target.x + (dest.x - target.x) * i / DRAG_STEPS,
+        y: target.y + (dest.y - target.y) * i / DRAG_STEPS,
+        button: "left",
+        buttons: 1
+      });
+    }
+    await host.call("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: dest.x,
+      y: dest.y,
+      button: "left",
+      clickCount: 1
+    });
+    host.afterInput = action;
+    return { executed: action.id };
+  }
+  if (kind !== "select") {
+    for (const type of ["mousePressed", "mouseReleased"]) {
+      await host.call("Input.dispatchMouseEvent", {
+        type,
+        x: target.x,
+        y: target.y,
+        button: kind === "context" ? "right" : "left",
+        clickCount: 1
+      });
+    }
+    if (kind === "click" || kind === "context" || kind === "fill") {
+      await host.evaluate(`(() => {
+          const e=window.__jevFast?.node(${action.node});
+          if (!e?.isConnected) return;
+          const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView||window;
+          if (r.top<0 || r.left<0 || r.bottom>w.innerHeight || r.right>w.innerWidth)
+            e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+        })()`).catch(() => {
+      });
+    }
+    if (kind === "fill") {
+      if (target.type && KEY_TYPED_INPUTS.has(target.type)) {
+        for (const ch of text ?? "") {
+          await host.call("Input.dispatchKeyEvent", { type: "char", text: ch });
+        }
+      } else {
+        const modifiers = host.selectAllModifier;
+        await host.call("Input.dispatchKeyEvent", {
+          type: "keyDown",
+          key: "a",
+          code: "KeyA",
+          modifiers,
+          commands: ["selectAll"]
+        });
+        await host.call("Input.dispatchKeyEvent", {
+          type: "keyUp",
+          key: "a",
+          code: "KeyA",
+          modifiers
+        });
+        await host.call("Input.insertText", { text: text ?? "" });
+      }
+    }
+  }
+  host.afterInput = action;
+  return { executed: action.id };
+}
+async function domClick(host, action, page, text) {
+  if (!await host.fresh(page, action)) {
+    throw new StalePage("Page changed since this decision. Observe again.");
+  }
+  return await domDispatch(host, action, text);
+}
+async function domDispatch(host, action, text) {
+  if (!action.node) {
+    return { executed: action.id };
+  }
+  if (action.kind === "fill") {
+    await host.evaluate(
+      `(() => {
+          const e=window.__jevFast?.node(${action.node});
+          if (!e?.isConnected) return "stale";
+          if (e.isContentEditable) {
+            e.innerText=${JSON.stringify(text ?? "")};
+          } else {
+            const proto=e.tagName==='TEXTAREA'?HTMLTextAreaElement:HTMLInputElement;
+            Object.getOwnPropertyDescriptor(proto.prototype,'value').set.call(e,${JSON.stringify(text ?? "")});
+          }
+          e.dispatchEvent(new Event('input',{bubbles:true}));
+          e.dispatchEvent(new Event('change',{bubbles:true}));
+          return "ok";
+        })()`
+    );
+    host.afterInput = action;
+    return { executed: action.id };
+  }
+  if (action.kind === "drag" && action.dragTo !== void 0) {
+    await host.evaluate(
+      `(() => {
+          const c=window.__jevFast;
+          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
+          if (!src || !dst) return "stale";
+          const dt=new DataTransfer();
+          const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
+          fire("dragstart",src); fire("dragenter",dst); fire("dragover",dst);
+          fire("drop",dst); fire("dragend",src);
+          return "ok";
+        })()`
+    );
+    host.afterInput = action;
+    return { executed: action.id };
+  }
+  const types = action.kind === "hover" ? ["mouseover", "mousemove"] : action.kind === "context" ? ["pointerdown", "mousedown", "pointerup", "mouseup", "contextmenu"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
+  await host.evaluate(
+    `(() => {
+        const e=window.__jevFast?.node(${action.node});
+        if (!e) return "stale";
+        const r=e.getBoundingClientRect();
+        const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:${action.kind === "context" ? 2 : 0}};
+        for (const t of ${JSON.stringify(types)}) {
+          const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
+          e.dispatchEvent(new Ev(t,opts));
+        }
+        return "ok";
+      })()`
+  );
+  host.afterInput = action;
+  return { executed: action.id };
+}
+
+// src/cdp/fresh.ts
+var READ_STATE = loadSnapshotJs();
+var MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
+async function settle(host, budgetMs, quietMs = QUIET_MS) {
+  const quiet = await host.evaluate(
+    `(() => {const w = window.__jevFast && window.__jevFast.wake;
+        if (!w || !w.quiet) return false;
+
+        return w.quiet(${Math.min(quietMs, budgetMs)}, ${budgetMs}).then(() => true);})()`,
+    true
+  ).catch(() => false);
+  if (quiet !== true) await sleep(budgetMs);
+}
+async function fresh(host, page, action, level = "full") {
+  if (action && (action.kind === "click" || action.kind === "select")) {
+    const node = action.node;
+    if (node === void 0) return false;
+    const current = await host.evaluate(
+      `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`
+    );
+    return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
+  }
+  if (level === "page") {
+    const current = await host.evaluate(
+      `(() => { const c=window.__jevFast; return c ? c.pageKey() : null; })()`
+    );
+    return JSON.stringify(current) === JSON.stringify(page.page_key);
+  }
+  return markerMatches(level, await host.evaluate(MARKER), page.marker);
+}
+
+// src/cdp/launch.ts
+import { execSync, spawn } from "node:child_process";
+import { homedir as homedir2 } from "node:os";
+import { join as join3 } from "node:path";
+
+// src/cdp/chrome.ts
+import { existsSync as existsSync2, readdirSync } from "node:fs";
+import { homedir, platform } from "node:os";
+import { join as join2 } from "node:path";
+function systemCandidates() {
+  switch (platform()) {
+    case "darwin":
+      return [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta",
+        "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+      ];
+    case "linux":
+      return [
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/google-chrome-beta",
+        "/usr/bin/google-chrome-unstable",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/microsoft-edge",
+        "/snap/bin/chromium"
+      ];
+    case "win32": {
+      const roots = [
+        process.env.PROGRAMFILES,
+        process.env["PROGRAMFILES(X86)"],
+        process.env.LOCALAPPDATA
+      ].filter((r) => r !== void 0);
+      return roots.flatMap(
+        (root) => [
+          "Google\\Chrome\\Application\\chrome.exe",
+          "Google\\Chrome Beta\\Application\\chrome.exe",
+          "Google\\Chrome SxS\\Application\\chrome.exe",
+          "Microsoft\\Edge\\Application\\msedge.exe",
+          "Chromium\\Application\\chrome.exe",
+          "BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+        ].map((rel) => join2(root, rel))
+      );
+    }
+    default:
+      return [];
+  }
+}
+function cacheRoots() {
+  const roots = [];
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH) roots.push(process.env.PLAYWRIGHT_BROWSERS_PATH);
+  roots.push(
+    join2(homedir(), "Library", "Caches", "ms-playwright"),
+    join2(homedir(), ".cache", "ms-playwright"),
+    join2(homedir(), ".cache", "puppeteer")
+  );
+  return roots;
+}
+var CACHE_BINARY = /* @__PURE__ */ new Set([
+  "chrome",
+  "chrome.exe",
+  "chromium",
+  "Chromium",
+  "Google Chrome for Testing",
+  "msedge.exe"
+]);
+function cacheCandidates() {
+  const found = [];
+  const walk = (dir, depth) => {
+    if (depth > 6) return;
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const path = join2(dir, entry.name);
+      if (entry.isDirectory()) walk(path, depth + 1);
+      else if (CACHE_BINARY.has(entry.name)) found.push(path);
+    }
+  };
+  for (const root of cacheRoots()) walk(root, 0);
+  return found.sort();
+}
+function findChrome() {
+  if (process.env.CHROME_PATH && existsSync2(process.env.CHROME_PATH)) {
+    return process.env.CHROME_PATH;
+  }
+  for (const candidate of systemCandidates()) {
+    if (existsSync2(candidate)) return candidate;
+  }
+  for (const candidate of cacheCandidates()) {
+    if (existsSync2(candidate)) return candidate;
+  }
+  for (const name of [
+    "google-chrome",
+    "google-chrome-stable",
+    "chromium",
+    "chromium-browser",
+    "chrome",
+    "msedge",
+    "brave-browser"
+  ]) {
+    for (const dir of (process.env.PATH ?? "").split(process.platform === "win32" ? ";" : ":")) {
+      for (const bin of platform() === "win32" ? [name, `${name}.exe`] : [name]) {
+        const candidate = join2(dir, bin);
+        if (existsSync2(candidate)) return candidate;
+      }
+    }
+  }
+  throw new Error(
+    `No Chrome/Chromium found. Set CHROME_PATH, or attach to a running browser with --cdp http://host:9222`
+  );
+}
+
+// src/cdp/launch.ts
 function splitShellWords(input) {
   const out = [];
   let cur = "", quote = null, started = false;
@@ -2212,6 +2670,61 @@ function reapProfileChrome(profileDir) {
     return false;
   }
 }
+async function spawnChrome(opts) {
+  if (opts.cdpUrl) return null;
+  const port = await freePort();
+  const profileDir = opts.profileDir ?? process.env.JEV_PROFILE ?? join3(homedir2(), ".jev-browse", "profile");
+  const args = [
+    `--remote-debugging-port=${port}`,
+    `--user-data-dir=${profileDir}`,
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-session-crashed-bubble",
+    "--hide-crash-restore-bubble"
+  ];
+  if (!opts.headed) args.push("--headless=new");
+  else args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
+  if (process.getuid?.() === 0) {
+    args.push("--no-sandbox");
+    process.stderr.write(
+      "jev-browse: running as root \u2014 Chrome launched with --no-sandbox, renderer containment is off. Attach to a non-root Chrome via JEV_CDP_URL to keep it.\n"
+    );
+  }
+  for (const extra of splitShellWords(process.env.JEV_CHROME_ARGS ?? "")) {
+    args.push(extra);
+  }
+  const proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
+  proc.on("error", () => {
+  });
+  return { proc, profileDir, port };
+}
+async function resolveWsUrl(opts, spawned) {
+  if (opts.cdpUrl) {
+    const base = opts.cdpUrl.replace(/\/+$/, "");
+    const info = await (await fetch(`${base}/json/version`)).json();
+    if (!info.webSocketDebuggerUrl) {
+      throw new Error(`${base} did not report a webSocketDebuggerUrl`);
+    }
+    return info.webSocketDebuggerUrl;
+  }
+  try {
+    return await browserWsUrl(spawned.port);
+  } catch (error) {
+    if (!spawned || !reapProfileChrome(spawned.profileDir)) throw error;
+    const port = await freePort();
+    const args2 = spawned.proc.spawnargs.map(
+      (a) => a.startsWith("--remote-debugging-port=") ? `--remote-debugging-port=${port}` : a
+    );
+    spawned.proc = spawn(args2[0], args2.slice(1), { stdio: "ignore" });
+    spawned.proc.on("error", () => {
+    });
+    spawned.port = port;
+    return browserWsUrl(port);
+  }
+}
+
+// src/cdp/browser.ts
+var READ_STATE2 = loadSnapshotJs();
 var CdpBrowser = class _CdpBrowser {
   socket;
   session;
@@ -2222,124 +2735,30 @@ var CdpBrowser = class _CdpBrowser {
   seen = /* @__PURE__ */ new Set();
   adopted = [];
   sessions = /* @__PURE__ */ new Map();
-  pending = /* @__PURE__ */ new Map();
-  navPending = /* @__PURE__ */ new Map();
-  mainFrame = /* @__PURE__ */ new Map();
-  lastDialog = null;
+  events = new CdpEvents();
   selectAllModifier = 2;
-  downloadGuids = /* @__PURE__ */ new Map();
-  downloads = [];
   constructor() {
   }
   static async open(url, opts = {}) {
     const browser = new _CdpBrowser();
-    let port = null;
-    if (!opts.cdpUrl) {
-      port = await freePort();
-      const profileDir = opts.profileDir ?? process.env.JEV_PROFILE ?? join3(homedir2(), ".jev-browse", "profile");
-      const args = [
-        `--remote-debugging-port=${port}`,
-        `--user-data-dir=${profileDir}`,
-        "--no-first-run",
-        "--no-default-browser-check",
-        "--disable-session-crashed-bubble",
-        "--hide-crash-restore-bubble"
-      ];
-      if (!opts.headed) args.push("--headless=new");
-      else
-        args.push(`--window-size=${VIEWPORT_W},${VIEWPORT_H + 120}`, "--window-position=40,40");
-      if (process.getuid?.() === 0) {
-        args.push("--no-sandbox");
-        process.stderr.write(
-          "jev-browse: running as root \u2014 Chrome launched with --no-sandbox, renderer containment is off. Attach to a non-root Chrome via JEV_CDP_URL to keep it.\n"
-        );
-      }
-      for (const extra of splitShellWords(process.env.JEV_CHROME_ARGS ?? "")) {
-        args.push(extra);
-      }
-      browser.proc = spawn(findChrome(), [...args, "about:blank"], { stdio: "ignore" });
-      browser.proc.on("error", () => {
-      });
-      browser.launchProfileDir = profileDir;
+    const spawned = await spawnChrome(opts);
+    if (spawned) {
+      browser.proc = spawned.proc;
+      browser.launchProfileDir = spawned.profileDir;
     }
     try {
-      let wsUrl;
-      if (opts.cdpUrl) {
-        const base = opts.cdpUrl.replace(/\/+$/, "");
-        const info = await (await fetch(`${base}/json/version`)).json();
-        if (!info.webSocketDebuggerUrl) {
-          throw new Error(`${base} did not report a webSocketDebuggerUrl`);
-        }
-        wsUrl = info.webSocketDebuggerUrl;
-      } else {
-        try {
-          wsUrl = await browserWsUrl(port);
-        } catch (error) {
-          if (!browser.launchProfileDir || !reapProfileChrome(browser.launchProfileDir)) {
-            throw error;
-          }
-          port = await freePort();
-          const args2 = browser.proc.spawnargs.map(
-            (a) => a.startsWith("--remote-debugging-port=") ? `--remote-debugging-port=${port}` : a
-          );
-          browser.proc = spawn(args2[0], args2.slice(1), { stdio: "ignore" });
-          browser.proc.on("error", () => {
-          });
-          wsUrl = await browserWsUrl(port);
-        }
-      }
+      const wsUrl = await resolveWsUrl(opts, spawned);
+      if (spawned) browser.proc = spawned.proc;
       browser.socket = await CdpSocket.connect(wsUrl);
       if (browser.proc) {
         await browser.socket.call("Browser.setDownloadBehavior", {
           behavior: "allow",
-          downloadPath: mkdtempSync(join3(tmpdir(), "jev-downloads-")),
+          downloadPath: mkdtempSync(join4(tmpdir(), "jev-downloads-")),
           eventsEnabled: true
         }).catch(() => {
         });
       }
-      browser.socket.onEvent("Page.javascriptDialogOpening", (p, sessionId) => {
-        if (!sessionId) return;
-        browser.lastDialog = {
-          type: String(p.type ?? "dialog"),
-          message: String(p.message ?? "")
-        };
-        browser.socket.call("Page.handleJavaScriptDialog", { accept: true }, sessionId).catch(() => {
-        });
-      });
-      browser.socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
-        if (sessionId && !LONG_LIVED_REQUESTS.has(String(p.type))) {
-          (browser.pending.get(sessionId) ?? browser.pending.set(sessionId, /* @__PURE__ */ new Map()).get(sessionId)).set(p.requestId, Date.now());
-        }
-      });
-      browser.socket.onEvent("Network.loadingFinished", (p, sessionId) => {
-        if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
-      });
-      browser.socket.onEvent("Network.loadingFailed", (p, sessionId) => {
-        if (sessionId) browser.pending.get(sessionId)?.delete(p.requestId);
-      });
-      browser.socket.onEvent("Page.frameStartedNavigating", (p, sessionId) => {
-        if (sessionId && p.frameId === browser.mainFrame.get(sessionId)) {
-          browser.navPending.set(sessionId, (browser.navPending.get(sessionId) ?? 0) + 1);
-        }
-      });
-      browser.socket.onEvent("Page.frameNavigated", (p, sessionId) => {
-        if (sessionId && p.frame?.id === browser.mainFrame.get(sessionId)) {
-          browser.navPending.set(sessionId, Math.max(0, (browser.navPending.get(sessionId) ?? 0) - 1));
-        }
-      });
-      browser.socket.onEvent("Page.frameStoppedLoading", (p, sessionId) => {
-        if (sessionId && p.frameId === browser.mainFrame.get(sessionId)) {
-          browser.navPending.set(sessionId, 0);
-        }
-      });
-      browser.socket.onEvent("Browser.downloadWillBegin", (p) => {
-        browser.downloadGuids.set(String(p.guid), String(p.suggestedFilename ?? p.url ?? "download"));
-      });
-      browser.socket.onEvent("Browser.downloadProgress", (p) => {
-        const name = browser.downloadGuids.get(String(p.guid));
-        if (name && p.state === "completed") browser.downloads.push(name);
-        if (name && p.state !== "inProgress") browser.downloadGuids.delete(String(p.guid));
-      });
+      browser.events.wire(browser.socket);
       browser.target = (await browser.socket.call("Target.createTarget", {
         url: "about:blank",
         background: true
@@ -2416,7 +2835,7 @@ var CdpBrowser = class _CdpBrowser {
     const tree = await this.call(
       "Page.getFrameTree"
     ).catch(() => null);
-    if (tree?.frameTree?.frame?.id) this.mainFrame.set(this.session, tree.frameTree.frame.id);
+    if (tree?.frameTree?.frame?.id) this.events.setMainFrame(this.session, tree.frameTree.frame.id);
   }
   async evaluate(expression, awaitPromise = false) {
     const response = await this.call("Runtime.evaluate", {
@@ -2435,10 +2854,10 @@ var CdpBrowser = class _CdpBrowser {
   }
   async adoptNewTarget() {
     const { targetInfos } = await this.socket.call("Target.getTargets").catch(() => ({ targetInfos: [] }));
-    const fresh = targetInfos.filter(
+    const fresh2 = targetInfos.filter(
       (t) => t.type === "page" && !this.seen.has(t.targetId) && t.openerId === this.target
     );
-    for (const t of fresh) {
+    for (const t of fresh2) {
       this.seen.add(t.targetId);
       try {
         const { sessionId } = await this.socket.call(
@@ -2506,12 +2925,12 @@ var CdpBrowser = class _CdpBrowser {
     }
     for (let attempt = 0; attempt < 100; attempt++) {
       try {
-        const info = await this.evaluate(READ_STATE);
+        const info = await this.evaluate(READ_STATE2);
         if (info === null || info === void 0) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
-        info.pending_requests = this.pendingCount(this.session);
-        info.pending_nav = (this.navPending.get(this.session) ?? 0) > 0;
-        if (this.downloads.length) info.downloads = [...this.downloads];
+        info.pending_requests = this.events.pendingCount(this.session);
+        info.pending_nav = this.events.pendingNav(this.session);
+        if (this.events.downloads.length) info.downloads = [...this.events.downloads];
         const tabs = await this.listTabs();
         if (tabs.length > 1) {
           info.tabs = tabs.map((t) => ({
@@ -2529,10 +2948,8 @@ var CdpBrowser = class _CdpBrowser {
               });
           });
         }
-        if (this.lastDialog) {
-          info.dialog = `${this.lastDialog.type}: ${this.lastDialog.message}`.slice(0, 240);
-          this.lastDialog = null;
-        }
+        const dialog = this.events.takeDialog();
+        if (dialog) info.dialog = dialog;
         return info;
       } catch (error) {
         if (!(error instanceof StalePage) || attempt === 99) throw error;
@@ -2541,110 +2958,17 @@ var CdpBrowser = class _CdpBrowser {
     }
     throw new StalePage("Page did not settle");
   }
-  pendingCount(session) {
-    const requests = this.pending.get(session);
-    if (!requests) return 0;
-    const now = Date.now();
-    let count = 0;
-    for (const [id, started] of requests) {
-      if (now - started > PENDING_GRACE_MS) requests.delete(id);
-      else count++;
-    }
-    return count;
-  }
   async settle(budgetMs, quietMs = QUIET_MS) {
-    const quiet = await this.evaluate(
-      `(() => {const w = window.__jevFast && window.__jevFast.wake;
-        if (!w || !w.quiet) return false;
-
-        return w.quiet(${Math.min(quietMs, budgetMs)}, ${budgetMs}).then(() => true);})()`,
-      true
-    ).catch(() => false);
-    if (quiet !== true) await sleep(budgetMs);
+    return settle(this, budgetMs, quietMs);
   }
   pendingNav() {
-    return (this.navPending.get(this.session) ?? 0) > 0;
+    return this.events.pendingNav(this.session);
   }
   async fresh(page, action, level = "full") {
-    if (action && (action.kind === "click" || action.kind === "select")) {
-      const node = action.node;
-      if (node === void 0) return false;
-      const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`
-      );
-      return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
-    }
-    if (level === "page") {
-      const current = await this.evaluate(
-        `(() => { const c=window.__jevFast; return c ? c.pageKey() : null; })()`
-      );
-      return JSON.stringify(current) === JSON.stringify(page.page_key);
-    }
-    return markerMatches(level, await this.evaluate(MARKER), page.marker);
+    return fresh(this, page, action, level);
   }
   async act(action, page, text) {
-    if (!await this.fresh(page, action, "page")) {
-      throw new StalePage("Page changed since this decision. Observe again.");
-    }
-    const kind = action.kind;
-    if (kind === "wait") {
-      const deadline = Date.now() + WAIT_BUDGET_MS;
-      for (; ; ) {
-        if (!await this.fresh(page)) break;
-        if (this.pendingNav() || this.pendingCount(this.session) > 0) {
-          if (Date.now() >= deadline) break;
-          await sleep(WAIT_POLL_MS);
-          continue;
-        }
-        await this.settle(Math.max(0, deadline - Date.now()), QUIET_MS);
-        break;
-      }
-      return { executed: action.id };
-    }
-    if (kind === "scroll" && action.node !== void 0) {
-      const moved = await this.evaluate(
-        `(() => {
-          const e=window.__jevFast?.node(${JSON.stringify(action.node)});
-          if (!e?.isConnected) return null;
-          const b=e.scrollTop;
-          e.scrollBy({top:${JSON.stringify(action.delta ?? SCROLL_DELTA)},behavior:'instant'});
-          return e.scrollTop!==b;
-        })()`
-      ).catch(() => null);
-      if (moved === null) throw new StalePage("Scroll region is gone. Observe again.");
-      this.afterInput = action;
-      return { executed: action.id };
-    }
-    if (kind === "scroll") {
-      await this.evaluate(
-        `(delta => {
-          const sign=Math.sign(delta)||1;
-          const dy=Math.round(sign*innerHeight*0.8);
-          const moved=(n,by)=>{const b=n.scrollTop;n.scrollBy({top:by,behavior:'instant'});return n.scrollTop!==b;};
-          for (const fx of [0.5,0.3,0.7,0.15,0.85]) {
-            const x=Math.round(innerWidth*fx), y=Math.round(innerHeight*0.6);
-            const e=window.__jevFast?.deepHit(document,x,y);
-            for (let n=e; n && n!==document.documentElement && n!==document.body; n=n.parentElement||n.getRootNode()?.host) {
-              if (n.tagName==='IFRAME') {
-                try { const w=n.contentWindow, b=w.scrollY; w.scrollBy({top:dy,behavior:'instant'}); if (w.scrollY!==b) return 'iframe'; } catch {}
-                continue;
-              }
-              const cs=getComputedStyle(n);
-              if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight>n.clientHeight+1 && moved(n,dy)) return 'element';
-            }
-          }
-          const b=scrollY; scrollBy({top:dy,behavior:'instant'});
-          return scrollY!==b ? 'window' : 'none';
-        })(${JSON.stringify(action.delta ?? SCROLL_DELTA)})`
-      ).catch(() => null);
-      this.afterInput = action;
-      return { executed: action.id };
-    }
-    if (kind === "back" || kind === "forward") {
-      await this.evaluate(`history.${kind === "back" ? "back" : "forward"}()`);
-      return { executed: action.id };
-    }
-    if (kind === "focus_tab") {
+    if (action.kind === "focus_tab") {
       const targetId = String(action.value ?? "");
       const sessionId = this.sessions.get(targetId);
       if (!sessionId) throw new StalePage("Tab is gone. Observe again.");
@@ -2654,235 +2978,10 @@ var CdpBrowser = class _CdpBrowser {
       this.session = sessionId;
       return { executed: action.id };
     }
-    if (kind === "press") {
-      const key = KEYS.get(String(action.key));
-      if (!key) throw new Error(`Unknown key ${action.key}`);
-      await this.call("Input.dispatchKeyEvent", { type: "keyDown", ...key });
-      await this.call("Input.dispatchKeyEvent", { type: "keyUp", ...key });
-      this.afterInput = action;
-      return { executed: action.id };
-    }
-    if (action.node === void 0) throw new Error("Invalid observed node");
-    let target;
-    try {
-      target = await this.evaluate(`(action => {
-        const e=window.__jevFast?.node(action.node);
-        // Visibility alone doesn't decide clickability \u2014 opacity:0 custom
-        // controls fail checkVisibility yet win their own hit test. The
-        // covered check below is the real arbiter.
-        if (!e?.isConnected) return {why:'gone'};
-        if (e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return {why:'disabled'};
-        if (action.kind==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return {why:'readonly'};
-        const d=e.ownerDocument, w=d.defaultView||window;
-        let r=e.getBoundingClientRect(), lx=r.x+r.width/2, ly=r.y+r.height/2;
-        // Observed targets drift out of the viewport between snapshot and input
-        // (async layout, sticky chrome). One instant re-scroll beats a stale-page
-        // re-decision; a still-offscreen or covered target stays fatal.
-        if (r.width && r.height && (lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight)) {
-          e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
-          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
-        }
-        if (!r.width || !r.height || lx<0 || ly<0 || lx>=w.innerWidth || ly>=w.innerHeight) return {why:'offscreen'};
-        const c=window.__jevFast, deepHit=()=>c.deepHit(d,lx,ly);
-        let hit=deepHit();
-        // A hit on the target's own ancestor is clipping by a scroll
-        // container (a long suggestion list, an overflow pane), not cover:
-        // bring the target into view once and test again.
-        if (hit && hit!==e && c.composedContains(hit,e)) {
-          e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
-          r=e.getBoundingClientRect(); lx=r.x+r.width/2; ly=r.y+r.height/2;
-          hit=deepHit();
-        }
-        // Not covered when the hit is the target or inside it across shadow
-        // boundaries, or is one of e's own shadow hosts. An unrelated overlay
-        // in the same shadow root still counts as covered.
-        const hosts=new Set(); for (let sr=e.getRootNode();sr instanceof ShadowRoot;sr=sr.host.getRootNode()) hosts.add(sr.host);
-        if (!c.composedContains(e,hit) && !hosts.has(hit)) return {why:'covered by '+(hit?hit.tagName.toLowerCase():'nothing')};
-        if (action.kind==='select') {
-          if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
-              !o.disabled && !o.closest('optgroup[disabled]'))) return {why:'no such option'};
-          e.value=action.value;
-          e.dispatchEvent(new Event('input',{bubbles:true}));
-          e.dispatchEvent(new Event('change',{bubbles:true}));
-        }
-        const fx=action.frame?.x||0, fy=action.frame?.y||0;
-        return {x:lx+fx,y:ly+fy,type:e.tagName==='INPUT'?e.type:''};
-      })(${JSON.stringify(action)})`);
-    } catch (error) {
-      if (kind === "select") {
-        throw new Error("Dropdown execution was interrupted; inspect before retrying.");
-      }
-      throw error;
-    }
-    if (target === null || target === void 0 || target.why !== void 0) {
-      if (kind === "select") {
-        throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
-      }
-      const why = String(target?.why ?? "");
-      if ((kind === "click" || kind === "context" || kind === "hover") && (why === "offscreen" || why.startsWith("covered"))) {
-        return await this.domDispatch(action, text);
-      }
-      throw new StalePage(`Target ${JSON.stringify(action.label.slice(0, 40))} ${target?.why ?? "changed"}. Observe again.`);
-    }
-    if (kind === "fill" && target.type === "file") {
-      const doc = await this.call("DOM.getDocument", { depth: 1 });
-      const found = await this.call("DOM.querySelector", {
-        nodeId: doc.root.nodeId,
-        selector: `input[data-jev-node="${action.node}"]`
-      });
-      if (!found.nodeId) throw new StalePage("File input no longer addressable. Observe again.");
-      await this.call("DOM.setFileInputFiles", { files: [text ?? ""], nodeId: found.nodeId });
-      this.afterInput = action;
-      return { executed: action.id };
-    }
-    if (kind === "hover") {
-      await this.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: target.x, y: target.y });
-      this.afterInput = action;
-      return { executed: action.id };
-    }
-    if (kind === "drag" && action.dragTo !== void 0) {
-      const destFrame = page.actions.find((a) => a.node === action.dragTo)?.frame;
-      const dest = await this.evaluate(`(() => {
-        const e=window.__jevFast?.node(${action.dragTo});
-        if (!e?.isConnected) return null;
-        const r=e.getBoundingClientRect();
-        return {x:r.x+r.width/2+${destFrame?.x ?? 0},y:r.y+r.height/2+${destFrame?.y ?? 0}};
-      })()`);
-      if (!dest) throw new StalePage("Drag destination changed. Observe again.");
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mousePressed",
-        x: target.x,
-        y: target.y,
-        button: "left",
-        clickCount: 1
-      });
-      for (let i = 1; i <= DRAG_STEPS; i++) {
-        await this.call("Input.dispatchMouseEvent", {
-          type: "mouseMoved",
-          x: target.x + (dest.x - target.x) * i / DRAG_STEPS,
-          y: target.y + (dest.y - target.y) * i / DRAG_STEPS,
-          button: "left",
-          buttons: 1
-        });
-      }
-      await this.call("Input.dispatchMouseEvent", {
-        type: "mouseReleased",
-        x: dest.x,
-        y: dest.y,
-        button: "left",
-        clickCount: 1
-      });
-      this.afterInput = action;
-      return { executed: action.id };
-    }
-    if (kind !== "select") {
-      for (const type of ["mousePressed", "mouseReleased"]) {
-        await this.call("Input.dispatchMouseEvent", {
-          type,
-          x: target.x,
-          y: target.y,
-          button: kind === "context" ? "right" : "left",
-          clickCount: 1
-        });
-      }
-      if (kind === "click" || kind === "context" || kind === "fill") {
-        await this.evaluate(`(() => {
-          const e=window.__jevFast?.node(${action.node});
-          if (!e?.isConnected) return;
-          const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView||window;
-          if (r.top<0 || r.left<0 || r.bottom>w.innerHeight || r.right>w.innerWidth)
-            e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
-        })()`).catch(() => {
-        });
-      }
-      if (kind === "fill") {
-        if (target.type && KEY_TYPED_INPUTS.has(target.type)) {
-          for (const ch of text ?? "") {
-            await this.call("Input.dispatchKeyEvent", { type: "char", text: ch });
-          }
-        } else {
-          const modifiers = this.selectAllModifier;
-          await this.call("Input.dispatchKeyEvent", {
-            type: "keyDown",
-            key: "a",
-            code: "KeyA",
-            modifiers,
-            commands: ["selectAll"]
-          });
-          await this.call("Input.dispatchKeyEvent", {
-            type: "keyUp",
-            key: "a",
-            code: "KeyA",
-            modifiers
-          });
-          await this.call("Input.insertText", { text: text ?? "" });
-        }
-      }
-    }
-    this.afterInput = action;
-    return { executed: action.id };
+    return act(this, action, page, text);
   }
   async domClick(action, page, text) {
-    if (!await this.fresh(page, action)) {
-      throw new StalePage("Page changed since this decision. Observe again.");
-    }
-    return await this.domDispatch(action, text);
-  }
-  async domDispatch(action, text) {
-    if (!action.node) {
-      return { executed: action.id };
-    }
-    if (action.kind === "fill") {
-      await this.evaluate(
-        `(() => {
-          const e=window.__jevFast?.node(${action.node});
-          if (!e?.isConnected) return "stale";
-          if (e.isContentEditable) {
-            e.innerText=${JSON.stringify(text ?? "")};
-          } else {
-            const proto=e.tagName==='TEXTAREA'?HTMLTextAreaElement:HTMLInputElement;
-            Object.getOwnPropertyDescriptor(proto.prototype,'value').set.call(e,${JSON.stringify(text ?? "")});
-          }
-          e.dispatchEvent(new Event('input',{bubbles:true}));
-          e.dispatchEvent(new Event('change',{bubbles:true}));
-          return "ok";
-        })()`
-      );
-      this.afterInput = action;
-      return { executed: action.id };
-    }
-    if (action.kind === "drag" && action.dragTo !== void 0) {
-      await this.evaluate(
-        `(() => {
-          const c=window.__jevFast;
-          const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
-          if (!src || !dst) return "stale";
-          const dt=new DataTransfer();
-          const fire=(t,el)=>el.dispatchEvent(new DragEvent(t,{bubbles:true,cancelable:true,dataTransfer:dt}));
-          fire("dragstart",src); fire("dragenter",dst); fire("dragover",dst);
-          fire("drop",dst); fire("dragend",src);
-          return "ok";
-        })()`
-      );
-      this.afterInput = action;
-      return { executed: action.id };
-    }
-    const types = action.kind === "hover" ? ["mouseover", "mousemove"] : action.kind === "context" ? ["pointerdown", "mousedown", "pointerup", "mouseup", "contextmenu"] : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
-    await this.evaluate(
-      `(() => {
-        const e=window.__jevFast?.node(${action.node});
-        if (!e) return "stale";
-        const r=e.getBoundingClientRect();
-        const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:${action.kind === "context" ? 2 : 0}};
-        for (const t of ${JSON.stringify(types)}) {
-          const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
-          e.dispatchEvent(new Ev(t,opts));
-        }
-        return "ok";
-      })()`
-    );
-    this.afterInput = action;
-    return { executed: action.id };
+    return domClick(this, action, page, text);
   }
   async close() {
     try {
@@ -2910,11 +3009,11 @@ var CdpBrowser = class _CdpBrowser {
 // src/abrowser.ts
 import { execFile } from "node:child_process";
 import { homedir as homedir3 } from "node:os";
-import { join as join4 } from "node:path";
+import { join as join5 } from "node:path";
 import { promisify } from "node:util";
 var execFileAsync = promisify(execFile);
-var READ_STATE2 = loadSnapshotJs();
-var MARKER2 = `(() => { const state=${READ_STATE2}; return state?.marker ?? null; })()`;
+var READ_STATE3 = loadSnapshotJs();
+var MARKER2 = `(() => { const state=${READ_STATE3}; return state?.marker ?? null; })()`;
 var TAG_ATTR = "data-jev-node";
 var PRESS_KEYS = new Map(
   Object.entries({
@@ -2949,7 +3048,7 @@ var AgentBrowser = class _AgentBrowser {
   }
   static async open(url, opts = {}) {
     const browser = new _AgentBrowser(opts);
-    const profile = process.env.JEV_AB_PROFILE ?? join4(homedir3(), ".jev-browse", "agent-browser-profile");
+    const profile = process.env.JEV_AB_PROFILE ?? join5(homedir3(), ".jev-browse", "agent-browser-profile");
     try {
       await browser.run(["--profile", profile, ...browser.launchArgs, "open"]);
       browser.opened = true;
@@ -3063,7 +3162,7 @@ var AgentBrowser = class _AgentBrowser {
     }
     for (let attempt = 0; attempt < 100; attempt++) {
       try {
-        const info = await this.evaluate(READ_STATE2);
+        const info = await this.evaluate(READ_STATE3);
         if (info === null || info === void 0) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
         info.actions = info.actions.filter((a) => !a.frame && !a.shadow);
@@ -3273,7 +3372,7 @@ function parseOutput(stdout) {
 // src/cli.ts
 var lockDir = (profileDir) => {
   const key = createHash2("sha1").update(profileDir).digest("hex").slice(0, 12);
-  return join5(homedir4(), ".jev-browse", `run-${key}.lock`);
+  return join6(homedir4(), ".jev-browse", `run-${key}.lock`);
 };
 function pidAlive(pid) {
   try {
@@ -3290,13 +3389,13 @@ async function acquireLock(profileDir, timeoutMs = 3e4) {
   for (; ; ) {
     try {
       mkdirSync(dir, { recursive: true });
-      writeFileSync(join5(dir, "pid"), String(process.pid), { flag: "wx" });
+      writeFileSync(join6(dir, "pid"), String(process.pid), { flag: "wx" });
       heldLock = dir;
       return;
     } catch {
-      const holder = Number(readFileSync3(join5(dir, "pid"), "utf8"));
+      const holder = Number(readFileSync3(join6(dir, "pid"), "utf8"));
       if (holder && !pidAlive(holder)) {
-        rmSync(join5(dir, "pid"), { force: true });
+        rmSync(join6(dir, "pid"), { force: true });
         continue;
       }
       if (Date.now() > deadline) {
@@ -3309,7 +3408,7 @@ async function acquireLock(profileDir, timeoutMs = 3e4) {
 function releaseLock() {
   if (!heldLock) return;
   try {
-    const holder = Number(readFileSync3(join5(heldLock, "pid"), "utf8"));
+    const holder = Number(readFileSync3(join6(heldLock, "pid"), "utf8"));
     if (holder === process.pid) rmSync(heldLock, { recursive: true, force: true });
   } catch {
   }
@@ -3365,7 +3464,7 @@ async function runAgent(args, opts = {}) {
   if (protocol !== "http:" && protocol !== "https:" && !(protocol === "file:" && allowFile)) {
     throw new Error(`jev-browse only drives http(s) pages; got ${args.url}`);
   }
-  const profileDir = args.engine === "agent-browser" ? process.env.JEV_AB_PROFILE ?? join5(homedir4(), ".jev-browse", "agent-browser-profile") : process.env.JEV_PROFILE ?? join5(homedir4(), ".jev-browse", "profile");
+  const profileDir = args.engine === "agent-browser" ? process.env.JEV_AB_PROFILE ?? join6(homedir4(), ".jev-browse", "agent-browser-profile") : process.env.JEV_PROFILE ?? join6(homedir4(), ".jev-browse", "profile");
   await acquireLock(profileDir);
   let agent;
   try {

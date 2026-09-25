@@ -95,3 +95,43 @@ export interface BrowserDriver {
   settle?(budgetMs: number, quietMs?: number): Promise<void>;
   close(): Promise<void>;
 }
+
+export interface HistoryEntry {
+  step: number;
+  action: string;
+  kind: string;
+  choice: string;
+  probability: number;
+  confidence: number;
+  latency_ms: number;
+  text: string | null;
+  text_helper: string | null;
+  text_latency_ms: number;
+  operation: string;
+  target: string | null;
+  page_changed: boolean | null;
+  url: string;
+  usage: unknown;
+  executed_ms: number;
+  elapsed_ms: number;
+  pending_requests?: number;
+  follow_up?: string;
+}
+
+export interface RunResult {
+  status: "done" | "blocked" | "error";
+  goal: string;
+  url: string;
+  final_url: string;
+  steps: number;
+  decisions: number;
+  elapsed_ms: number;
+  history: HistoryEntry[];
+  final_text?: string;
+  answer?: string;
+  downloads?: string[];
+  error?: string;
+  blocked_cause?: string;
+  final_state?: string;
+  answer_note?: string;
+}
