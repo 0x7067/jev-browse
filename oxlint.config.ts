@@ -14,9 +14,16 @@ export default defineConfig({
 		".roo/**",
 		".windsurf/**",
 		"bundled/**",
+		"src/snapshot.js",
 		"dist/**",
 		"tools/oxlint/anti-slop/**",
 		"scripts/check-no-comments.mjs",
+	],
+	overrides: [
+		{
+			files: ["src/snapshot/*.js"],
+			rules: { "no-unused-vars": "off" },
+		},
 	],
 	jsPlugins: [{ name: "anti-slop", specifier: "./tools/oxlint/anti-slop/index.ts" }],
 	rules: {

@@ -19,8 +19,8 @@
     "jev-browse-mcp": "bundled/mcp.mjs"
   },
   "scripts": {
-    "compile": "tsc && cp src/snapshot.js dist/snapshot.js && npm run build:bundle",
-    "build:bundle": "esbuild src/cli.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/cli.mjs && esbuild src/mcp.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/mcp.mjs && cp src/snapshot.js bundled/snapshot.js",
+    "compile": "node scripts/build-snapshot.mjs && tsc && cp src/snapshot.js dist/snapshot.js && npm run build:bundle",
+    "build:bundle": "node scripts/build-snapshot.mjs && esbuild src/cli.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/cli.mjs && esbuild src/mcp.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/mcp.mjs && cp src/snapshot.js bundled/snapshot.js",
     "check:bundle": "npm run --silent build:bundle && git diff --exit-code -- bundled/",
     "check:comments": "node scripts/check-no-comments.mjs",
     "eval": "node scripts/eval.mjs",

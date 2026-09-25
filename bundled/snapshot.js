@@ -1,5 +1,6 @@
 (() => {
   if (!document.body) return null;
+
   const cache = window.__jevFast ||= {ids:new WeakMap(), nodes:new Map(), next:1};
 
   const wake = cache.wake ||= {rev:0, listeners:new Set()};
@@ -124,6 +125,7 @@ return s?[s]:[]}).join(' ') ||
   const tabindexSel='[tabindex]:not([tabindex^="-"])';
 
   const HANDLER_PROPS=['onclick','oncontextmenu','onmousedown','onkeydown','onkeypress','onmouseover'];
+
   const DROP_PROPS=['ondrop','ondragover','ondragenter'];
 
   const hasHandlerProp=e=>{
@@ -145,6 +147,7 @@ return s?[s]:[]}).join(' ') ||
   };
 
   const CLICK_EVENTS=['click','dblclick','mousedown','mouseup','contextmenu'];
+
   const HOVER_EVENTS=['mouseover','mouseenter'];
 
   const listenedClick=e=>{
@@ -204,6 +207,7 @@ return s?[s]:[]}).join(' ') ||
   cache.pageKey=()=>[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
     [...document.querySelectorAll('input,textarea,select')]
       .flatMap(e=>safe(e)?[[e.tagName,e.type||null,name(e),e.value,e.checked,e.selectedIndex,e.disabled,e.readOnly]]:[])];
+
   cache.guard=e=>{
     if (!e?.isConnected || !visible(e)) return null;
     const r=e.getBoundingClientRect();
@@ -610,7 +614,9 @@ return s?[s]:[]}).join(' ') ||
     }
   }
 
-  const words=[]; let node,length=0;
+  const words=[];
+
+let node,length=0;
 
   const walkText=(doc)=>{
     const w=doc.defaultView, vw=w?w.innerWidth:innerWidth, vh=w?w.innerHeight:innerHeight;
@@ -654,6 +660,7 @@ return s?[s]:[]}).join(' ') ||
   let text=words.join('\n');
 
   if (text.length>6000) text=text.slice(0,4500)+'\n[… '+(text.length-6000)+' chars omitted …]\n'+text.slice(-1500);
+
   const height=document.documentElement.scrollHeight, page_key=cache.pageKey();
 
   const challenge=actions.length<=10 && (
@@ -668,6 +675,7 @@ return s?[s]:[]}).join(' ') ||
     document.title,text,semantics,page_key[6]];
 
   const omitted_actions=Math.max(0,actions.length-MAX_ACTIONS);
+
   actions.splice(MAX_ACTIONS);
 
   if (omitted_actions>0)
@@ -680,6 +688,7 @@ return s?[s]:[]}).join(' ') ||
   for (const a of actions) if (!(a.node in guards)) guards[a.node]=cache.guard(cache.nodes.get(a.node));
 
   let focused;
+
   const ae=document.activeElement;
 
   if (ae && ae!==document.body && ae!==document.documentElement) {
@@ -690,13 +699,17 @@ return s?[s]:[]}).join(' ') ||
   if (scrollY+innerHeight<height-2) actions.push({id:'scroll_down',kind:'scroll',label:'Scroll down',delta:560});
 
   if (scrollY>0) actions.push({id:'scroll_up',kind:'scroll',label:'Scroll up',delta:-560});
+
   actions.push({id:'wait',kind:'wait',label:'Wait for the page to update'});
 
   if (history.length>1) actions.push({id:'go_back',kind:'back',label:'Go back to the previous page'});
+
   actions.push({id:'go_forward',kind:'forward',label:'Go forward in history'});
 
   const editing=ae && (ae.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(ae.tagName));
+
   const scrollable=height>innerHeight+2;
+
   const keys=new Set(['tab','escape']);
 
   if (focused) for (const k of ['enter','space','arrowup','arrowdown','arrowleft','arrowright']) keys.add(k);
