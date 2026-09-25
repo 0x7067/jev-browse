@@ -1,0 +1,51 @@
+src/agent/consults.ts
+  s_74bd654a01f4a3::t_519448446040b3 1-99
+src/agent/followup.ts
+  s_d9393bfb2a1e8c::t_d2cef13fb38c57 1-58
+src/agent/fuses.ts
+  s_d9393bfb2a1e8c::t_ac43354a92b5d1 1-57
+src/agent/observe.ts
+  s_74bd654a01f4a3::t_e4f3e86443527a 1-50
+src/cdp/fresh.ts
+  s_74bd654a01f4a3::t_f01dd5d26d773d 1-60
+src/cdp/input.ts
+  s_d9393bfb2a1e8c::t_76635bf862ac1f 1-436
+src/cdp/launch.ts
+  s_6bd45e19d8925c::t_9128dc07b7e76f 1-151
+src/model/text.ts
+  s_d9393bfb2a1e8c::t_20a1c3cc6e8cf6 166-180
+src/types.ts
+  s_d9393bfb2a1e8c::t_7b7204ed5adcd0 98-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5dab87d979ff09d65c8b611a33020fed4254984d",
+  "prompts": {},
+  "sessions": {
+    "s_6bd45e19d8925c": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0d966-55a3-7798-91e5-79e4596d48ee",
+        "model": "glm-5.3"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    },
+    "s_74bd654a01f4a3": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0d962-8505-756b-ac8e-1509951c65b2",
+        "model": "qwen3.8-flash"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    },
+    "s_d9393bfb2a1e8c": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0d91c-a973-77d0-9a5a-dc48853f5883",
+        "model": "qwen3.8-flash"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
