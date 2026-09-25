@@ -57,6 +57,10 @@
   const name = (e,seen=new Set()) => {
     if (!e || seen.has(e)) return '';
     seen.add(e);
+
+    const computedName=e.computedName?.();
+
+    if (computedName) return computedName;
     const doc=e.ownerDocument||document;
 
     const referenced=(e.getAttribute('aria-labelledby')||'').split(/\s+/)
@@ -82,9 +86,37 @@ return s?[s]:[]}).join(' ') ||
   const CONTAINER_ROLES=['listbox','menu','menubar','tablist','tree','treegrid',
     'radiogroup','grid','table','rowgroup'];
 
+  const LANDMARK_TAGS={NAV:'navigation',MAIN:'main',HEADER:'banner',FOOTER:'contentinfo',ASIDE:'complementary'};
+
+  const LANDMARK_ROLES=['navigation','main','banner','contentinfo','complementary','search','form','region'];
+
+  const landmarkOf=e=>{
+    for (let a=e.parentElement;a;a=a.parentElement) {
+      const computed=a.computedRole?.();
+
+      if (computed && LANDMARK_ROLES.includes(computed))
+        return ((a.computedName?.()||'')||computed).replace(/\s+/g,' ').slice(0,40);
+
+      const explicit=a.getAttribute('role');
+
+      if (explicit && LANDMARK_ROLES.includes(explicit))
+        return (a.getAttribute('aria-label')||explicit).replace(/\s+/g,' ').slice(0,40);
+
+      if ((a.tagName==='SECTION'||a.tagName==='FORM') && a.getAttribute('aria-label'))
+        return a.getAttribute('aria-label').replace(/\s+/g,' ').slice(0,40);
+
+      const implicit=LANDMARK_TAGS[a.tagName];
+
+      if (implicit) return (a.getAttribute('aria-label')||implicit).replace(/\s+/g,' ').slice(0,40);
+    }
+
+    return '';
+  };
+
   const hoverSel='[aria-haspopup],[onmouseover],[oncontextmenu]';
 
-  const dragHandleSel='.ui-sortable-handle,[aria-grabbed],[class*="drag-handle"],[class*="sortable-handle"],[draggable="true"]';
+  const dragHandleSel='[draggable="true"],[aria-grabbed],[aria-roledescription],'+
+    '[class*="drag-handle"],[class*="sortable-handle"],.ui-sortable-handle';
 
   const selector='a[href],button,input,textarea,select,summary,[contenteditable="true"],'+
     '[draggable="true"],[onclick],[ondrop],[ondragover],[ondragenter],'+dragHandleSel+','+roles.map(role=>'[role="'+role+'"]').join(',')+','+hoverSel;
@@ -128,6 +160,10 @@ return s?[s]:[]}).join(' ') ||
   };
 
   const role = e => {
+    const computed=e.computedRole?.();
+
+    if (computed && roles.includes(computed)) return computed;
+
     const explicit=e.getAttribute('role');
 
     if (roles.includes(explicit)) return explicit;
@@ -210,7 +246,8 @@ return s?[s]:[]}).join(' ') ||
     for (const e of root.querySelectorAll('*')) {
       if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
 
-      if (e.tagName==='DIALOG' && e.open && e.matches(':modal')) {
+      if ((e.tagName==='DIALOG' && e.open && e.matches(':modal')) ||
+          (e.matches('[role="dialog"],[role="alertdialog"]') && e.ariaModal==='true')) {
         const doc=e.ownerDocument;
         modalsByDoc.set(doc,[...(modalsByDoc.get(doc)??[]),e]);
       }
@@ -282,7 +319,7 @@ return s?[s]:[]}).join(' ') ||
 
       if (fx+r.x>=innerWidth || fy+r.y>=innerHeight ||
           fx+r.x+r.width<=0 || fy+r.y+r.height<=0) {
-        if (fy+r.y>=innerHeight && belowFold.length<64 &&
+        if (fy+r.y>=innerHeight && belowFold.length<300 &&
             (rname==='link' || rname==='button'))
           belowFold.push({e,root,r,rname,fx,fy});
 
@@ -329,6 +366,24 @@ return s?[s]:[]}).join(' ') ||
 
         if (value!==null) base[key]=value;
       }
+
+      if (e.ariaCurrent) base.current=e.ariaCurrent;
+
+      if (e.required===true || e.ariaRequired==='true') base.required=true;
+
+      const rel=e.getAttribute('rel');
+
+      if (rel) base.rel=rel;
+
+      if (rname==='link') {
+        const href=e.getAttribute('href');
+
+        if (href && href!=='#' && !href.startsWith('javascript:')) base.href=href.slice(0,120);
+      }
+
+      const landmark=landmarkOf(e);
+
+      if (landmark) base.landmark=landmark;
 
       if (['checkbox','radio'].includes(e.type)) base.checked=String(e.checked);
 
@@ -394,24 +449,7 @@ return s?[s]:[]}).join(' ') ||
 
   gather(document,0,0,0);
 
-  {
-    const NAV_WORD=/^\s*(next|next page|more|older|newer|previous|prev|prev page|back|load more|show more|see more|view more|»|›|→|←|«|‹|\d+|[<>‹›«»]\s*\d+|\d+\s*[<>‹›«»]?)\s*$/i;
-
-    const navScore=(e)=>{
-      const rel=e.getAttribute('rel');
-
-      if (rel==='next' || rel==='prev') return 0;
-
-      if (NAV_WORD.test(name(e).trim())) return 1;
-
-      if (e.closest('[rel~="next"],[rel~="prev"],[class*="paginat"],nav')) return 2;
-
-      return 3;
-    };
-
-    belowFold.sort((a,b)=>navScore(a.e)-navScore(b.e));
-
-    for (const {e,root,r,rname,fx,fy} of belowFold.slice(0,16)) {
+    for (const {e,root,r,rname,fx,fy} of belowFold.slice(0,120)) {
       const accessibleName=name(e);
       const frame=(fx||fy)?{x:fx,y:fy}:undefined;
 
@@ -420,13 +458,21 @@ return s?[s]:[]}).join(' ') ||
 
       cache.sig.set(base.node,[root,rname,accessibleName]);
 
+      const rel=e.getAttribute('rel');
+
+      if (rel) base.rel=rel;
+
+      const href=e.getAttribute('href');
+
+      if (rname==='link' && href && href!=='#' && !href.startsWith('javascript:'))
+        base.href=href.slice(0,120);
+
       if (frame) base.frame=frame;
 
       if (e.getRootNode() instanceof ShadowRoot) base.shadow=true;
 
       actions.push({...base,kind:'click'});
     }
-  }
 
   for (const [e,off] of panes) {
     const r=e.getBoundingClientRect();
@@ -550,11 +596,14 @@ return s?[s]:[]}).join(' ') ||
       const e=cache.nodes.get(a.node);
 
       if (!e) continue;
-      const scope=e.closest('li,article,tr,dd,[role="listitem"],[role="row"],[class*="card"],[class*="item"],[class*="product"]');
+
+      const scope=e.closest('li,article,tr,dd,figure,details,section[aria-label],'+
+        '[role="listitem"],[role="row"],[role="article"],[role="group"],[role="figure"]');
 
       if (!scope) continue;
 
-      const ctx=scope.querySelector('h1,h2,h3,h4,h5,h6,label,td:first-child,th:first-child,[class*="name"],[class*="title"],[class*="header"],strong,b')
+      const ctx=scope.querySelector('h1,h2,h3,h4,h5,h6,[role="heading"],label,caption,legend,dt,'+
+        'td:first-child,th:first-child,strong,b')
         ?.textContent?.trim().replace(/\s+/g,' ');
 
       if (ctx && ctx.length<=80 && !a.label.includes(ctx)) a.label=a.label+' — '+ctx;
@@ -668,6 +717,34 @@ return s?[s]:[]}).join(' ') ||
   if (challenge) state.challenge=true;
 
   if (delegatedContextmenu) state.delegatedContextmenu=true;
+
+  {
+    const pageLinks=[...document.querySelectorAll('link[rel]')]
+      .flatMap(l=>{
+        const rel=(l.getAttribute('rel')||'').trim().toLowerCase(), href=(l.getAttribute('href')||'').trim();
+
+        return rel && href ? [[rel,href.slice(0,120)]] : [];
+      });
+
+    if (pageLinks.length) state.page_links=pageLinks.slice(0,8);
+
+    const LIVE_ROLES=['status','alert','log','marquee','timer'];
+
+    const live=[...document.querySelectorAll('[aria-live],output,[role]')]
+      .flatMap(e=>{
+        const role=(e.getAttribute('role')||'').toLowerCase()||
+          (e.tagName==='OUTPUT' ? 'status' : '');
+
+        if (!e.ariaLive && !LIVE_ROLES.includes(role)) return [];
+
+        if (!visible(e)) return [];
+
+        return [[(e.ariaLive||role).slice(0,12),
+          (e.textContent||'').trim().replace(/\s+/g,' ').slice(0,80)]];
+      });
+
+    if (live.length) state.live_regions=live.slice(0,8);
+  }
 
   return state;
 })()

@@ -10,6 +10,9 @@ WAIT only when the needed control is absent/disabled, or submitted results are s
 A page reporting pending_requests or pending_nav is still loading — WAIT lets it finish.
 If Search/Submit is visible and the required fields are ready, CLICK it immediately.
 Recent WAIT actions are not evidence of loading. Prefer a useful visible control over WAIT.
+For a goal that asks only for loading or external resources to finish (no named visible
+content): once you have WAITed and the page no longer reports pending_requests or
+pending_nav, the loading has finished — claim DONE even though nothing visible changed.
 PRESS_* sends a real key to whatever element currently holds focus — with nothing focused,
 the key is lost and the action changes nothing. Enter submits fields and command palettes,
 Escape closes dialogs, arrows move in pickers and sliders. Before using arrows on a slider,
@@ -36,6 +39,13 @@ FOCUS_TAB_* switches which open browser tab you are acting on — page.tabs list
 switching tabs is not navigation, GO_BACK only moves history inside the current tab.
 To reach a specific page number via 'next'/pagination links, click the same control again —
 each click advances one page; the URL or a page indicator shows where you landed.
+Until the indicator matches the requested page, only pagination controls advance toward a
+page-number target — category, title, or item links leave the catalog. On the target page,
+read the requested value from the listing itself; opening an item page never answers a
+listing question.
+When the goal names a specific control to use (for example "click its Close control"),
+act on that control — a generic shortcut such as Escape or clicking the backdrop does not
+satisfy it.
 DONE requires visible evidence that ALL requirements are satisfied on the CURRENT page, not
 on a page you intend to reach. A link or tab named after the destination is not the
 destination — if asked to open a result or section, a matching link is not enough; click it
