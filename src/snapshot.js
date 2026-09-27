@@ -251,7 +251,7 @@ return s?[s]:[]}).join(' ') ||
       if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
 
       if ((e.tagName==='DIALOG' && e.open && e.matches(':modal')) ||
-          (e.matches('[role="dialog"],[role="alertdialog"]') && e.ariaModal==='true')) {
+          (e.matches('[role="dialog"],[role="alertdialog"]') && e.ariaModal==='true' && e.checkVisibility())) {
         const doc=e.ownerDocument;
         modalsByDoc.set(doc,[...(modalsByDoc.get(doc)??[]),e]);
       }
