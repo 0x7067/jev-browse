@@ -1,0 +1,38 @@
+src/agent/consults.ts
+  s_fbf57df9ba19e5::t_6224df242b7416 40,43
+src/json.ts
+  s_fbf57df9ba19e5::t_6224df242b7416 46
+src/snapshot/40-text.js
+  s_fbf57df9ba19e5::t_6224df242b7416 58-59,61,118
+  s_fbf57df9ba19e5::t_cbc9facebff0e4 119
+src/types.ts
+  s_fbf57df9ba19e5::t_6224df242b7416 69
+bundled/snapshot.js
+  s_fbf57df9ba19e5::t_fcadde5ba17825 674-675,677,734
+  s_fbf57df9ba19e5::t_1f4f5054bf8624 735
+bundled/cli.mjs
+  s_fbf57df9ba19e5::t_fcadde5ba17825 71,73,134
+src/snapshot.js
+  s_fbf57df9ba19e5::t_fcadde5ba17825 674-675,677,734
+  s_fbf57df9ba19e5::t_83f51f6134259e 735
+docs/standards.md
+  s_fbf57df9ba19e5::t_f6446038e35fc6 34-40
+bundled/mcp.mjs
+  s_fbf57df9ba19e5::t_fcadde5ba17825 77,79,140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "96214f27d34db0743f77d8fa7a1ace1c7a462f4a",
+  "prompts": {},
+  "sessions": {
+    "s_fbf57df9ba19e5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4b8757ef-fa6c-402c-9b67-1982f1cde69d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
