@@ -26,17 +26,12 @@ node scripts/eval.mjs --repeat 3            # median-of-N per task
 node scripts/eval.mjs --tasks fx-range,tin-hovers
 node scripts/eval.mjs --label baseline      # tags the results file
 node scripts/eval.mjs --file tasks-hard.json
-node scripts/eval.mjs --file tasks-quarantined.json
 node scripts/eval.mjs --engine agent-browser  # cdp (default) or agent-browser
 node scripts/eval.mjs --compare a.json b.json
 ```
 
 Failed verifications exit non-zero — suitable as an evidence gate in CI or
 before merging behavioral changes.
-
-`tasks-quarantined.json` holds tasks whose public site is currently incapable
-of satisfying its goal. It is excluded from `npm run eval:all`; run it directly
-when checking whether the external condition has recovered.
 
 Results land in `evals/results/` with per-step latency breakdowns
 (`latency_ms` per Jev call, `text_latency_ms` per helper call) and the stderr
