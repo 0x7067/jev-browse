@@ -9,16 +9,31 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createServer } from "node:net";
+import { createInterface } from "node:readline";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cliEntryPath } from "./lib/cli-entry.mjs";
 import { expandDates } from "./lib/dates.mjs";
 import { loadEnvFile } from "./lib/env.mjs";
+import {
+  CANVAS_H,
+  CANVAS_W,
+  HEADER_H,
+  PAD,
+  PAGE_H,
+  PAGE_W,
+  captionStates,
+  renderCaptions,
+} from "./lib/captions.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const FINAL_HOLD_S = 2.5;
+
+const PREROLL_S = 1;
 
 function parseArgs(argv) {
   const args = { goals: [], out: join(ROOT, "docs"), name: "demo", maxSteps: 60 };
@@ -86,7 +101,7 @@ async function waitHttp(url, timeoutMs = 15000) {
   }
 }
 
-async function screencast(wsUrl, onFrame) {
+async function cdpSession(wsUrl, onEvent = () => {}) {
   const ws = new WebSocket(wsUrl);
   await new Promise((res, rej) => {
     ws.addEventListener("open", res, { once: true });
@@ -103,7 +118,6 @@ async function screencast(wsUrl, onFrame) {
       ws.send(JSON.stringify({ id: msgId, method, params }));
     });
 
-  let stopped = false;
   ws.addEventListener("close", () => {
     for (const p of pending.values()) p.reject(new Error("CDP connection closed"));
     pending.clear();
@@ -111,34 +125,42 @@ async function screencast(wsUrl, onFrame) {
   ws.addEventListener("message", async (event) => {
     const msg = JSON.parse(String(event.data));
 
-    if (msg.id !== undefined) {
-      const p = pending.get(msg.id);
-
-      if (p) {
-        pending.delete(msg.id);
-
-        if (msg.error) p.reject(new Error(msg.error.message));
-        else p.resolve(msg.result ?? {});
-      }
+    if (msg.id === undefined) {
+      await onEvent(msg, send);
 
       return;
     }
 
-    if (msg.method === "Page.screencastFrame") {
-      const { data, metadata, sessionId } = msg.params;
-      await onFrame(data, metadata);
-      send("Page.screencastFrameAck", { sessionId }).catch(() => {});
-    }
+    const p = pending.get(msg.id);
+
+    if (!p) return;
+    pending.delete(msg.id);
+
+    if (msg.error) p.reject(new Error(msg.error.message));
+    else p.resolve(msg.result ?? {});
+  });
+
+  return { send, close: () => ws.close() };
+}
+
+async function screencast(wsUrl, onFrame) {
+  const { send, close } = await cdpSession(wsUrl, async (msg, reply) => {
+    if (msg.method !== "Page.screencastFrame") return;
+    const { data, metadata, sessionId } = msg.params;
+    await onFrame(data, metadata);
+    reply("Page.screencastFrameAck", { sessionId }).catch(() => {});
   });
 
   await send("Page.enable");
   await send("Page.startScreencast", {
     format: "jpeg",
-    quality: 85,
-    maxWidth: 1120,
-    maxHeight: 780,
+    quality: 94,
+    maxWidth: PAGE_W,
+    maxHeight: PAGE_H,
     everyNthFrame: 1,
   });
+
+  let stopped = false;
 
   return {
     async stop() {
@@ -148,9 +170,23 @@ async function screencast(wsUrl, onFrame) {
         send("Page.stopScreencast").catch(() => {}),
         sleep(2000),
       ]);
-      ws.close();
+      close();
     },
   };
+}
+
+async function captionTrack(port, states, goal, dir) {
+  const res = await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT" });
+  const target = await res.json();
+  const { send, close } = await cdpSession(target.webSocketDebuggerUrl);
+
+  try {
+    await send("Page.enable");
+
+    return await renderCaptions(send, states, goal, dir);
+  } finally {
+    close();
+  }
 }
 
 async function main() {
@@ -173,7 +209,7 @@ async function main() {
       "--no-first-run",
       "--no-default-browser-check",
       "--headless=new",
-      "--window-size=1120,900",
+      `--window-size=${PAGE_W},${PAGE_H + 120}`,
       "--hide-crash-restore-bubble",
       "about:blank",
     ],
@@ -210,16 +246,19 @@ async function main() {
       { cwd: ROOT, env },
     );
 
-    const eventsStream = (await import("node:fs")).createWriteStream(join(work, "events.jsonl"));
     let stdout = "";
+    const events = [];
     cli.stdout.on("data", (d) => (stdout += d));
-    cli.stderr.pipe(eventsStream);
     cli.stderr.pipe(process.stderr);
+    createInterface({ input: cli.stderr }).on("line", (line) => {
+      try { events.push({ ...JSON.parse(line), wall: Date.now() / 1000 }); } catch {}
+    });
 
     const cliDone = new Promise((res) => cli.on("exit", res));
 
     let cast = null;
     let t0 = null;
+    let clockSkew = null;
     let frameIndex = 0;
     const stamps = [];
     const deadline = Date.now() + 30000;
@@ -232,7 +271,11 @@ async function main() {
         cast = await screencast(target.webSocketDebuggerUrl, async (data, metadata) => {
           const ts = metadata?.timestamp ?? Date.now() / 1000;
 
-          if (t0 === null) t0 = ts;
+          if (t0 === null) {
+            t0 = ts;
+            clockSkew = Date.now() / 1000 - ts;
+          }
+
           stamps.push(ts);
           writeFileSync(join(framesDir, "stamps.json"), JSON.stringify(stamps));
           writeFileSync(
@@ -251,7 +294,6 @@ async function main() {
     const exitCode = await cliDone;
     await sleep(700);
     await cast.stop();
-    chrome.kill("SIGKILL");
 
     let result = null;
 
@@ -260,10 +302,29 @@ async function main() {
     if (!frameIndex) throw new Error("Screencast captured zero frames");
 
     const rel = stamps.map((t) => Math.max(0, t - t0));
+    const durationS = rel[rel.length - 1] + FINAL_HOLD_S;
+    const firstStep = events.find((e) => e.type === "step");
+
+    const leadS = firstStep
+      ? Math.max(0, firstStep.wall - t0 - firstStep.elapsed_ms / 1000 - PREROLL_S)
+      : 0;
+
+    const states = captionStates({
+      events,
+      history: result?.history ?? [],
+      t0,
+      endAt: durationS,
+      status: result?.status ?? "error",
+      elapsedMs: result?.elapsed_ms ?? 0,
+      actions: result?.steps ?? 0,
+    });
+
+    const captions = await captionTrack(port, states, args.goals.join(" "), work);
+    chrome.kill("SIGKILL");
 
     const concat = rel
       .map((t, i) => {
-        const next = i + 1 < rel.length ? rel[i + 1] : t + 0.8;
+        const next = i + 1 < rel.length ? rel[i + 1] : t + FINAL_HOLD_S;
         const dur = Math.max(0.016, next - t);
 
         return `file frames/f_${String(i + 1).padStart(6, "0")}.jpg\nduration ${dur.toFixed(3)}`;
@@ -286,21 +347,27 @@ async function main() {
 
     await ffmpeg([
       "-y", "-f", "concat", "-safe", "0", "-i", concatPath,
-      "-vf", "scale=1120:-2", "-pix_fmt", "yuv420p",
+      "-f", "concat", "-safe", "0", "-i", captions,
+      "-filter_complex",
+      `[0:v]fps=30,scale=${PAGE_W}:${PAGE_H},pad=${CANVAS_W}:${CANVAS_H}:${PAD}:${HEADER_H}:color=0x0e1015,tpad=stop_mode=clone:stop_duration=${FINAL_HOLD_S}[bg];[1:v]fps=30[c];[bg][c]overlay=0:0:format=auto,trim=start=${leadS.toFixed(3)}:end=${durationS.toFixed(3)},setpts=PTS-STARTPTS,format=yuv420p[v]`,
+      "-map", "[v]",
+      "-c:v", "libx264", "-crf", "18", "-preset", "slow",
       "-movflags", "+faststart", mp4,
     ]);
     await ffmpeg([
       "-y", "-i", mp4,
-      "-vf", "fps=15,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
+      "-vf", "fps=15,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=256:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle",
       gif,
     ]);
 
-    const durationS = rel.length ? rel[rel.length - 1] + 0.8 : 0;
     console.log(JSON.stringify({
       ok: true,
       exitCode,
       frames: frameIndex,
-      video_seconds: Number(durationS.toFixed(2)),
+      clock_skew_s: Number(clockSkew.toFixed(3)),
+      captions: states.map(({ at, kind, operation, label, text }) => ({ at: Number(at.toFixed(2)), kind, operation, label, text })),
+      video_seconds: Number((durationS - leadS).toFixed(2)),
+      trimmed_lead_s: Number(leadS.toFixed(2)),
       goals: args.goals,
       mp4,
       gif,

@@ -2,23 +2,22 @@
 
 # jev-browse
 
-**A browser agent with a dynamic, indexed action space, written in TypeScript.**
+jev-browse is a TypeScript browser agent. You give it one goal and a start URL.
+On every step, [TypeSafe's Jev](https://docs.typesafe.ai) picks an operation
+and an element from a numbered list of what's on the page. A small LLM only
+comes in when the operation is `TYPE_TEXT`, to write the text. It ships with
+two browser engines and installs on Pi, Claude Code, Codex, and any MCP client.
 
-Give it one goal. [TypeSafe's Jev](https://docs.typesafe.ai) picks an operation
-and an element. A small LLM writes text only when the operation is
-`TYPE_TEXT`. Two interchangeable browser engines ship with it, and it installs
-on Pi, Claude Code, Codex, and any MCP-capable harness.
+Here it searches Google Flights for one-way flights from Zürich to London. The
+video plays at real speed. The bar at the bottom shows each action as it runs.
 
-**Zürich to London on Google Flights in 17.6 seconds.** One natural-language
-goal, generated city names, calendar clicks, and loading waits included.
+[![jev-browse searching Google Flights at 1× speed, with each action captioned](docs/demo.gif)](docs/demo.mp4)
 
-[![A real Google Flights search at 1× speed: typed cities, clicked calendar, verified results page](docs/demo.gif)](docs/demo.mp4)
+[MP4](docs/demo.mp4) · [The run loop](src/agent.ts) · [The recorder](scripts/record_demo.mjs)
 
-[Watch the MP4](docs/demo.mp4) · [Read the loop](src/agent.ts) · [Recorded with](scripts/record_demo.mjs)
+## How it picks an action
 
-## The action space
-
-Every observation produces a new element table:
+Each observation builds a fresh element table:
 
 ```
 [1] button    Change ticket type · Round trip
@@ -29,10 +28,10 @@ Every observation produces a new element table:
 ```
 
 The operations are `CLICK`, `TYPE_TEXT`, `SELECT`, `SCROLL_UP`, `SCROLL_DOWN`,
-`WAIT`, `DONE`, and `BLOCKED`, plus `HOVER`, `CONTEXT_CLICK`, `DRAG`,
+`WAIT`, `DONE`, and `BLOCKED`. There are also `HOVER`, `CONTEXT_CLICK`, `DRAG`,
 `GO_BACK`, `GO_FORWARD`, and `PRESS_*` for Enter, Tab, Escape, Backspace,
-Delete, the arrows, Home, End, PageUp/PageDown, and Space. These are real
-key events, so command palettes and Enter-to-submit forms work.
+Delete, the arrows, Home, End, PageUp, PageDown, and Space. Key presses are
+real key events, so command palettes and Enter-to-submit forms work.
 
 ```
                       one Jev request
@@ -50,24 +49,26 @@ page → element table → operation                 │
                    small LLM → text → browser
 ```
 
-The target questions are speculative. If the operation comes back `CLICK`,
-only `click_target` can execute. Two decisions, one network round trip. The
-model never emits selectors, coordinates, or code, so it can't hallucinate a
-target.
+Jev answers every target question in the same request as the operation. Only
+the target that matches the operation runs: if it says `CLICK`, the agent uses
+`click_target` and ignores the rest. That puts both decisions in one network
+round trip. The model picks a row number from the table and never writes
+selectors, coordinates, or code, so every target it can name exists on the
+page.
 
-The extractor reads through open shadow roots and same-origin iframes,
-accumulating coordinate offsets so hits land correctly, and indexes input
-types a pure role-mapping would miss: `password`, `date`, `time`, `range`,
-`file`. Date fields are typed key-by-key because `insertText` can't drive
-them. File inputs are filled through `DOM.setFileInputFiles`, never clicked.
-Tabs opened mid-run are adopted automatically, so `target=_blank` flows
-continue.
+The extractor reads through open shadow roots and same-origin iframes. It adds
+up each frame's offset so clicks land on the right pixel. It also indexes
+input types that a plain role mapping misses: `password`, `date`, `time`,
+`range`, and `file`. Date fields get typed key by key, because `insertText`
+can't fill them. File inputs are filled with `DOM.setFileInputFiles` and never
+clicked. When a click opens a new tab, the agent switches to it, so
+`target=_blank` flows keep going.
 
 ## Install
 
-You need Node ≥ 22 and Chrome. The repo root is a portable
-[Agent Plugins](https://agent-plugins.org/) package (`plugin.json`,
-`mcp.json`, `skills/`), so each harness installs it natively:
+You need Node 22 or later and Chrome. The repo root is an
+[Agent Plugins](https://agent-plugins.org/) package (`plugin.json`, `mcp.json`,
+`skills/`), so each harness installs it the usual way:
 
 | Harness | Install |
 | --- | --- |
@@ -76,11 +77,11 @@ You need Node ≥ 22 and Chrome. The repo root is a portable
 | Codex / ChatGPT | `codex plugin marketplace add 0x7067/jev-browse`, then `codex plugin install jev-browse` |
 | OpenCode | `opencode mcp add jev --global -- npx -y -p github:0x7067/jev-browse jev-browse-mcp` |
 | Any MCP client | stdio command `npx -y -p github:0x7067/jev-browse jev-browse-mcp` |
-| CLI only | `npm install -g github:0x7067/jev-browse`, or run it through `npx -y -p github:0x7067/jev-browse jev-browse` |
+| CLI only | `npm install -g github:0x7067/jev-browse`, or `npx -y -p github:0x7067/jev-browse jev-browse` |
 
-Every path above runs `bundled/`, a committed esbuild bundle with the SDK
-inlined. No `npm install`, no build step, no `node_modules` at the install
-site.
+Every install above runs `bundled/`, a committed esbuild bundle with the SDK
+inlined. There's no `npm install`, no build step, and no `node_modules` on the
+installing machine.
 
 ### Configure
 
@@ -95,81 +96,89 @@ TEXT_MODEL=...              # e.g. inception/mercury-2.5 on OpenRouter
 JEV_AB_PROFILE=...          # optional — agent-browser engine profile dir (default ~/.jev-browse/agent-browser-profile)
 ```
 
-Keys resolve from the environment first, then `.env` in the package root,
-then the client's plugin-data directory (`PLUGIN_DATA` or
-`CLAUDE_PLUGIN_DATA`), then the current directory. See `.env.example`. The
-plugin-data path covers GUI-spawned MCP servers that don't inherit a login
-shell.
+Keys are read from the environment first. Then come `.env` in the package
+root, the client's plugin-data directory (`PLUGIN_DATA` or
+`CLAUDE_PLUGIN_DATA`), and `.env` in the current directory. The plugin-data
+path is there for MCP servers that a GUI app starts, since those don't inherit
+a login shell. `.env.example` lists every variable.
 
-## Use it
+## Run it
 
 ```bash
 jev-browse --url https://www.google.com/travel/flights?hl=en \
-  --goal "Find one-way flights from Zurich to London on December 20, 2026, \
+  --goal "Find one-way flights from Zurich to London on December 26, 2026, \
 for one adult in economy. Stop when matching flight options are visible." \
   [--engine cdp|agent-browser] [--headed] [--cdp http://localhost:9222] \
   [--max-steps 60] [--allow-file-urls]
 ```
 
 Step events stream to stderr as JSONL. Stdout carries only the final result
-JSON. Exit 0 on `done`, 2 on `blocked`, 1 on error.
+JSON. The exit code is 0 on `done`, 2 on `blocked`, and 1 on error.
 
-The harnesses call the MCP server, `node bundled/mcp.mjs` on stdio, which
-exposes `jev_browse`. `mcp.json` runs it as `${PLUGIN_ROOT}/bundled/mcp.mjs`.
-For local development without a build, use `npm run` (tsx) or rebuild
-`bundled/` with `npm run compile` (see Development).
+Harnesses talk to the MCP server instead. It runs `node bundled/mcp.mjs` on
+stdio and exposes one tool, `jev_browse`; `mcp.json` points at
+`${PLUGIN_ROOT}/bundled/mcp.mjs`. For local work, run from source with
+`npm run run`, or rebuild `bundled/` with `npm run compile` (see Development).
 
-Only `http(s)` start URLs are accepted. Page text flows to external model
-APIs, so `file://` would be an exfiltration path; tests and fixtures opt in
-with `--allow-file-urls` or `JEV_ALLOW_FILE_URLS=1`.
+Start URLs must be `http` or `https`. Page text goes to outside model APIs, so
+a `file://` start URL would leak local files. Tests and fixtures opt in with
+`--allow-file-urls` or `JEV_ALLOW_FILE_URLS=1`.
 
-## Why it moves
+## What happens on each step
 
-One request per decision cycle. The operation head and the target heads see
-the same observed state, and each decision also predicts its conventional
-continuation — the autocomplete pick after typing, Enter to submit, or "this
-completes the goal". When the post-action page matches that prediction, the
-follow-up executes without a second round trip. Nothing in the loop looks at
-screenshots; Jev consumes structured state, and the demo video comes from a
-separate CDP screencast.
+Each decision costs one Jev request. The operation and the target questions
+see the same page state. Jev also predicts the usual next move: pick the
+autocomplete suggestion after typing, press Enter to submit, or call the goal
+done. If the page after the action matches that prediction, the agent runs the
+follow-up without asking Jev again. That's the `FOLLOW_UP` caption in the demo.
+Nothing in the loop looks at screenshots. Jev reads structured page state, and
+the demo video comes from a separate CDP screencast.
 
-The page is read once per step. `snapshot.js` pulls visible controls, names,
-values, and text in a single browser call, atomically, keeping references to
-real DOM nodes. Observation prefers platform semantics over guesswork: ARIA
-IDL reflection (`ariaCurrent`, `ariaModal`, `ariaLive`, `ariaRequired`),
-`computedRole()`/`computedName()` where the browser ships them, the HTML-AAM
-implicit tag mappings, native `<dialog>` plus the ARIA dialog pattern, and
-verbatim `rel`/`href` tokens for sequential links. What remains heuristic
-exists only where no standard signal does, and each case is listed with its
-reason in [docs/standards.md](docs/standards.md).
+The agent reads the page once per step. `snapshot.js` collects visible
+controls, their names and values, and the page text in one browser call. It
+keeps references to the real DOM nodes. Where the platform provides a signal,
+the snapshot uses it:
 
-Then it checks the page hasn't moved under it. Fill, wait, scroll, and `DONE`
-get a full marker compare. Click and select get a scoped guard covering the
-document, the URL, form values, and the target's context. A select whose
-evaluation fails is fatal, not stale. These guards tolerate churn, because a
-clock, a counter, or a virtual-DOM re-render that recreates every node is not
-a changed page: claims compare document identity, URL, title,
-digit-normalized text, controls, and form state, and a swapped node is
-re-resolved once by root, role, and name.
+- ARIA IDL reflection: `ariaCurrent`, `ariaModal`, `ariaLive`, `ariaRequired`
+- `computedRole()` and `computedName()`, when the browser ships them
+- the HTML-AAM implicit role mappings for tags
+- native `<dialog>` and visible ARIA modal dialogs
+- `rel` and `href` tokens on links, copied verbatim
 
-Mutations never retry. Execution is logged before the post-action
-observation, and `TYPE_TEXT` values are cached only while the helper input is
-identical, then discarded after a successful mutation. The one exception is
-input that never landed at all: when trusted `Input.dispatch*` events deliver
-nothing — a canceled provisional navigation can kill the renderer's input
-pipeline — an executed click or hover retries once through in-page event
-synthesis before it counts as a strike.
+A heuristic is left only where no standard signal exists.
+[docs/standards.md](docs/standards.md) lists each one with its reason.
 
-Runs are bounded and serialized. At most `--max-steps` actions (default 60;
-MCP tool: `max_steps`), twice that many model calls, or three consecutive
-no-change non-wait actions ends the run in `blocked`. A pid lock at `~/.jev-browse/run.lock` fails fast instead of
-fighting over Chrome's SingletonLock.
+Before acting, the agent checks that the page hasn't changed since it looked.
+Fill, wait, scroll, and `DONE` compare the whole page marker. Click and select
+use a narrower check: the document, the URL, form values, and the area around
+the target. If a select fails to evaluate, the run stops with an error rather
+than retrying. The checks ignore noise. A ticking clock, a counter, or a
+framework re-render that swaps every node doesn't count as a new page. The
+compare covers document identity, URL, title, page text with digits
+normalized, controls, and form state. If a node was swapped out, the agent
+finds it again once by root, role, and name.
 
-Launching as root is the one place the defaults get weaker. Chrome refuses uid
-0 without `--no-sandbox`, so the flag is added for you and printed on stderr:
-renderer containment is off. Attach to a non-root Chrome through
-`--cdp`/`JEV_CDP_URL` to keep it. `JEV_CHROME_ARGS` appends operator flags,
-split shell-style — quotes group, `\` escapes.
+Actions that change the page never retry. The agent logs each action before it
+observes the result. It caches `TYPE_TEXT` values only while the text helper's
+input stays identical, and drops them after a successful change. There is one
+exception. Sometimes trusted `Input.dispatch*` events never reach the page,
+for example when a canceled navigation kills the renderer's input pipeline.
+Then a click or hover retries once through events fired inside the page before
+it counts as a strike.
+
+Runs have limits. The run ends `blocked` after `--max-steps` actions (default
+60; `max_steps` in the MCP tool), after twice that many model calls, or after
+three non-wait actions in a row that change nothing. Other fuses catch loops,
+repeated page states, and 10 seconds without progress. Each browser profile
+has one run lock under `~/.jev-browse/`. A second run on the same profile
+waits up to 30 seconds, then fails, instead of fighting over Chrome's
+SingletonLock.
+
+Running as root weakens one default. Chrome refuses to start as uid 0 without
+`--no-sandbox`, so jev-browse adds that flag and says so on stderr. Renderer
+sandboxing is then off. To keep it, attach to a Chrome running as a normal
+user with `--cdp` or `JEV_CDP_URL`. `JEV_CHROME_ARGS` adds your own Chrome
+flags, split like a shell would: quotes group words, `\` escapes.
 
 ## Engines
 
@@ -180,17 +189,17 @@ split shell-style — quotes group, `\` escapes.
 | Input | `Input.dispatchMouseEvent`/`insertText`/key events | CLI click/fill/select/hover on tagged `data-jev-node` elements |
 | Deps | Chrome only | agent-browser binary |
 
-Both implement `BrowserDriver` (`observe / fresh / act / close`) over the
-same `snapshot.js`, action space, and freshness guards. `cdp` is the default
-for two reasons: it won the head-to-head on final states, and it's the only
-engine that pierces iframes and shadow DOM. CSS selectors can't cross those
-boundaries, so the agent-browser engine filters pierced actions out of the
-table rather than offer dead targets.
+Both engines implement `BrowserDriver` (`observe / fresh / act / close`) on
+top of the same `snapshot.js`, action space, and freshness checks. `cdp` is
+the default for two reasons. It reached more correct final states when the two
+were compared, and it's the only engine that reaches into iframes and shadow
+DOM. CSS selectors can't cross those boundaries, so the agent-browser engine
+drops those actions from the table instead of offering targets it can't hit.
 
-## Small enough to read
+## Code map
 
-Every implementation file stays under 500 lines; `npm run lint` enforces the
-cap with oxlint's `max-lines`.
+Every implementation file stays under 500 lines. `npm run lint` enforces that
+with oxlint's `max-lines` rule.
 
 | File | Job |
 | --- | --- |
@@ -198,56 +207,57 @@ cap with oxlint's `max-lines`.
 | [src/agent/steps.ts](src/agent/steps.ts) | The phase machine: observe, decide, act, settle |
 | [src/agent/consults.ts](src/agent/consults.ts) | DONE confirmation, blocked probes, repair consults |
 | [src/agent/fuses.ts](src/agent/fuses.ts) | No-progress fuses: cycles, revisits, idle streaks |
-| [src/agent/followup.ts](src/agent/followup.ts) | Predicted continuations and toggle detection |
+| [src/agent/followup.ts](src/agent/followup.ts) | Predicted follow-ups and toggle detection |
 | [src/agent/observe.ts](src/agent/observe.ts) | First-observation settle and state summary |
-| [src/snapshot/](src/snapshot/) → [src/snapshot.js](src/snapshot.js) | Ordered fragments concatenated into the injected atomic snapshot |
-| [src/model/decide.ts](src/model/decide.ts) | Dynamic operation/target heads and the decision request |
-| [src/model/space.ts](src/model/space.ts) | The indexed action space |
+| [src/snapshot/](src/snapshot/) → [src/snapshot.js](src/snapshot.js) | Ordered fragments joined into the injected snapshot |
+| [src/model/decide.ts](src/model/decide.ts) | Operation and target questions, and the decision request |
+| [src/model/space.ts](src/model/space.ts) | The numbered action space |
 | [src/model/text.ts](src/model/text.ts) | Text-helper handoff for `TYPE_TEXT` |
-| [src/model/endpoints.ts](src/model/endpoints.ts) | Model-endpoint warm-up |
+| [src/model/endpoints.ts](src/model/endpoints.ts) | Model endpoint warm-up |
 | [src/questions.ts](src/questions.ts) | Model instructions |
 | [src/cdp/browser.ts](src/cdp/browser.ts) | Session shell: attach, observe, tab adoption |
-| [src/cdp/input.ts](src/cdp/input.ts) | Trusted input synthesis and DOM-event fallbacks |
-| [src/cdp/events.ts](src/cdp/events.ts) | Network, navigation, dialog, and download event state |
-| [src/cdp/fresh.ts](src/cdp/fresh.ts) | Freshness guards and settle over the shared marker contract |
-| [src/cdp/launch.ts](src/cdp/launch.ts) | Chrome spawn and ws-url resolution |
+| [src/cdp/input.ts](src/cdp/input.ts) | Trusted input and DOM-event fallbacks |
+| [src/cdp/events.ts](src/cdp/events.ts) | Network, navigation, dialog, and download events |
+| [src/cdp/fresh.ts](src/cdp/fresh.ts) | Freshness checks and settle over the shared marker contract |
+| [src/cdp/launch.ts](src/cdp/launch.ts) | Chrome spawn and WebSocket URL lookup |
 | [src/cdp/socket.ts](src/cdp/socket.ts) | Minimal CDP client over a browser WebSocket |
-| [src/cdp/chrome.ts](src/cdp/chrome.ts) | Chrome/Chromium discovery |
-| [src/abrowser.ts](src/abrowser.ts) | agent-browser engine over the same driver interface |
-| [src/cli.ts](src/cli.ts) | Headless entry point every adapter runs |
+| [src/cdp/chrome.ts](src/cdp/chrome.ts) | Chrome and Chromium discovery |
+| [src/abrowser.ts](src/abrowser.ts) | agent-browser engine behind the same driver interface |
+| [src/cli.ts](src/cli.ts) | Headless entry point that every adapter runs |
 | [src/mcp.ts](src/mcp.ts) | stdio MCP server exposing `jev_browse` |
-| [integrations/pi](integrations/pi/index.ts) | Pi extension: `jev_browse` tool + skill |
-| [bundled](bundled/) | Committed esbuild bundles; the entry points installs actually run |
-| [plugin.json](plugin.json) · [mcp.json](mcp.json) | Portable Agent Plugins manifest and MCP wiring |
+| [integrations/pi](integrations/pi/index.ts) | Pi extension: `jev_browse` tool and skill |
+| [bundled](bundled/) | Committed esbuild bundles; installs run these |
+| [plugin.json](plugin.json) · [mcp.json](mcp.json) | Agent Plugins manifest and MCP wiring |
 | [scripts/eval.mjs](scripts/eval.mjs) + [evals/](evals/) | Real-world task suite and results |
 | [scripts/record_demo.mjs](scripts/record_demo.mjs) | CDP screencast recorder behind `docs/demo.*` |
 
 ## Evidence and limits
 
-The current video is a **17,620 ms** Google Flights run. Timing starts after
-initial page observation and includes model calls, generated text, browser
-work, and loading waits. The final frame is a verified results page: one-way
-Zürich to London on Sunday, December 20, 2026, with real fares. The video
-plays at 1× from CDP frame timestamps, with a ~0.8 s final hold.
+The demo is a 14,586 ms run with 11 actions. The clock starts after
+the first page observation. It includes model calls, generated text, browser
+work, and loading waits. The run ends on a results page for one-way flights
+from Zürich to London on Saturday, December 26, 2026, with fares in CHF. The
+video plays at 1×, timed from CDP frame timestamps, and holds the last frame
+for 2.5 seconds.
 
-Verified coverage is [`fixture-interactions.html`](fixture-interactions.html)
-plus a [real-world task suite](evals/) spanning form flows, autocomplete,
-iframes and framesets, shadow roots, hover-reveal menus, native selects, date
-pickers, file upload, dynamic loading, modals, multi-tab flows, infinite
-scroll, drag-and-drop, context menus, invisible (`opacity:0`) custom controls,
-and multi-step authenticated flows like ParaBank transfers and full saucedemo
-checkouts. Range sliders work through the focus-then-arrows idiom. Suite runs
-are verified by URL, page text, or executed actions; tasks with no checkable
-expectation are reported separately. The verification details live in
-[evals/](evals/).
+Coverage comes from [`fixture-interactions.html`](fixture-interactions.html)
+and a [real-world task suite](evals/). The suite covers form flows,
+autocomplete, iframes and framesets, shadow roots, hover menus, native
+selects, date pickers, file upload, dynamic loading, modals, multi-tab flows,
+infinite scroll, drag and drop, context menus, and invisible (`opacity:0`)
+custom controls. It also runs multi-step logged-in flows, such as ParaBank
+transfers and full saucedemo checkouts. Range sliders work by focusing the
+slider and pressing arrow keys. Each suite run is checked against the final
+URL, the page text, or the actions it ran. Tasks with nothing to check are
+reported separately. [evals/](evals/) has the details.
 
-A `DONE` choice is a claim, not proof. The model can assert a goal it didn't
-reach — measured on Enter-only palettes — so verify outcomes independently.
-Cross-origin iframes and closed shadow roots stay opaque; that's the DOM, not
-us. There's no in-page address bar, so start on the right site: Google
-Flights, not google.com. And no purchase or credential guardrail exists in
-code. The instruction text asks the model to behave, and nothing enforces it.
-Scope goals accordingly.
+`DONE` is the model's claim, and the model can be wrong. It has claimed goals
+it didn't reach; we measured this on command palettes that only accept Enter.
+Check outcomes yourself. Cross-origin iframes and closed shadow roots stay
+opaque, because the DOM doesn't expose them. There's no address bar in the
+action space, so start on the right site: Google Flights, not google.com.
+Nothing in the code stops purchases or credential entry. The instructions ask
+the model to behave, and nothing enforces it, so scope goals with that in mind.
 
 ## Development
 
@@ -255,41 +265,37 @@ Scope goals accordingly.
 git clone https://github.com/0x7067/jev-browse && cd jev-browse
 npm install          # dev tooling (typescript, esbuild, oxlint)
 npm run typecheck    # tsc --noEmit
-npm run lint         # oxlint plus check:comments
-npm run compile      # tsc -> dist/ and rebuilds bundled/
+npm run lint         # oxlint, the 500-line cap, and the no-comments check
+npm run compile      # joins src/snapshot/ into src/snapshot.js, then tsc -> dist/ and bundled/
+npm run check:bundle # rebuilds bundled/ and fails if it differs from the commit
 npm run run -- --url ... --goal ...   # tsx src/cli.ts, no build step
 ```
 
-Rebuild `bundled/` with `npm run compile` before committing changes to `src/`;
-the bundles are what installed copies execute. `npm run compile` first
-concatenates the `src/snapshot/` fragments into the generated
-`src/snapshot.js`, then typechecks and bundles. `npm run check:bundle`
-rebuilds and fails if the committed bundles drifted from `src/` (safe to
-run as a pre-commit gate). `npm run lint` includes the 500-line `max-lines`
-gate and the no-comments gate.
+Run `npm run compile` before you commit a change to `src/`, and commit the
+rebuilt `bundled/` with it. Installed copies run only `bundled/`.
+`check:bundle` works as a pre-commit gate.
 
-The build script is called `compile` on purpose: npm runs install-time
-preparation for git dependencies when a script named `build` (or
-`install`/`prepare`/etc.) exists, which breaks `npx -p github:...`
-installs. Installed copies only ever run the committed `bundled/`, which
-needs no dependencies.
+The build script is named `compile`, not `build`. npm runs install-time
+preparation for git dependencies when a script called `build`, `install`,
+`prepare`, or similar exists, and that breaks `npx -p github:...` installs.
 
-The demo is recorded with:
+Record the demo with:
 
 ```bash
-node scripts/record_demo.mjs --url "https://www.google.com/travel/flights?hl=en" \
+node scripts/record_demo.mjs --url "https://www.google.com/travel/flights?hl=en&curr=CHF" \
   --goal "Find one-way flights from Zurich to London on {{DATE+90d}}, \
 for one adult in economy. Stop when matching flight options are visible."
 ```
 
-It records through the fixed-port `--cdp` attach path and renders
-`docs/demo.mp4` and `docs/demo.gif` at 1×. Live runs make paid API calls.
+The recorder starts a headless Chrome on a free port and attaches the agent to
+it with `--cdp`. It captures a screencast, then captions each step from the
+stderr events. It writes `docs/demo.mp4` and `docs/demo.gif` at 1×. Live runs
+make paid API calls.
 
-`{{DATE+Nd}}` in a goal resolves to N days after the recording date, and the
-resolved goals are echoed in the summary JSON. A literal departure date
-expires: once it is in the past, Google Flights greys it out, the task becomes
-unsatisfiable, and the run ends in a false `DONE` on the calendar instead of a
-results page. That is how the previous demo goal rotted.
+`{{DATE+Nd}}` in a goal becomes the date N days after the recording day. The
+summary JSON prints the resolved goal. Don't hard-code the date. Once it's in
+the past, Google Flights greys it out, the task can't be done, and the run
+ends in a false `DONE` on the calendar instead of on a results page.
 
 ## License
 
