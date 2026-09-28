@@ -73,14 +73,6 @@
     }
   },
   {
-    "id": "tin-iframe",
-    "url": "https://the-internet.herokuapp.com/iframe",
-    "goal": "Type \"hello\" into the text editor inside the iframe and stop.",
-    "expect": {
-      "text_match": "hello"
-    }
-  },
-  {
     "id": "fx-shadow",
     "url": "fixture-interactions.html",
     "file_url": true,

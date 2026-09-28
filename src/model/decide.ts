@@ -3,7 +3,7 @@ import type { TypeSafeClient, Questions, ChoiceCriteria } from "@typesafe-ai/sdk
 
 import { isFiniteNumber, isString } from "../json.ts";
 import { NEXT_ACTION, TARGET } from "../questions.ts";
-import type { JsonValue, ObservedAction, PageState } from "../types.ts";
+import type { HistoryEntry, JsonValue, ObservedAction, PageState } from "../types.ts";
 import { actionSpace } from "./space.ts";
 
 interface RawChoiceAnswer {
@@ -74,7 +74,7 @@ export async function choose(
   client: TypeSafeClient,
   state: PageState,
   goal: string,
-  history: any[],
+  history: HistoryEntry[],
 ): Promise<Decision> {
   const attempts = [state, shrunkState(state, 2500, 40), shrunkState(state, 1000, 20)];
   let invalidRetried = false;
@@ -104,12 +104,35 @@ async function chooseOnce(
   client: TypeSafeClient,
   state: PageState,
   goal: string,
-  history: any[],
+  history: HistoryEntry[],
 ): Promise<Decision> {
   const { elements, targets, controls, dragDestinations } = actionSpace(
     state.actions,
     state.delegatedContextmenu === true,
+    /\bhover(?:ed|ing|s)?\b/i.test(goal),
   );
+
+  let afterLastNonHover = 0;
+
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].kind === "hover") continue;
+    afterLastNonHover = i + 1;
+    break;
+  }
+
+  const hovered = new Set(
+    history.slice(afterLastNonHover).map((h) => h.action.replace(/^Hover\s+/i, "")),
+  );
+
+  for (const [index, action] of Object.entries(targets.HOVER ?? {})) {
+    if (!hovered.has(action.label.replace(/^Hover\s+/i, ""))) continue;
+    delete targets.HOVER[index];
+
+    const element = elements[Number(index) - 1];
+    element.operations = element.operations.filter((operation: string) => operation !== "HOVER");
+  }
+
+  if (targets.HOVER && Object.keys(targets.HOVER).length === 0) delete targets.HOVER;
 
   const labels = new Map([
     ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
@@ -242,13 +265,7 @@ async function chooseOnce(
       elements,
       recent_actions: history
         .slice(-10)
-        .map((h) =>
-          Object.fromEntries(
-            ["action", "kind", "text", "page_changed"].flatMap((k) =>
-              k in h ? [[k, h[k]]] : [],
-            ),
-          ),
-        ),
+        .map(({ action, kind, text, page_changed }) => ({ action, kind, text, page_changed })),
     },
     questions,
   });

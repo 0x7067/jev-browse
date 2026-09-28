@@ -39,7 +39,7 @@ export async function decideStep(a: Agent): Promise<void> {
           return;
         }
 
-        await a.confirmDone(a.page);
+        await a.confirmDone(a.page, a.history[a.history.length - 1]?.kind);
         a.phase = "done";
 
         return;
@@ -174,7 +174,7 @@ export async function actStep(a: Agent): Promise<void> {
           return;
         }
 
-        await a.confirmDone(page);
+        await a.confirmDone(page, a.history[a.history.length - 1]?.kind);
       }
 
       if (selected === "BLOCKED") a.blockedCause = "model_claim";
@@ -190,6 +190,10 @@ export async function actStep(a: Agent): Promise<void> {
 
     if (decision.operation === "CONTEXT_CLICK") {
       action = { ...action, kind: "context" };
+    }
+
+    if (decision.operation === "HOVER") {
+      action = { ...action, kind: "hover" };
     }
 
     if (decision.operation === "DRAG" && decision.target2) {

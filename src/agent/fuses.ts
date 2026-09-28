@@ -34,7 +34,12 @@ export function fusedNow(
 
   const seen = trail.filter((f) => f === current).length;
 
+  const hoverLoop =
+    last?.kind === "hover" &&
+    history.slice(-4, -1).some((h) => h.kind === "hover" && h.action === last.action);
+
   return (
+    hoverLoop ||
     (repeated.length === 3 &&
       repeated.every((h) => h.page_changed === false && h.kind !== "wait")) ||
     idleMs >= 10_000 ||

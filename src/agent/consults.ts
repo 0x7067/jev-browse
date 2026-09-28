@@ -36,7 +36,13 @@ export function prematureDone(
   return REPAIR_DONE;
 }
 
-export async function confirmDone(browser: BrowserDriver, page: PageState): Promise<void> {
+const REVEAL_KINDS = new Set(["scroll", "wait", "hover", "back", "forward"]);
+
+export async function confirmDone(
+  browser: BrowserDriver,
+  page: PageState,
+  lastKind?: string,
+): Promise<void> {
   if (page.pending_nav || page.busy || browser.pendingNav?.()) {
     const deadline = Date.now() + 2500;
 
@@ -57,9 +63,25 @@ export async function confirmDone(browser: BrowserDriver, page: PageState): Prom
     }
   }
 
-  const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
+  const revealSettle = lastKind !== undefined && REVEAL_KINDS.has(lastKind);
+  const window_ = (page.pending_requests ?? 0) > 0 || revealSettle ? 1500 : 400;
 
   await (browser.settle?.(window_) ?? sleep(window_));
+
+  if (revealSettle) {
+    const deadline = Date.now() + 8000;
+    let text = page.text;
+
+    while (Date.now() < deadline) {
+      await (browser.settle?.(500, 500) ?? sleep(500));
+
+      const latest = await browser.observe();
+
+      if (latest.text === text && !latest.pending_requests && !latest.pending_nav) break;
+
+      text = latest.text;
+    }
+  }
 
   if (!(await browser.fresh(page, undefined, "structure"))) {
     throw new StalePage("Page changed while confirming DONE. Choose again.");

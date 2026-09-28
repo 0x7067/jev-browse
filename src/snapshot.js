@@ -546,6 +546,24 @@ return s?[s]:[]}).join(' ') ||
     for (let i=actions.length-1;i>=0;i--) if (drop.has(actions[i].node)) actions.splice(i,1);
   }
 
+  {
+    const order=new Map(actions.map((a,i)=>[a,i]));
+
+    actions.sort((a,b)=>{
+      if (a.kind!=='click' || b.kind!=='click') return order.get(a)-order.get(b);
+      const ae=a.node===undefined ? null : cache.nodes.get(a.node);
+      const be=b.node===undefined ? null : cache.nodes.get(b.node);
+
+      if (ae && be && ae!==be) {
+        if (composedContains(ae,be)) return 1;
+
+        if (composedContains(be,ae)) return -1;
+      }
+
+      return order.get(a)-order.get(b);
+    });
+  }
+
   cache.node=id=>{
     const e=cache.nodes.get(id);
 
@@ -575,8 +593,15 @@ return s?[s]:[]}).join(' ') ||
   for (const [a,off] of hoverZones) {
     const ar=a.getBoundingClientRect();
 
+    const visibleName=[...a.childNodes].flatMap(n=>{
+      const text=n.nodeType===3 ? n.textContent.trim() :
+        n.nodeType===1 && visible(n) ? name(n) : '';
+
+      return text ? [text] : [];
+    }).join(' ');
+
     const base={node:identity(a),role:'group',
-      label:('Hover '+((name(a)||'element').replace(/\s+/g,' ').trim())).slice(0,240),
+      label:('Hover '+((visibleName||name(a)||'element').replace(/\s+/g,' ').trim())).slice(0,240),
       rect:{x:off.fx+ar.x,y:off.fy+ar.y,w:ar.width,h:ar.height}};
 
     if (off.fx||off.fy) base.frame={x:off.fx,y:off.fy};

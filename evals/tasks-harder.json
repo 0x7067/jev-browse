@@ -208,7 +208,8 @@
     "url": "https://demoqa.com/menu",
     "goal": "Hover through the Main Item 2 menu to reveal 'SUB SUB LIST', hover 'Sub Sub Item 1', and stop.",
     "expect": {
-      "status": "done"
+      "status": "done",
+      "action_match": "HOVER:Sub Sub Item 1"
     }
   }
 ]

@@ -160,8 +160,8 @@ export class Agent {
     return resolveFollowUp(fu, this.page.actions);
   }
 
-  async confirmDone(page: PageState): Promise<void> {
-    return confirmDone(this.browser, page);
+  async confirmDone(page: PageState, lastKind?: string): Promise<void> {
+    return confirmDone(this.browser, page, lastKind);
   }
 
   waitEntry(action: string, page: PageState): HistoryEntry {

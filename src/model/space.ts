@@ -15,7 +15,11 @@ export type ElementChoice = {
   options?: { index: string; label: string; value: JsonValue }[];
 };
 
-export function actionSpace(actions: ObservedAction[], delegatedContextmenu = false) {
+export function actionSpace(
+  actions: ObservedAction[],
+  delegatedContextmenu = false,
+  hoverAnyElement = false,
+) {
   const elements: any[] = [];
   const indices = new Map<number, string>();
   const targets: Record<string, Record<string, ObservedAction>> = {};
@@ -79,6 +83,19 @@ export function actionSpace(actions: ObservedAction[], delegatedContextmenu = fa
     }
 
     group[target] = action;
+  }
+
+  if (hoverAnyElement) {
+    const hoverTargets = (targets.HOVER ??= {});
+
+    for (const [index, action] of Object.entries(targets.CLICK ?? {})) {
+      if (index in hoverTargets) continue;
+      hoverTargets[index] = { ...action, kind: "hover", label: `Hover ${action.label}` };
+
+      const element = elements[Number(index) - 1];
+
+      if (!element.operations.includes("HOVER")) element.operations.push("HOVER");
+    }
   }
 
   for (const action of actions) {

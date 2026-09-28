@@ -22,6 +22,7 @@ const HELP = `Usage: node scripts/eval.mjs [options]
   --file tasks.json       Task file under evals/ (default: tasks.json)
   --tasks id1,id2         Run only these task ids
   --repeat N              Median-of-N runs per task (default: 1)
+  --retry N               Rerun a failed run up to N times (default: 0)
   --label NAME            Tag the results file
   --engine cdp|agent-browser  Browser engine (default: cli default)
   --compare a.json b.json Compare two result files
@@ -31,7 +32,7 @@ Results land in evals/results/. Exit code is non-zero when any run fails verific
 `;
 
 function parseArgs(argv) {
-  const args = { repeat: 1, label: null, tasks: null, compare: null, file: "tasks.json" };
+  const args = { repeat: 1, retry: 0, label: null, tasks: null, compare: null, file: "tasks.json" };
 
   for (let i = 0; i < argv.length; i++) {
     const val = () => argv[++i];
@@ -42,6 +43,7 @@ function parseArgs(argv) {
         args.help = true;
         break;
       case "--repeat": args.repeat = Number(val()); break;
+      case "--retry": args.retry = Number(val()); break;
       case "--label": args.label = val(); break;
       case "--tasks": args.tasks = val().split(","); break;
       case "--engine": args.engine = val(); break;
@@ -262,28 +264,52 @@ async function main() {
   const report = { label: args.label, started: new Date().toISOString(), tasks: {} };
   mkdirSync(RESULTS_DIR, { recursive: true });
 
+  const isInfra = (r) =>
+    (r.status === "error" && (r.steps ?? 0) === 0) || /TypeSafe API credits/.test(r.error ?? "");
+
   for (const task of tasks) {
     const runs = [];
 
     for (let i = 0; i < args.repeat; i++) {
-      const r = await runOnce(task, env, args.engine);
+      let r = await runOnce(task, env, args.engine);
+      let attempts = 1;
+
+      while (r.verified === false && attempts <= args.retry) {
+        console.log(
+          `${task.id.padEnd(24)} retry ${attempts}/${args.retry} after ${r.status} verified:NO`,
+        );
+
+        attempts++;
+        await sleep(500);
+        r = await runOnce(task, env, args.engine);
+      }
+
+      r.attempts = attempts;
+      r.retried = attempts > 1;
       runs.push(r);
       const verdict = r.verified === "unverifiable" ? "unverifiable" : r.verified ? "yes" : "NO";
       console.log(
-        `${task.id.padEnd(24)} run ${i + 1}/${args.repeat}  ${String(r.status).padEnd(8)} verified:${verdict.padEnd(12)} ${String(r.elapsed_ms).padStart(6)}ms  steps:${r.steps} decisions:${r.decisions} jev:${r.jev_ms}ms txt:${r.text_ms}ms${r.error ? `  err:${r.error.slice(0, 80)}` : ""}${r.why ? `\n${" ".repeat(26)}↳ ${r.why.clause} want:${JSON.stringify(r.why.pattern)} got:${JSON.stringify(r.why.actual.slice(0, 90))}` : ""}`,
+        `${task.id.padEnd(24)} run ${i + 1}/${args.repeat}  ${String(r.status).padEnd(8)} verified:${verdict.padEnd(12)} ${String(r.elapsed_ms).padStart(6)}ms  steps:${r.steps} decisions:${r.decisions} jev:${r.jev_ms}ms txt:${r.text_ms}ms${r.retried ? " (after retry)" : ""}${r.error ? `  err:${r.error.slice(0, 80)}` : ""}${r.why ? `\n${" ".repeat(26)}↳ ${r.why.clause} want:${JSON.stringify(r.why.pattern)} got:${JSON.stringify(r.why.actual.slice(0, 90))}` : ""}`,
       );
       await sleep(500);
     }
 
+    const passed = runs.filter((r) => r.verified === true).length;
+    const unverifiable = runs.filter((r) => r.verified === "unverifiable").length;
+    const flaky = runs.filter((r) => r.verified === true && r.retried).length;
+    const infra = runs.filter((r) => r.verified === false && isInfra(r)).length;
+
     report.tasks[task.id] = {
       runs: runs.length,
-      verified: runs.filter((r) => r.verified === true).length,
-      unverifiable: runs.filter((r) => r.verified === "unverifiable").length,
+      verified: passed,
+      unverifiable,
+      flaky,
+      infra_errors: infra,
       median_ms: median(runs.map((r) => r.elapsed_ms)),
       median_decisions: median(runs.map((r) => r.decisions)),
       median_jev_ms: median(runs.map((r) => r.jev_ms)),
       median_text_ms: median(runs.map((r) => r.text_ms)),
-      why: runs.find((r) => r.why)?.why ?? null,
+      why: runs.find((r) => r.why && !isInfra(r))?.why ?? null,
       detail: runs,
     };
   }
@@ -294,15 +320,17 @@ async function main() {
     (s, t) => ({
       verified: s.verified + t.verified,
       unverifiable: s.unverifiable + t.unverifiable,
-      failed: s.failed + t.runs - t.verified - t.unverifiable,
+      flaky: s.flaky + (t.flaky ?? 0),
+      infra_errors: s.infra_errors + (t.infra_errors ?? 0),
+      failed: s.failed + t.runs - t.verified - t.unverifiable - (t.infra_errors ?? 0),
     }),
-    { verified: 0, unverifiable: 0, failed: 0 },
+    { verified: 0, unverifiable: 0, flaky: 0, infra_errors: 0, failed: 0 },
   );
 
   const name = `${args.label ?? "run"}-${Date.now()}.json`;
   writeFileSync(join(RESULTS_DIR, name), JSON.stringify(report, null, 2));
   console.log(
-    `\nwrote evals/results/${name}  median total: ${report.median_total_ms}ms  verified:${totals.verified} unverifiable:${totals.unverifiable} failed:${totals.failed}`,
+    `\nwrote evals/results/${name}  median total: ${report.median_total_ms}ms  verified:${totals.verified} unverifiable:${totals.unverifiable} flaky:${totals.flaky} infra:${totals.infra_errors} failed:${totals.failed}`,
   );
 
   const byClause = new Map();

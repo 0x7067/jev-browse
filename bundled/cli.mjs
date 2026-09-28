@@ -34,7 +34,8 @@ function fusedNow(history, fingerprints, current) {
   }
   const trail = fingerprints.slice(-14).filter((f, i, a) => i === 0 || f !== a[i - 1]);
   const seen = trail.filter((f) => f === current).length;
-  return repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || seen >= 4 || cycling(fingerprints);
+  const hoverLoop = last?.kind === "hover" && history.slice(-4, -1).some((h) => h.kind === "hover" && h.action === last.action);
+  return hoverLoop || repeated.length === 3 && repeated.every((h) => h.page_changed === false && h.kind !== "wait") || idleMs >= 1e4 || seen >= 4 || cycling(fingerprints);
 }
 function giveUpHint(history, page) {
   const base = "Your recent actions made no progress. Try a different approach \u2014 scroll, hover, a different element \u2014 or claim BLOCKED.";
@@ -67,7 +68,8 @@ function prematureDone(history, goal, doneConsults) {
   if ((steps?.length ?? 0) < 2 && !skipped) return null;
   return REPAIR_DONE;
 }
-async function confirmDone(browser, page) {
+var REVEAL_KINDS = /* @__PURE__ */ new Set(["scroll", "wait", "hover", "back", "forward"]);
+async function confirmDone(browser, page, lastKind) {
   if (page.pending_nav || page.busy || browser.pendingNav?.()) {
     const deadline = Date.now() + 2500;
     while (Date.now() < deadline && (page.busy || browser.pendingNav?.())) {
@@ -83,8 +85,19 @@ async function confirmDone(browser, page) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }
   }
-  const window_ = (page.pending_requests ?? 0) > 0 ? 1500 : 400;
+  const revealSettle = lastKind !== void 0 && REVEAL_KINDS.has(lastKind);
+  const window_ = (page.pending_requests ?? 0) > 0 || revealSettle ? 1500 : 400;
   await (browser.settle?.(window_) ?? sleep(window_));
+  if (revealSettle) {
+    const deadline = Date.now() + 8e3;
+    let text = page.text;
+    while (Date.now() < deadline) {
+      await (browser.settle?.(500, 500) ?? sleep(500));
+      const latest = await browser.observe();
+      if (latest.text === text && !latest.pending_requests && !latest.pending_nav) break;
+      text = latest.text;
+    }
+  }
   if (!await browser.fresh(page, void 0, "structure")) {
     throw new StalePage("Page changed while confirming DONE. Choose again.");
   }
@@ -213,7 +226,7 @@ If the page does not contain the answer, return {"answer": null}. No commentary.
 var MAX_STEPS = 60;
 
 // src/model/space.ts
-function actionSpace(actions, delegatedContextmenu = false) {
+function actionSpace(actions, delegatedContextmenu = false, hoverAnyElement = false) {
   const elements = [];
   const indices = /* @__PURE__ */ new Map();
   const targets = {};
@@ -262,6 +275,15 @@ function actionSpace(actions, delegatedContextmenu = false) {
       options.push({ index: target, label: action.label, value: action.value });
     }
     group[target] = action;
+  }
+  if (hoverAnyElement) {
+    const hoverTargets = targets.HOVER ??= {};
+    for (const [index, action] of Object.entries(targets.CLICK ?? {})) {
+      if (index in hoverTargets) continue;
+      hoverTargets[index] = { ...action, kind: "hover", label: `Hover ${action.label}` };
+      const element = elements[Number(index) - 1];
+      if (!element.operations.includes("HOVER")) element.operations.push("HOVER");
+    }
   }
   for (const action of actions) {
     if (action.node === void 0) continue;
@@ -514,8 +536,25 @@ async function choose(client, state, goal, history) {
 async function chooseOnce(client, state, goal, history) {
   const { elements, targets, controls, dragDestinations } = actionSpace(
     state.actions,
-    state.delegatedContextmenu === true
+    state.delegatedContextmenu === true,
+    /\bhover(?:ed|ing|s)?\b/i.test(goal)
   );
+  let afterLastNonHover = 0;
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].kind === "hover") continue;
+    afterLastNonHover = i + 1;
+    break;
+  }
+  const hovered = new Set(
+    history.slice(afterLastNonHover).map((h) => h.action.replace(/^Hover\s+/i, ""))
+  );
+  for (const [index, action] of Object.entries(targets.HOVER ?? {})) {
+    if (!hovered.has(action.label.replace(/^Hover\s+/i, ""))) continue;
+    delete targets.HOVER[index];
+    const element = elements[Number(index) - 1];
+    element.operations = element.operations.filter((operation2) => operation2 !== "HOVER");
+  }
+  if (targets.HOVER && Object.keys(targets.HOVER).length === 0) delete targets.HOVER;
   const labels = /* @__PURE__ */ new Map([
     ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
     [
@@ -626,13 +665,7 @@ async function chooseOnce(client, state, goal, history) {
     state: {
       page,
       elements,
-      recent_actions: history.slice(-10).map(
-        (h) => Object.fromEntries(
-          ["action", "kind", "text", "page_changed"].flatMap(
-            (k) => k in h ? [[k, h[k]]] : []
-          )
-        )
-      )
+      recent_actions: history.slice(-10).map(({ action, kind, text, page_changed }) => ({ action, kind, text, page_changed }))
     },
     questions
   });
@@ -712,7 +745,7 @@ async function decideStep(a) {
         a.phase = "decide";
         return;
       }
-      await a.confirmDone(a.page);
+      await a.confirmDone(a.page, a.history[a.history.length - 1]?.kind);
       a.phase = "done";
       return;
     }
@@ -816,7 +849,7 @@ async function actStep(a) {
         a.phase = "decide";
         return;
       }
-      await a.confirmDone(page);
+      await a.confirmDone(page, a.history[a.history.length - 1]?.kind);
     }
     if (selected === "BLOCKED") a.blockedCause = "model_claim";
     a.phase = selected === "DONE" ? "done" : "blocked";
@@ -826,6 +859,9 @@ async function actStep(a) {
   if (!action) throw new Error(`Decision selected unknown action ${selected}`);
   if (decision.operation === "CONTEXT_CLICK") {
     action = { ...action, kind: "context" };
+  }
+  if (decision.operation === "HOVER") {
+    action = { ...action, kind: "hover" };
   }
   if (decision.operation === "DRAG" && decision.target2) {
     const dest = page.actions.find((a2) => a2.id === decision.target2);
@@ -931,8 +967,8 @@ async function settleStep(a) {
   if (entry.page_changed === false && action.kind === "click" && action.node !== void 0) {
     a.domDead.set(action.node, (a.domDead.get(action.node) ?? 0) + 1);
   }
-  const REVEAL_KINDS = /* @__PURE__ */ new Set(["scroll", "wait", "hover", "back", "forward"]);
-  if (decision.follow_up && decision.follow_up !== "NONE" && !(decision.follow_up === "DONE_AFTER" && REVEAL_KINDS.has(action.kind))) {
+  const REVEAL_KINDS2 = /* @__PURE__ */ new Set(["scroll", "wait", "hover", "back", "forward"]);
+  if (decision.follow_up && decision.follow_up !== "NONE" && !(decision.follow_up === "DONE_AFTER" && REVEAL_KINDS2.has(action.kind))) {
     a.followUp = {
       type: decision.follow_up === "DONE_AFTER" ? "DONE" : decision.follow_up,
       text,
@@ -1743,8 +1779,8 @@ var Agent = class _Agent {
   resolveFollowUp(fu) {
     return resolveFollowUp(fu, this.page.actions);
   }
-  async confirmDone(page) {
-    return confirmDone(this.browser, page);
+  async confirmDone(page, lastKind) {
+    return confirmDone(this.browser, page, lastKind);
   }
   waitEntry(action, page) {
     const entry = {
