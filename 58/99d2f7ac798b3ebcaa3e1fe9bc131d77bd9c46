@@ -1,0 +1,25 @@
+bundled/cli.mjs
+  s_6cc6de7afd2887::t_76505374d42bf9 37-38,71-72,88-89,91-100,229,279-287,539-540,542-557,668,748,852,863-865,970-971,1782-1783
+bundled/mcp.mjs
+  s_6cc6de7afd2887::t_60a2e575c7eafa 43-44,77-78,94-95,97-106,235,285-293,545-546,548-563,674,754,858,869-871,976-977,1788-1789
+bundled/snapshot.js
+  s_6cc6de7afd2887::t_43ea6672b26b94 549-566,596-602,604
+src/snapshot.js
+  s_6cc6de7afd2887::t_c137b56efa40b0 549-566,596-602,604
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5899d2f7ac798b3ebcaa3e1fe9bc131d77bd9c46",
+  "prompts": {},
+  "sessions": {
+    "s_6cc6de7afd2887": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0de49-6b39-7373-86fc-b8f77f056fe2",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
