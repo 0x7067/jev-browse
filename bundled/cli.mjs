@@ -68,9 +68,9 @@ function prematureDone(history, goal, doneConsults) {
   return REPAIR_DONE;
 }
 async function confirmDone(browser, page) {
-  if (page.pending_nav || browser.pendingNav?.()) {
+  if (page.pending_nav || page.busy || browser.pendingNav?.()) {
     const deadline = Date.now() + 2500;
-    while (Date.now() < deadline && browser.pendingNav?.()) {
+    while (Date.now() < deadline && (page.busy || browser.pendingNav?.())) {
       if (!await browser.fresh(page, void 0, "structure")) {
         throw new StalePage("Navigation committed while confirming DONE. Choose again.");
       }
@@ -131,7 +131,7 @@ function structureOf(marker) {
   const strip = (a) => isJsonObject(a) ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id")) : a;
   const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
   const text = isString(marker[7]) ? marker[7].replace(new RegExp("\\p{N}+", "gu"), "#") : marker[7];
-  return [marker[0], marker[1], marker[6], controls, marker[9], text];
+  return [marker[0], marker[1], marker[6], controls, marker[9], text, marker[10]];
 }
 function markerMatches(level, current, observed) {
   const project = level === "structure" ? structureOf : (m) => m;

@@ -37,10 +37,10 @@ export function prematureDone(
 }
 
 export async function confirmDone(browser: BrowserDriver, page: PageState): Promise<void> {
-  if (page.pending_nav || browser.pendingNav?.()) {
+  if (page.pending_nav || page.busy || browser.pendingNav?.()) {
     const deadline = Date.now() + 2500;
 
-    while (Date.now() < deadline && browser.pendingNav?.()) {
+    while (Date.now() < deadline && (page.busy || browser.pendingNav?.())) {
       if (!(await browser.fresh(page, undefined, "structure"))) {
         throw new StalePage("Navigation committed while confirming DONE. Choose again.");
       }

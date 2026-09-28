@@ -66,6 +66,7 @@ export interface PageState {
   focused?: string;
   downloads?: string[];
   challenge?: boolean;
+  busy?: boolean;
   delegatedContextmenu?: boolean;
   tabs?: { title: string; url: string; current?: boolean }[];
 }

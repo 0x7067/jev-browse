@@ -31,7 +31,13 @@ signal exists; each is listed with its reason.
 - ARIA live-region roles (`status`, `alert`, `log`, `marquee`, `timer`) plus
   implicit `<output>`→`status` produce `live_regions`.
 - Modals: native `<dialog open>:modal` plus explicit `role=dialog` /
-  `role=alertdialog` with `ariaModal === 'true'` (ARIA dialog pattern).
+  `role=alertdialog` with `ariaModal === 'true'` (ARIA dialog pattern), counted
+  only while `checkVisibility()` is true. Hidden ARIA modals left in the DOM
+  (Google Flights keeps four) do not scope the action space.
+- Loading: any `[aria-busy="true"]` sets the page's `busy` flag, which is part
+  of the freshness marker. `DONE` is not accepted on a busy page until it
+  settles or 2.5 s pass. This catches client-side navigations (Turbo's
+  `fetch` + `pushState`) that never raise a CDP navigation event.
 - Accessible-name computation follows the accname/HTML-AAM order:
   `aria-labelledby` → `aria-label` → associated `<label>` → value/alt →
   content → `title` → `placeholder`.

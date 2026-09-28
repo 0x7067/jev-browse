@@ -43,7 +43,7 @@ export function structureOf(marker: JsonValue): JsonValue {
   const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
   const text = isString(marker[7]) ? marker[7].replace(/\p{N}+/gu, "#") : marker[7];
 
-  return [marker[0], marker[1], marker[6], controls, marker[9], text];
+  return [marker[0], marker[1], marker[6], controls, marker[9], text, marker[10]];
 }
 
 export function markerMatches(level: "full" | "structure", current: JsonValue, observed: JsonValue): boolean {

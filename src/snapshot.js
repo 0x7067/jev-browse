@@ -671,8 +671,10 @@ let node,length=0;
 
   const semantics=actions.map(({rect: _rect,...action})=>action);
 
+  const busy=!!document.querySelector('[aria-busy="true"]');
+
   const marker=[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
-    document.title,text,semantics,page_key[6]];
+    document.title,text,semantics,page_key[6],busy];
 
   const omitted_actions=Math.max(0,actions.length-MAX_ACTIONS);
 
@@ -728,6 +730,8 @@ let node,length=0;
     scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused};
 
   if (challenge) state.challenge=true;
+
+  if (busy) state.busy=true;
 
   if (delegatedContextmenu) state.delegatedContextmenu=true;
 
