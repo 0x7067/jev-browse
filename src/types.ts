@@ -47,6 +47,17 @@ export type ObservedAction = {
   [extra: string]: JsonValue;
 };
 
+export interface FrameState {
+  node: number;
+  title: string;
+  src: string;
+  document_url: string | null;
+  accessibility: "same_origin" | "inaccessible";
+  ready_state: string | null;
+  load_event: "observed" | "unknown";
+  app_readiness: { attribute: string; value: string; source: string } | null;
+}
+
 export interface PageState {
   url: string;
   title: string;
@@ -66,6 +77,8 @@ export interface PageState {
   focused?: string;
   downloads?: string[];
   challenge?: boolean;
+  challenge_reasons?: string[];
+  frames?: FrameState[];
   busy?: boolean;
   delegatedContextmenu?: boolean;
   tabs?: { title: string; url: string; current?: boolean }[];
@@ -87,11 +100,12 @@ export interface BrowserDriver {
   fresh(
     page: PageState,
     action?: ObservedAction,
-    level?: "full" | "page" | "structure",
+    level?: "full" | "page" | "structure" | "completion",
   ): Promise<boolean>;
   act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
   domClick(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult>;
 
+  inspectTarget?(node: number): Promise<JsonValue>;
   pendingNav?(): boolean;
   settle?(budgetMs: number, quietMs?: number): Promise<void>;
   close(): Promise<void>;
@@ -129,6 +143,8 @@ export interface RunResult {
   elapsed_ms: number;
   history: HistoryEntry[];
   final_text?: string;
+  final_frames?: FrameState[];
+  challenge_reasons?: string[];
   answer?: string;
   downloads?: string[];
   error?: string;

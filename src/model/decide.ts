@@ -1,3 +1,4 @@
+import { trace } from "../trace.ts";
 
 import type { TypeSafeClient, Questions, ChoiceCriteria } from "@typesafe-ai/sdk";
 
@@ -249,6 +250,8 @@ async function chooseOnce(
     url: state.url,
     title: state.title,
     text: state.text,
+    ...(state.frames && { frames: state.frames.map(frame => ({ ...frame })) }),
+    ...(state.challenge_reasons && { challenge_reasons: state.challenge_reasons }),
     ...(state.pending_nav === true && { pending_nav: true }),
     ...(state.pending_requests !== undefined &&
       state.pending_requests > 0 && { pending_requests: state.pending_requests }),
@@ -259,7 +262,7 @@ async function chooseOnce(
     ...(state.tabs && state.tabs.length > 1 && { tabs: state.tabs }),
   };
 
-  const result = await client.systemOne({
+  const request = {
     state: {
       page,
       elements,
@@ -268,7 +271,11 @@ async function chooseOnce(
         .map(({ action, kind, text, page_changed }) => ({ action, kind, text, page_changed })),
     },
     questions,
-  });
+  };
+
+  trace("model_request", request);
+  const result = await client.systemOne(request);
+  trace("model_response", result);
 
   const answers = result.answers as Record<string, RawChoiceAnswer>;
   const operationAnswer = answers.operation ?? {};

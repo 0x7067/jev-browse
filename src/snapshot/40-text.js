@@ -47,18 +47,31 @@ let node,length=0;
 
   const height=document.documentElement.scrollHeight, page_key=cache.pageKey();
 
-  const challenge=actions.length<=10 && (
-    /just a moment|verifying you are|verify you are (a )?human|checking your (browser|connection)|are you a (robot|human)|unusual traffic|complete the (captcha|security)|enter the characters|i'?m not a robot|attention required|cf-chl|h-captcha|g-recaptcha|please verify/i
-      .test(text+' '+document.title) ||
-    !!document.querySelector('iframe[src*="captcha"],iframe[src*="challenges.cloudflare"],.h-captcha,.g-recaptcha,#cf-please-wait,[class*="cf-chl"],[data-sitekey]')
-  ) || undefined;
+  const challenge_reasons=[];
+
+  const widgets=document.querySelectorAll('iframe[src*="captcha"],iframe[src*="challenges.cloudflare"],.h-captcha,.g-recaptcha,#cf-please-wait,[class*="cf-chl"],[data-sitekey]');
+
+  for (const e of widgets) {
+    const r=e.getBoundingClientRect();
+
+    if (visible(e) && r.width>0 && r.height>0 && r.bottom>0 && r.top<innerHeight && r.right>0 && r.left<innerWidth)
+      challenge_reasons.push('visible_widget:'+e.tagName.toLowerCase());
+  }
+
+  if (/please complete verification to continue|verifying with cloudflare/i.test(text))
+    challenge_reasons.push('verification_message');
+
+  if (actions.length<=10 && /just a moment|verifying you are|verify you are (a )?human|checking your (browser|connection)|are you a (robot|human)|unusual traffic|complete the (captcha|security)|enter the characters|i'?m not a robot|attention required|please verify/i.test(text+' '+document.title))
+    challenge_reasons.push('interstitial_text');
+
+  const challenge=challenge_reasons.length>0;
 
   const semantics=actions.map(({rect: _rect,...action})=>action);
 
   const busy=!!document.querySelector('[aria-busy="true"]');
 
   const marker=[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
-    document.title,text,semantics,page_key[6],busy];
+    document.title,text,semantics,page_key[6],busy,frames,challenge_reasons];
 
   const omitted_actions=Math.max(0,actions.length-MAX_ACTIONS);
 
@@ -111,9 +124,9 @@ let node,length=0;
     .some(e=>e && listenSet(e)?.has('contextmenu'));
 
   const state={url:location.href,title:document.title,w:innerWidth,h:innerHeight,text,
-    scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused};
+    scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused,frames};
 
-  if (challenge) state.challenge=true;
+  if (challenge) { state.challenge=true; state.challenge_reasons=[...new Set(challenge_reasons)]; }
 
   if (busy) state.busy=true;
 

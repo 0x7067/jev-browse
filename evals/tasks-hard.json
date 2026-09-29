@@ -162,5 +162,49 @@
     "expect": {
       "answer_match": "\u00a351.77"
     }
+  },
+  {
+    "id": "guide-anchor-broad",
+    "url": "https://ravnhq.github.io/claude-certified-architect/guides/en.html",
+    "goal": "Check whether this public Claude Certified Architect guide has a shareable section heading. Click a visible heading anchor or section link and stop when the URL has a section fragment and the matching section is visible, or when no such control is available. Do not submit forms.",
+    "max_steps": 10,
+    "expect": {
+      "url_match": "#.+",
+      "text_match": "Claude Certified Architect",
+      "action_match": "CLICK"
+    }
+  },
+  {
+    "id": "guide-anchor-precise",
+    "url": "https://ravnhq.github.io/claude-certified-architect/guides/en.html",
+    "goal": "Click exactly one visible # anchor beside a heading. The task is DONE immediately when the URL gains any # fragment. Stop there without clicking another link.",
+    "max_steps": 4,
+    "expect": {
+      "url_match": "#.+",
+      "action_match": "^CLICK:#[^ ]*$"
+    }
+  },
+  {
+    "id": "gallery-frame-readiness",
+    "url": "https://gallery-production-e6fd.up.railway.app/",
+    "goal": "Wait until both comparison preview frames report data-loaded=true. Do not vote, skip, or advance. Stop when both previews have that readiness signal.",
+    "max_steps": 8,
+    "expect": {
+      "frames_match": "\"attribute\":\"data-loaded\",\"value\":\"true\".*\"attribute\":\"data-loaded\",\"value\":\"true\""
+    }
+  },
+  {
+    "id": "certsafari-verification",
+    "url": "https://www.certsafari.com/anthropic/claude-certified-architect-foundations",
+    "goal": "Open Start quiz, then submit the Set up your quiz dialog using its Start quiz button with the default settings. Stop immediately if a verification challenge is visible; do not interact with verification. Do not answer any question.",
+    "max_steps": 8,
+    "expect": {
+      "status": "blocked",
+      "challenge_match": "visible_widget|verification_message|interstitial_text",
+      "action_not_match": "CLICK:(?!Start quiz)"
+    },
+    "completion": {
+      "text_match": "Question [0-9]+|Please complete verification to continue|Verifying with Cloudflare"
+    }
   }
 ]

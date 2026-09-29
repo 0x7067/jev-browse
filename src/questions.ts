@@ -28,6 +28,7 @@ SCROLL_PANE_* operations scroll inside a specific region (feed, menu list, modal
 the page-level Scroll controls only move the document.
 A goal that asks to download a file is satisfied when its filename appears in
 page.downloads — clicking the link starts it; claim DONE once the name is listed.
+A goal that says to stop at verification or not interact with verification takes priority: stop at that state without clicking challenge controls.
 A page flagged challenge is a bot/CAPTCHA wall: try its controls if it is solvable
 (a checkbox, a button), WAIT if it may resolve on its own, BLOCKED if neither works.
 When a suggestion list is open under a field you typed, pick the option row itself —
@@ -46,6 +47,9 @@ listing question.
 When the goal names a specific control to use (for example "click its Close control"),
 act on that control — a generic shortcut such as Escape or clicking the backdrop does not
 satisfy it.
+page.frames reports observed frame facts: ready_state is readable only for accessible documents;
+load_event=unknown does not mean unloaded. app_readiness is a page-provided attribute, not proof
+that the embedded app works. Use a requested readiness signal directly; do not infer inaccessible content.
 DONE requires visible evidence that ALL requirements are satisfied on the CURRENT page, not
 on a page you intend to reach. A link or tab named after the destination is not the
 destination — if asked to open a result or section, a matching link is not enough; click it

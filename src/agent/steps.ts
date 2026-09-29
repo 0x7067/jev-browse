@@ -1,3 +1,4 @@
+import { trace, tracing } from "../trace.ts";
 import type { Agent } from "../agent.ts";
 import { choose } from "../model/decide.ts";
 import { actionSpace } from "../model/space.ts";
@@ -13,6 +14,14 @@ export async function observeStep(a: Agent): Promise<void> {
   }
 
 export async function decideStep(a: Agent): Promise<void> {
+    if (a.stopAtChallenge && a.page.challenge) {
+      a.blockedCause = "verification_required";
+      a.phase = "blocked";
+      trace("challenge_stop", { reasons: a.page.challenge_reasons, page: a.page });
+
+      return;
+    }
+
     if (!a.startedAt) a.startedAt = performance.now();
 
     if (a.decisions.length >= a.maxSteps * 2) {
@@ -33,13 +42,7 @@ export async function decideStep(a: Agent): Promise<void> {
       a.followUp = null;
 
       if (fu.type === "DONE") {
-        if (a.prematureDone()) {
-          a.phase = "decide";
-
-          return;
-        }
-
-        await a.confirmDone(a.page, a.history[a.history.length - 1]?.kind);
+        if (!(await a.confirmDone(a.history[a.history.length - 1]?.kind))) return;
         a.phase = "done";
 
         return;
@@ -73,7 +76,11 @@ export async function decideStep(a: Agent): Promise<void> {
     const repair = a.repairHint ?? toggle;
     a.repairHint = null;
 
-    const goal = repair ? `${a.goal}\n\n${repair}` : a.goal;
+    const conditions = Object.keys(a.expectation).length
+      ? `Required completion evidence (all patterns must match the current observation): ${JSON.stringify(a.expectation)}. Continue toward this evidence; a setup screen is not a completed result.`
+      : "";
+
+    const goal = [a.goal, conditions, repair].filter(Boolean).join("\n\n");
 
     const dead = new Set(
       [...a.domDead].flatMap(([node, n]) => (n >= 2 ? [node] : [])),
@@ -168,13 +175,7 @@ export async function actStep(a: Agent): Promise<void> {
       }
 
       if (selected === "DONE") {
-        if (a.prematureDone()) {
-          a.phase = "decide";
-
-          return;
-        }
-
-        await a.confirmDone(page, a.history[a.history.length - 1]?.kind);
+        if (!(await a.confirmDone(a.history[a.history.length - 1]?.kind))) return;
       }
 
       if (selected === "BLOCKED") a.blockedCause = "model_claim";
@@ -246,7 +247,15 @@ export async function actStep(a: Agent): Promise<void> {
       }
     }
 
+    trace("action_attempt", { action, url: page.url, fingerprint: page.fingerprint });
+
+    if (tracing() && action.node !== undefined && a.browser.inspectTarget) {
+      const details = await a.browser.inspectTarget(action.node).catch(error => ({ error: String(error) }));
+      trace("action_target", { action, details });
+    }
+
     await a.browser.act(action, page, text);
+    trace("action_dispatched", { action });
     a.pendingText = null;
     a.earlyWaits = 0;
     a.probeConsulted = false;
@@ -319,15 +328,18 @@ export async function settleStep(a: Agent): Promise<void> {
       a.domRetried.add(action.node);
 
       try {
+        trace("fallback_attempt", { action, reason: "unchanged observation" });
         await a.browser.domClick(action, page, text);
         const retried = await a.browser.observe();
+        trace("fallback_result", { action, page: retried });
 
         if (retried.fingerprint !== page.fingerprint) {
           a.page = retried;
           entry.page_changed = true;
           entry.action = `${action.label} (dom)`;
         }
-      } catch {
+      } catch (error) {
+        trace("fallback_error", { action, error: String(error) });
       }
     }
 

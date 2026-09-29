@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -21,6 +22,7 @@ const HELP = `Usage: node scripts/eval.mjs [options]
 
   --file tasks.json       Task file under evals/ (default: tasks.json)
   --tasks id1,id2         Run only these task ids
+  --trace                 Save per-run observations, model input, targets, and CDP timing
   --repeat N              Median-of-N runs per task (default: 1)
   --retry N               Rerun a failed run up to N times (default: 0)
   --label NAME            Tag the results file
@@ -42,6 +44,7 @@ function parseArgs(argv) {
       case "-h":
         args.help = true;
         break;
+      case "--trace": args.trace = true; break;
       case "--repeat": args.repeat = Number(val()); break;
       case "--retry": args.retry = Number(val()); break;
       case "--label": args.label = val(); break;
@@ -56,7 +59,7 @@ function parseArgs(argv) {
   return args;
 }
 
-const VERIFIABLE_KEYS = ["status", "url_match", "url_not_match", "text_match", "state_match", "action_match", "answer_match", "download_match"];
+const VERIFIABLE_KEYS = ["status", "url_match", "url_not_match", "text_match", "state_match", "action_match", "answer_match", "download_match", "frames_match", "challenge_match", "action_not_match"];
 
 const isVerifiable = (task) => VERIFIABLE_KEYS.some((k) => task.expect?.[k] !== undefined);
 
@@ -95,6 +98,18 @@ function verify(task, result, opsText) {
     return fail("download_match", exp.download_match, (result.downloads ?? []).join(", "));
   }
 
+  if (exp.frames_match && !new RegExp(exp.frames_match).test(JSON.stringify(result.final_frames ?? []))) {
+    return fail("frames_match", exp.frames_match, JSON.stringify(result.final_frames ?? []));
+  }
+
+  if (exp.challenge_match && !new RegExp(exp.challenge_match).test(JSON.stringify(result.challenge_reasons ?? []))) {
+    return fail("challenge_match", exp.challenge_match, JSON.stringify(result.challenge_reasons ?? []));
+  }
+
+  if (exp.action_not_match && new RegExp(exp.action_not_match).test(opsText)) {
+    return fail("action_not_match", exp.action_not_match, opsText);
+  }
+
   return { ok: true };
 }
 
@@ -106,10 +121,11 @@ function verdictFields(task, result, ops) {
   return v.ok ? { verified: true } : { verified: false, why: { clause: v.clause, pattern: v.pattern, actual: v.actual } };
 }
 
-function runOnce(task, env, engine) {
+function runOnce(task, env, engine, traceEnabled) {
   return new Promise((resolvePromise) => {
     const url = task.file_url ? `file://${join(ROOT, task.url)}` : task.url;
     const profile = mkdtempSync(join(tmpdir(), "jev-eval-"));
+    const traceFile = traceEnabled ? join(RESULTS_DIR, `trace-${randomUUID()}.jsonl`) : undefined;
     const childEnv = { ...env, JEV_PROFILE: profile, JEV_AB_PROFILE: profile };
 
     if (task.file_url) childEnv.JEV_ALLOW_FILE_URLS = "1";
@@ -120,6 +136,9 @@ function runOnce(task, env, engine) {
         cliEntryPath(ROOT),
         "--url", url,
         "--goal", expandDates(task.goal, new Date()),
+        ...(task.completion ? ["--expect", JSON.stringify(task.completion)] : []),
+        ...(traceFile ? ["--trace", traceFile] : []),
+        ...(task.max_steps ? ["--max-steps", String(task.max_steps)] : []),
         ...(engine ? ["--engine", engine] : []),
         ...(task.file_url ? ["--allow-file-urls"] : []),
       ],
@@ -135,12 +154,18 @@ function runOnce(task, env, engine) {
     cli.on("exit", () => {
       clearTimeout(killer);
       rmSync(profile, { recursive: true, force: true });
+
+      if (traceFile) {
+        writeFileSync(traceFile + ".stdout", stdout, { mode: 0o600 });
+        writeFileSync(traceFile + ".stderr", stderr, { mode: 0o600 });
+      }
+
       let result = null;
 
       try { result = JSON.parse(stdout.trim()); } catch {}
 
       if (!result) {
-        resolvePromise({ status: "error", error: `no result (stderr tail: ${stderr.slice(-300)})`, steps: 0, decisions: 0, elapsed_ms: TASK_TIMEOUT_MS, history: [] });
+        resolvePromise({ trace_file: traceFile, status: "error", error: `no result (stderr tail: ${stderr.slice(-300)})`, steps: 0, decisions: 0, elapsed_ms: TASK_TIMEOUT_MS, history: [] });
 
         return;
       }
@@ -192,12 +217,15 @@ function runOnce(task, env, engine) {
         : null;
 
       resolvePromise({
+        trace_file: traceFile,
         status: result.status,
         ...verdictFields(task, result, ops),
         stale,
         trail,
         final_text: (result.final_text ?? "").slice(0, 1200),
         final_state: (result.final_state ?? "").slice(0, 1200),
+        final_frames: result.final_frames,
+        challenge_reasons: result.challenge_reasons,
         answer_note: result.answer_note,
         elapsed_ms: result.elapsed_ms,
         steps: result.steps,
@@ -213,6 +241,7 @@ function runOnce(task, env, engine) {
         events,
         space,
         done_consults: decisionEvents.filter((e) => e.type === "done_consult").length,
+        completion_ms: decisionEvents.reduce((total, e) => total + (e.type === "done_consult" ? e.latency_ms ?? 0 : 0), 0),
       });
     });
   });
@@ -271,7 +300,7 @@ async function main() {
     const runs = [];
 
     for (let i = 0; i < args.repeat; i++) {
-      let r = await runOnce(task, env, args.engine);
+      let r = await runOnce(task, env, args.engine, args.trace);
       let attempts = 1;
 
       while (r.verified === false && attempts <= args.retry) {
@@ -281,7 +310,7 @@ async function main() {
 
         attempts++;
         await sleep(500);
-        r = await runOnce(task, env, args.engine);
+        r = await runOnce(task, env, args.engine, args.trace);
       }
 
       r.attempts = attempts;

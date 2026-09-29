@@ -1,3 +1,6 @@
+import { stopChrome } from "./stop.ts";
+import { targetDetails } from "../target-details.ts";
+import { evaluate } from "./evaluate.ts";
 
 import { type ChildProcess } from "node:child_process";
 import { mkdtempSync } from "node:fs";
@@ -11,6 +14,7 @@ import {
   type ActResult,
   type BrowserDriver,
   type JsonObject,
+  type JsonValue,
   type ObservedAction,
   type PageState,
 } from "../types.ts";
@@ -130,7 +134,7 @@ export class CdpBrowser implements BrowserDriver {
       const deadline = Date.now() + 15000;
 
       while (Date.now() < deadline) {
-        if ((await browser.evaluate("document.readyState").catch(() => null)) === "complete") break;
+        if ((await browser.evaluate("document.readyState", false, "startup").catch(() => null)) === "complete") break;
         await sleep(20);
       }
 
@@ -166,28 +170,8 @@ export class CdpBrowser implements BrowserDriver {
     if (tree?.frameTree?.frame?.id) this.events.setMainFrame(this.session, tree.frameTree.frame.id);
   }
 
-  async evaluate<T>(expression: string, awaitPromise = false): Promise<T | undefined> {
-    const response = await this.call<{
-      exceptionDetails?: { exception?: { description?: string }; text?: string };
-      result?: { value?: T };
-    }>("Runtime.evaluate", {
-      expression,
-      returnByValue: true,
-      awaitPromise,
-    });
-
-    if (response.exceptionDetails) {
-      const description =
-        response.exceptionDetails.exception?.description ?? response.exceptionDetails.text ?? "";
-
-      if (/context.{0,20}destroy|execution context|navigat|detach/i.test(description)) {
-        throw new StalePage("Document changed during evaluation");
-      }
-
-      throw new Error(`Evaluation failed: ${description.slice(0, 300)}`);
-    }
-
-    return response.result?.value;
+  async evaluate<T>(expression: string, awaitPromise = false, purpose = "input"): Promise<T | undefined> {
+    return evaluate<T>(this, expression, awaitPromise, purpose);
   }
 
   private async adoptNewTarget(): Promise<void> {
@@ -240,6 +224,10 @@ export class CdpBrowser implements BrowserDriver {
       .map((t) => ({ targetId: t.targetId, title: t.title ?? "", url: t.url ?? "" }));
   }
 
+  async inspectTarget(node: number): Promise<JsonValue> {
+    return this.evaluate(targetDetails(node), false, "inspect_target");
+  }
+
   async observe(): Promise<PageState> {
     await this.adoptNewTarget();
 
@@ -268,14 +256,14 @@ export class CdpBrowser implements BrowserDriver {
               else requestAnimationFrame(ready);
             };
             requestAnimationFrame(ready);
-          }))(${JSON.stringify(action)})`, true);
+          }))(${JSON.stringify(action)})`, true, "after_input");
       } catch {
       }
     }
 
     for (let attempt = 0; attempt < 100; attempt++) {
       try {
-        const info = await this.evaluate<PageState | null>(READ_STATE);
+        const info = await this.evaluate<PageState | null>(READ_STATE, false, "observe");
 
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
         info.fingerprint = fingerprint(info);
@@ -328,7 +316,7 @@ export class CdpBrowser implements BrowserDriver {
   async fresh(
     page: PageState,
     action?: ObservedAction,
-    level: "full" | "page" | "structure" = "full",
+    level: "full" | "page" | "structure" | "completion" = "full",
   ): Promise<boolean> {
     return fresh(this, page, action, level);
   }
@@ -376,7 +364,7 @@ export class CdpBrowser implements BrowserDriver {
 
     if (this.proc) {
       try {
-        this.proc.kill("SIGTERM");
+        await stopChrome(this.proc);
       } catch {
       }
 

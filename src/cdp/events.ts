@@ -1,3 +1,4 @@
+import { trace } from "../trace.ts";
 import type { CdpSocket } from "./socket.ts";
 
 const LONG_LIVED_REQUESTS = new Set([
@@ -30,6 +31,8 @@ export class CdpEvents {
       socket.call("Page.handleJavaScriptDialog", { accept: true }, sessionId).catch(() => {});
     });
     socket.onEvent("Network.requestWillBeSent", (p, sessionId) => {
+      trace("network_start", { sessionId, request_id: p.requestId, url: p.request?.url, resource_type: p.type });
+
       if (sessionId && !LONG_LIVED_REQUESTS.has(String(p.type))) {
         (
           this.pending.get(sessionId) ??
@@ -38,9 +41,13 @@ export class CdpEvents {
       }
     });
     socket.onEvent("Network.loadingFinished", (p, sessionId) => {
+      trace("network_end", { sessionId, request_id: p.requestId, outcome: "finished" });
+
       if (sessionId) this.pending.get(sessionId)?.delete(p.requestId);
     });
     socket.onEvent("Network.loadingFailed", (p, sessionId) => {
+      trace("network_end", { sessionId, request_id: p.requestId, outcome: "failed", error: p.errorText, canceled: p.canceled });
+
       if (sessionId) this.pending.get(sessionId)?.delete(p.requestId);
     });
     socket.onEvent("Page.frameStartedNavigating", (p, sessionId) => {
@@ -49,6 +56,8 @@ export class CdpEvents {
       }
     });
     socket.onEvent("Page.frameNavigated", (p, sessionId) => {
+      trace("frame_navigated", { sessionId, frame_id: p.frame?.id, url: p.frame?.url });
+
       if (sessionId && p.frame?.id === this.mainFrame.get(sessionId)) {
         this.navPending.set(sessionId, Math.max(0, (this.navPending.get(sessionId) ?? 0) - 1));
       }

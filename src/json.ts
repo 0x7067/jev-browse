@@ -1,3 +1,4 @@
+import { trace } from "./trace.ts";
 import { createHash } from "node:crypto";
 
 import type { JsonObject, JsonValue, PageState } from "./types.ts";
@@ -27,27 +28,33 @@ export function fingerprint(state: PageState): string {
     text: state.text,
     actions: state.actions.map(({ rect: _rect, ...action }) => action),
     scroll: state.scroll,
+    frames: state.frames?.map(frame => ({ ...frame })),
+    challenge_reasons: state.challenge_reasons,
   };
 
   return createHash("sha256").update(JSON.stringify(canonicalize(content))).digest("hex");
 }
 
-export function structureOf(marker: JsonValue): JsonValue {
+export function structureOf(marker: JsonValue, completion = false): JsonValue {
   if (!Array.isArray(marker)) return null;
 
   const strip = (a: JsonValue) =>
     isJsonObject(a)
-      ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id"))
+      ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id" && !(completion && k === "cls")))
       : a;
 
   const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
   const text = isString(marker[7]) ? marker[7].replace(/\p{N}+/gu, "#") : marker[7];
 
-  return [marker[0], marker[1], marker[6], controls, marker[9], text, marker[10]];
+  return [marker[0], marker[1], marker[6], controls, marker[9], text, marker[10], marker[11], marker[12]];
 }
 
-export function markerMatches(level: "full" | "structure", current: JsonValue, observed: JsonValue): boolean {
-  const project = level === "structure" ? structureOf : (m: JsonValue) => m;
+export function markerMatches(level: "full" | "structure" | "completion", current: JsonValue, observed: JsonValue): boolean {
+  const project = (marker: JsonValue) => level === "full" ? marker : structureOf(marker, level === "completion");
 
-  return JSON.stringify(project(current)) === JSON.stringify(project(observed));
+  const matches = JSON.stringify(project(current)) === JSON.stringify(project(observed));
+
+  if (!matches) trace("freshness_mismatch", { level, current: project(current), observed: project(observed) });
+
+  return matches;
 }

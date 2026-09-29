@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
+import { parseExpectation } from "./completion.ts";
 import { runOnce } from "./cli.ts";
 import { loadDotEnv } from "./env.ts";
 import { isFiniteNumber, isString } from "./json.ts";
@@ -33,7 +34,7 @@ const PKG_VERSION = (() => {
   }
 })();
 
-const ALLOWED_ARGS = new Set(["goal", "url", "engine", "max_steps"]);
+const ALLOWED_ARGS = new Set(["goal", "url", "engine", "max_steps", "expect", "stop_at_challenge"]);
 
 const TOOL = {
   name: "jev_browse",
@@ -62,6 +63,17 @@ const TOOL = {
         enum: ["cdp", "agent-browser"],
         description:
           "Browser backend. cdp launches/attaches Chrome directly; agent-browser uses the agent-browser CLI session.",
+      },
+      expect: {
+        type: "object",
+        description: "Required completion evidence. Every supplied regex must match the terminal observation.",
+        properties: Object.fromEntries(["url_match", "text_match", "state_match", "frames_match"].map(key => [key, { type: "string", minLength: 1 }])),
+        additionalProperties: false,
+        minProperties: 1,
+      },
+      stop_at_challenge: {
+        type: "boolean",
+        description: "Stop as blocked when visible verification is detected, without interacting with it.",
       },
       max_steps: {
         type: "number",
@@ -121,6 +133,8 @@ async function callJevBrowse(id: JsonValue, args: JsonObject): Promise<void> {
         headed: false,
         cdpUrl: process.env.JEV_CDP_URL,
         maxSteps: isFiniteNumber(args.max_steps) ? args.max_steps : undefined,
+        expectation: args.expect === undefined ? undefined : parseExpectation(args.expect),
+        stopAtChallenge: args.stop_at_challenge === true ? true : undefined,
       },
       (event) =>
         process.stderr.write(JSON.stringify({ call: id, ...event }) + "\n"),

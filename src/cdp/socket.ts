@@ -1,6 +1,7 @@
 
 import { createServer } from "node:net";
 
+import { trace, tracePurpose, tracing, inPurpose } from "../trace.ts";
 import { sleep } from "../sleep.ts";
 import type { JsonObject } from "../types.ts";
 
@@ -28,6 +29,7 @@ export class CdpSocket {
         msg.method === "Inspector.targetCrashed" ||
         msg.method === "Target.targetCrashed"
       ) {
+        trace("renderer_crashed", { method: msg.method, sessionId: msg.sessionId, targetId: msg.params?.targetId });
         const sessionId: string | undefined = msg.sessionId;
 
         if (sessionId) {
@@ -67,7 +69,8 @@ export class CdpSocket {
         for (const cb of this.listeners.get(msg.method) ?? []) cb(msg.params, msg.sessionId);
       }
     });
-    ws.addEventListener("close", () => {
+    ws.addEventListener("close", event => {
+      trace("cdp_closed", { code: event.code, reason: event.reason, pending: this.pending.size });
       this.closed = true;
 
       for (const p of this.pending.values()) p.reject(new Error("CDP connection closed"));
@@ -102,29 +105,59 @@ export class CdpSocket {
     }
 
     const id = this.nextId++;
+    const started = performance.now();
+    const purpose = tracePurpose();
+    const details = { id, method, sessionId, purpose };
+    trace("cdp_start", details);
 
     return new Promise<T>((resolve, reject) => {
+      const finish = (outcome: string, error?: string) => {
+        clearTimeout(timer);
+        clearTimeout(slow);
+        trace("cdp_end", { ...details, outcome, elapsed_ms: Math.round(performance.now() - started), error });
+      };
+
       const timer = setTimeout(() => {
-        if (this.pending.delete(id)) reject(new Error("CDP call timed out"));
+        const pending = this.pending.get(id);
+        this.pending.delete(id);
+        pending?.reject(new Error(`CDP ${method} timed out after ${CALL_TIMEOUT_MS}ms (purpose=${purpose ?? "unspecified"}, session=${sessionId ?? "browser"}, id=${id})`));
       }, CALL_TIMEOUT_MS);
+
+      const slow = setTimeout(() => {
+        if (!tracing() || method === "Browser.getVersion") return;
+        trace("cdp_slow", details);
+        void inPurpose("liveness", () => this.call("Browser.getVersion"))
+          .then(() => trace("cdp_liveness", { stalled_id: id, responsive: true }))
+          .catch(error => trace("cdp_liveness", { stalled_id: id, responsive: false, error: String(error) }));
+      }, 5000);
 
       this.pending.set(id, {
         sessionId,
         resolve: (v) => {
-          clearTimeout(timer);
+          finish("ok");
           resolve(v);
         },
         reject: (e) => {
-          clearTimeout(timer);
+          finish("error", e.message);
           reject(e);
         },
       });
-      this.ws.send(JSON.stringify({ id, method, params, sessionId }));
+
+      try {
+        this.ws.send(JSON.stringify({ id, method, params, sessionId }));
+      } catch (error) {
+        const pending = this.pending.get(id);
+        this.pending.delete(id);
+        pending?.reject(error instanceof Error ? error : new Error(String(error)));
+      }
     });
   }
 
   close(): void {
     this.closed = true;
+
+    for (const p of this.pending.values()) p.reject(new Error("CDP connection closed"));
+    this.pending.clear();
 
     try {
       this.ws.close();

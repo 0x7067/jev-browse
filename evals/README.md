@@ -103,3 +103,35 @@ runs through `file_url` tasks for deterministic coverage.
   + HTML5 synthesis fallback) works, but the model can pick wrong ends.
 - No right-click *menu reading*: CONTEXT_CLICK fires the context event,
   but OS-native menus are outside the DOM and can't be observed.
+
+## Replay diagnostics
+
+`--trace` writes one unique `trace-*.jsonl` per attempt plus `.stdout` and
+`.stderr` sidecars under `evals/results/`. Each run detail records `trace_file`,
+including runs without a final JSON result. Use `scripts/trace-summary.mjs` to
+inspect slow calls, renderer timing, liveness probes, actions, completion checks,
+and failures. Traces contain observed page content and stay local.
+
+Additional expectations:
+
+- `frames_match`: regex against JSON of `RunResult.final_frames`.
+- `challenge_match`: regex against JSON of `RunResult.challenge_reasons`.
+- `action_not_match`: fail if executed operation/label strings match the regex.
+
+A task may set `max_steps` and an optional `completion` object passed to the
+CLI's `--expect`. Keep `expect` as the independent verdict; completion conditions
+are an agent input, not a replacement for verification. `completion_ms` records
+time in completion judgments, separate from action-model latency.
+
+The `fx-quiz-*`, `fx-hidden-challenge`, `fx-guide-anchor`, and
+`fx-frame-readiness` tasks cover setup dialogs, explicit completion conditions,
+visible and hidden verification, one-click stopping, and delayed frames. The
+live `guide-anchor-broad` and `guide-anchor-precise` tasks in `tasks-hard.json`
+preserve the exact September 29 historical goals. Their URL/action/text checks
+are useful replay evidence; broad-goal matching-section visibility also needs
+inspection of the trace.
+
+`node scripts/check-cdp-trace.mjs evals/results/cdp-proof.jsonl` runs a separate
+real-Chrome diagnostic check without a model. It verifies evaluation values,
+errors, slow-call timing, method-specific timeouts, and browser liveness during
+a stalled renderer call. Use a new output filename each time.

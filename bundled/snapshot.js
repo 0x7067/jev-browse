@@ -639,6 +639,59 @@ return s?[s]:[]}).join(' ') ||
     }
   }
 
+  const frames=[];
+
+  const frameLoads=cache.frameLoads ||= new WeakMap();
+
+  const readFrames=(doc,depth)=>{
+    if (depth>4 || frames.length>=40) return;
+
+    for (const frame of doc.querySelectorAll('iframe,frame')) {
+      const rect=frame.getBoundingClientRect();
+
+      if (!visible(frame) || !rect.width || !rect.height) continue;
+
+      const source=frame.getAttribute('srcdoc') ?? frame.getAttribute('src') ?? '';
+      let load=frameLoads.get(frame);
+
+      if (!load) {
+        load={source,observed:false};
+        frameLoads.set(frame,load);
+        frame.addEventListener('load',()=>{
+          load.source=frame.getAttribute('srcdoc') ?? frame.getAttribute('src') ?? '';
+          load.observed=true;
+        });
+      } else if (load.source!==source) {
+        load.source=source;
+        load.observed=false;
+      }
+
+      let child=null;
+
+      try { child=frame.contentDocument; } catch { }
+
+      const provider=frame.closest('[data-loaded],[data-ready]');
+      const attribute=provider?.hasAttribute('data-loaded') ? 'data-loaded' : 'data-ready';
+
+      const app_readiness=provider ? {
+        attribute,value:provider.getAttribute(attribute),
+        source:provider.tagName.toLowerCase()+(provider.id ? '#'+provider.id : '')
+      } : null;
+
+      frames.push({node:identity(frame),title:frame.title||frame.name||'',
+        src:frame.hasAttribute('srcdoc') ? 'about:srcdoc' : frame.src||'about:blank',
+        document_url:child?.URL??null,accessibility:child ? 'same_origin' : 'inaccessible',
+        ready_state:child?.readyState??null,load_event:load.observed ? 'observed' : 'unknown',
+        app_readiness});
+
+      if (child) readFrames(child,depth+1);
+
+      if (frames.length>=40) break;
+    }
+  };
+
+  readFrames(document,0);
+
   const words=[];
 
 let node,length=0;
@@ -688,18 +741,31 @@ let node,length=0;
 
   const height=document.documentElement.scrollHeight, page_key=cache.pageKey();
 
-  const challenge=actions.length<=10 && (
-    /just a moment|verifying you are|verify you are (a )?human|checking your (browser|connection)|are you a (robot|human)|unusual traffic|complete the (captcha|security)|enter the characters|i'?m not a robot|attention required|cf-chl|h-captcha|g-recaptcha|please verify/i
-      .test(text+' '+document.title) ||
-    !!document.querySelector('iframe[src*="captcha"],iframe[src*="challenges.cloudflare"],.h-captcha,.g-recaptcha,#cf-please-wait,[class*="cf-chl"],[data-sitekey]')
-  ) || undefined;
+  const challenge_reasons=[];
+
+  const widgets=document.querySelectorAll('iframe[src*="captcha"],iframe[src*="challenges.cloudflare"],.h-captcha,.g-recaptcha,#cf-please-wait,[class*="cf-chl"],[data-sitekey]');
+
+  for (const e of widgets) {
+    const r=e.getBoundingClientRect();
+
+    if (visible(e) && r.width>0 && r.height>0 && r.bottom>0 && r.top<innerHeight && r.right>0 && r.left<innerWidth)
+      challenge_reasons.push('visible_widget:'+e.tagName.toLowerCase());
+  }
+
+  if (/please complete verification to continue|verifying with cloudflare/i.test(text))
+    challenge_reasons.push('verification_message');
+
+  if (actions.length<=10 && /just a moment|verifying you are|verify you are (a )?human|checking your (browser|connection)|are you a (robot|human)|unusual traffic|complete the (captcha|security)|enter the characters|i'?m not a robot|attention required|please verify/i.test(text+' '+document.title))
+    challenge_reasons.push('interstitial_text');
+
+  const challenge=challenge_reasons.length>0;
 
   const semantics=actions.map(({rect: _rect,...action})=>action);
 
   const busy=!!document.querySelector('[aria-busy="true"]');
 
   const marker=[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
-    document.title,text,semantics,page_key[6],busy];
+    document.title,text,semantics,page_key[6],busy,frames,challenge_reasons];
 
   const omitted_actions=Math.max(0,actions.length-MAX_ACTIONS);
 
@@ -752,9 +818,9 @@ let node,length=0;
     .some(e=>e && listenSet(e)?.has('contextmenu'));
 
   const state={url:location.href,title:document.title,w:innerWidth,h:innerHeight,text,
-    scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused};
+    scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused,frames};
 
-  if (challenge) state.challenge=true;
+  if (challenge) { state.challenge=true; state.challenge_reasons=[...new Set(challenge_reasons)]; }
 
   if (busy) state.busy=true;
 

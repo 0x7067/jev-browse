@@ -83,3 +83,5 @@ handles, required state, commands, and observable proof.
 - [CLI missing key](./cli-missing-key.md) covers the error when no provider key is set.
 - [Jev provider](./jev-provider.md) covers choosing TypeSafe or OpenRouter with `JEV_PROVIDER`.
 - [Model-free drive paths](./model-free-drive.md) covers verifying snapshot/act behavior when the model is unreachable.
+
+Replay diagnostics and completion checks: [replay-diagnostics.md](replay-diagnostics.md).

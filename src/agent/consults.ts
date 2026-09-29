@@ -2,40 +2,6 @@ import { sleep } from "../sleep.ts";
 import { StalePage, type BrowserDriver, type HistoryEntry, type PageState } from "../types.ts";
 import { giveUpHint } from "./fuses.ts";
 
-const STEP_KINDS: [RegExp, string[]][] = [
-  [/\b(type|enter|fill|upload)\b/i, ["fill"]],
-  [/\bdrag\b/i, ["drag"]],
-  [/\bpress\b/i, ["press"]],
-  [/\bwait for\b/i, ["wait"]],
-];
-
-const REPAIR_DONE =
-  "Before claiming DONE, check each part of the goal against the page. If every part is visibly satisfied, claim DONE; if a part remains, act on it.";
-
-export function prematureDone(
-  history: HistoryEntry[],
-  goal: string,
-  doneConsults: number,
-): string | null {
-  const acted = history.filter((h) => h.operation !== "WAIT");
-  const MUTATING = new Set(["click", "context", "select", "fill", "drag", "press"]);
-  const unproven = acted.length < 2 || !acted.some((h) => MUTATING.has(h.kind));
-
-  if (doneConsults >= 1 || !unproven) return null;
-
-  const steps = goal.match(
-    /\b(click|type|press|select|activate|enter|fill|upload|submit|check|uncheck|drag|open|go to|navigate|mark|complete|choose|toggle|switch|wait for)\b/gi,
-  );
-
-  const skipped = STEP_KINDS.some(
-    ([step, kinds]) => step.test(goal) && !history.some((h) => kinds.includes(h.kind)),
-  );
-
-  if ((steps?.length ?? 0) < 2 && !skipped) return null;
-
-  return REPAIR_DONE;
-}
-
 const REVEAL_KINDS = new Set(["scroll", "wait", "hover", "back", "forward"]);
 
 export async function confirmDone(
@@ -47,7 +13,7 @@ export async function confirmDone(
     const deadline = Date.now() + 2500;
 
     while (Date.now() < deadline && (page.busy || browser.pendingNav?.())) {
-      if (!(await browser.fresh(page, undefined, "structure"))) {
+      if (!(await browser.fresh(page, undefined, "completion"))) {
         throw new StalePage("Navigation committed while confirming DONE. Choose again.");
       }
 
@@ -58,7 +24,7 @@ export async function confirmDone(
       throw new StalePage("Navigation still in flight while confirming DONE. Choose again.");
     }
 
-    if (!(await browser.fresh(page, undefined, "structure"))) {
+    if (!(await browser.fresh(page, undefined, "completion"))) {
       throw new StalePage("Page changed while confirming DONE. Choose again.");
     }
   }
@@ -83,7 +49,7 @@ export async function confirmDone(
     }
   }
 
-  if (!(await browser.fresh(page, undefined, "structure"))) {
+  if (!(await browser.fresh(page, undefined, "completion"))) {
     throw new StalePage("Page changed while confirming DONE. Choose again.");
   }
 }

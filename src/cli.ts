@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { parseExpectation, type CompletionExpectation } from "./completion.ts";
 
 import { mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -6,6 +7,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 
+import { trace, withTrace } from "./trace.ts";
 import { Agent, type RunResult } from "./agent.ts";
 import { CdpBrowser } from "./cdp/browser.ts";
 import { AgentBrowser } from "./abrowser.ts";
@@ -80,6 +82,9 @@ export interface CliArgs {
   cdpUrl?: string;
   maxSteps?: number;
   allowFileUrls?: boolean;
+  traceFile?: string;
+  expectation?: CompletionExpectation;
+  stopAtChallenge?: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -87,9 +92,25 @@ function parseArgs(argv: string[]): CliArgs {
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    const next = () => argv[++i];
+
+    const next = () => {
+      const value = argv[++i];
+
+      if (value === undefined || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+
+      return value;
+    };
 
     switch (arg) {
+      case "--stop-at-challenge":
+        args.stopAtChallenge = true;
+        break;
+      case "--expect":
+        args.expectation = parseExpectation(JSON.parse(next() ?? "null"));
+        break;
+      case "--trace":
+        args.traceFile = next();
+        break;
       case "--url":
         args.url = next();
         break;
@@ -118,7 +139,7 @@ function parseArgs(argv: string[]): CliArgs {
 
   if (!args.url || !args.goals.length || !["cdp", "agent-browser"].includes(args.engine)) {
     throw new Error(
-      "Usage: jev-browse --url URL --goal GOAL [--goal ...] [--engine cdp|agent-browser] [--headed] [--cdp http://host:9222] [--max-steps N] [--allow-file-urls]",
+      "Usage: jev-browse --url URL --goal GOAL [--goal ...] [--engine cdp|agent-browser] [--headed] [--cdp http://host:9222] [--max-steps N] [--allow-file-urls] [--trace FILE] [--expect JSON] [--stop-at-challenge]",
     );
   }
 
@@ -166,6 +187,8 @@ export async function runAgent(
       goal: args.goals,
       open: makeDriver(args),
       maxSteps: args.maxSteps,
+      expectation: args.expectation,
+      stopAtChallenge: args.stopAtChallenge,
     });
   } catch (error) {
     releaseLock();
@@ -179,6 +202,7 @@ export async function runAgent(
     return await agent.run(opts.onEvent);
   } catch (error) {
     const snap = agent.snapshot();
+    trace("fatal_snapshot", snap);
 
     opts.onEvent?.({
       type: "fatal",
@@ -224,7 +248,15 @@ export async function runOnce(
   const onSigint = () => onSignal("SIGINT");
   process.once("SIGTERM", onSigterm);
   process.once("SIGINT", onSigint);
-  const result = runAgent(args, { onEvent, signal: controller.signal });
+
+  const result = withTrace(args.traceFile ?? process.env.JEV_TRACE_FILE, () => {
+    trace("run_config", args);
+
+    return runAgent(args, { onEvent: event => {
+      trace("agent_event", event);
+      onEvent?.(event);
+    }, signal: controller.signal });
+  });
 
   try {
     return await result;

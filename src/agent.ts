@@ -1,5 +1,7 @@
+import { trace } from "./trace.ts";
 
-import { confirmDone, prematureDone } from "./agent/consults.ts";
+import { checkCompletion } from "./agent/completion.ts";
+import type { CompletionExpectation } from "./completion.ts";
 import { resolveFollowUp, toggleHint } from "./agent/followup.ts";
 import { giveUpHint } from "./agent/fuses.ts";
 import { settleFirstObservation, stateSummary } from "./agent/observe.ts";
@@ -27,6 +29,8 @@ export interface AgentOptions {
   goal: string | string[];
   open: (url: string) => Promise<BrowserDriver>;
   maxSteps?: number;
+  expectation?: CompletionExpectation;
+  stopAtChallenge?: boolean;
 }
 
 type Phase = "observe" | "decide" | "act" | "settle" | "done" | "blocked" | "error";
@@ -55,7 +59,9 @@ export class Agent {
   settleEntry: HistoryEntry | null = null;
   probeConsulted = false;
   fuseConsulted = false;
-  doneConsults = 0;
+  rejectedCompletions = new Map<string, number>();
+  readonly expectation: CompletionExpectation;
+  readonly stopAtChallenge: boolean;
 
   onEvent?: (event: { type: string; [k: string]: JsonValue }) => void;
 
@@ -76,6 +82,8 @@ export class Agent {
 
     if (!task) throw new Error("Supply a task");
     this.goal = task;
+    this.expectation = opts.expectation ?? {};
+    this.stopAtChallenge = opts.stopAtChallenge ?? /\bstop\b[^.!?\n]*\b(challenge|verification|captcha)\b|\bdo not interact with\b[^.!?\n]*\b(verification|challenge|captcha)\b/i.test(task);
     this.startUrl = opts.url;
     this.openDriver = opts.open;
     this.maxSteps = opts.maxSteps ?? MAX_STEPS;
@@ -93,6 +101,7 @@ export class Agent {
       throw error;
     }
 
+    trace("observation", agent.page);
     agent.phase = "decide";
 
     return agent;
@@ -126,24 +135,6 @@ export class Agent {
     return settleStep(this);
   }
 
-  prematureDone(): boolean {
-    const hint = prematureDone(this.history, this.goal, this.doneConsults);
-
-    if (!hint) return false;
-
-    this.doneConsults++;
-    this.onEvent?.({
-      type: "done_consult",
-      elapsed_ms: this.elapsed(),
-      consult: this.doneConsults,
-      acted: this.history.filter((h) => h.operation !== "WAIT").length,
-      url: this.page.url,
-    });
-    this.repairHint = hint;
-
-    return true;
-  }
-
   toggleHint(): string | null {
     return toggleHint(this.history);
   }
@@ -160,8 +151,8 @@ export class Agent {
     return resolveFollowUp(fu, this.page.actions);
   }
 
-  async confirmDone(page: PageState, lastKind?: string): Promise<void> {
-    return confirmDone(this.browser, page, lastKind);
+  async confirmDone(lastKind?: string): Promise<boolean> {
+    return checkCompletion(this, lastKind);
   }
 
   waitEntry(action: string, page: PageState): HistoryEntry {
@@ -192,6 +183,8 @@ export class Agent {
   }
 
   private deadPageReason(page: PageState): string | null {
+    if (this.stopAtChallenge && page.challenge) return "Verification requires user intervention";
+
     if (page.actions.some((a) => a.node !== undefined)) return null;
 
     if (page.url.startsWith("chrome-error://")) {
@@ -206,12 +199,13 @@ export class Agent {
   async run(onEvent?: (event: { type: string; [k: string]: JsonValue }) => void): Promise<RunResult> {
     let emitted = 0;
     this.onEvent = onEvent;
+    trace("observation", this.page);
 
     if (!this.startedAt) this.startedAt = performance.now();
     const dead = this.deadPageReason(this.page);
 
     if (dead) {
-      this.blockedCause = "dead_page";
+      this.blockedCause = this.stopAtChallenge && this.page.challenge ? "verification_required" : "dead_page";
       this.phase = "blocked";
       this.terminalError = dead;
       onEvent?.({
@@ -231,6 +225,8 @@ export class Agent {
       this.phase !== "error"
     ) {
       try {
+        trace("phase_start", { phase: this.phase });
+
         switch (this.phase) {
           case "observe":
             await this.observeStep();
@@ -245,6 +241,8 @@ export class Agent {
             await this.settleStep();
             break;
         }
+
+        trace("phase_end", { phase: this.phase, page: this.page });
       } catch (error) {
         if (error instanceof StalePage) {
           this.decision = null;
@@ -293,7 +291,7 @@ export class Agent {
       }
     }
 
-    if (this.status !== "ready" && !this.terminalError) {
+    if (this.status !== "ready" && this.status !== "done" && !this.terminalError) {
       try {
         for (let i = 0; i < 8; i++) {
           const latest = await this.browser.observe();
@@ -342,6 +340,8 @@ export class Agent {
       elapsed_ms: this.elapsed(),
       history: this.history,
       final_text: this.page.text,
+      final_frames: this.page.frames,
+      challenge_reasons: this.page.challenge_reasons,
     };
 
     if (answer !== undefined) result.answer = answer;

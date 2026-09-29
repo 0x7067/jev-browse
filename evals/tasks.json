@@ -474,5 +474,86 @@
     "expect": {
       "url_match": "tfs="
     }
+  },
+  {
+    "id": "fx-quiz-setup",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=setup",
+    "goal": "Start the practice quiz. Stop when the first actual question is visible. Do not answer it.",
+    "max_steps": 8,
+    "expect": {
+      "text_match": "Question 1.*red planet",
+      "action_match": "CLICK.*CLICK"
+    }
+  },
+  {
+    "id": "fx-quiz-challenge",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=challenge",
+    "goal": "Start the practice quiz. Stop at a verification challenge without interacting with verification.",
+    "max_steps": 8,
+    "expect": {
+      "text_match": "Please complete verification to continue",
+      "status": "blocked",
+      "challenge_match": "visible_widget|verification_message",
+      "action_not_match": "CLICK:(?!Start quiz)"
+    }
+  },
+  {
+    "id": "fx-hidden-challenge",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=hidden-challenge",
+    "goal": "Read the public article. Stop when Article ready to read is visible.",
+    "expect": {
+      "text_match": "Article ready to read"
+    }
+  },
+  {
+    "id": "fx-guide-anchor",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=anchors",
+    "goal": "Click exactly one visible # anchor beside a heading. Stop immediately when the URL gains any # fragment. Do not click another link.",
+    "max_steps": 4,
+    "expect": {
+      "url_match": "#(foundations|developer)$",
+      "action_match": "^CLICK:#[^ ]*$"
+    }
+  },
+  {
+    "id": "fx-frame-readiness",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=frames",
+    "goal": "Wait until both Preview A and Preview B report data-loaded=true. Stop when both previews have that readiness signal.",
+    "max_steps": 12,
+    "expect": {
+      "frames_match": "(?=.*\"title\":\"Preview A\")(?=.*\"title\":\"Preview B\")(?=.*\"accessibility\":\"inaccessible\").*\"value\":\"true\".*\"value\":\"true\""
+    }
+  },
+  {
+    "id": "fx-quiz-explicit",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=setup",
+    "goal": "Start the practice quiz. Stop when the first actual question is visible. Do not answer it.",
+    "completion": {
+      "text_match": "Question 1.*red planet"
+    },
+    "expect": {
+      "text_match": "Question 1.*red planet",
+      "action_match": "CLICK.*CLICK"
+    }
+  },
+  {
+    "id": "fx-completion-missing",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=hidden-challenge",
+    "goal": "Read the public article. Stop when Article ready to read is visible.",
+    "completion": {
+      "text_match": "ARTICLE APPROVED BY EDITOR"
+    },
+    "max_steps": 4,
+    "expect": {
+      "status": "blocked",
+      "text_match": "Article ready to read"
+    }
   }
 ]

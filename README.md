@@ -300,3 +300,60 @@ ends in a false `DONE` on the calendar instead of on a results page.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+### Diagnostic traces and completion evidence
+
+Use `--trace FILE` (or `JEV_TRACE_FILE`) to write a local JSONL trace. The path
+must be new; traces are created with owner-only permissions and are not
+uploaded. They contain page text, DOM target details, model inputs and outputs,
+and may include typed values. Keep them with the run evidence.
+
+```bash
+node bundled/cli.mjs --url https://example.com --goal 'Read the page' \
+  --trace evals/results/read-example.jsonl
+node scripts/trace-summary.mjs evals/results/read-example.jsonl
+node scripts/eval.mjs --tasks fx-quiz-setup,fx-guide-anchor --trace
+```
+
+Both engines record observations, decisions, attempted actions, DOM fallback
+attempts, completion checks, and fatal snapshots. CDP traces additionally record
+request/session IDs, method timing, navigation and request failures. Evaluations
+are labeled `observe`, `freshness`, `settle`, `after_input`, or `input`. Page-side
+execution and dispatch timing distinguish expensive evaluation from renderer
+scheduling delays. A call still pending after five seconds triggers one
+`Browser.getVersion` liveness probe; the normal 30-second call timeout remains.
+An error names the stalled method, purpose, session, and call ID.
+
+Every DONE claim, including a predicted DONE_AFTER, now checks its outcome on a
+fresh observation. Without explicit expectations, this uses a separate model
+completion check and remains a model judgment. Two rejected claims on the same
+observation end as `blocked/completion_unverified`.
+
+For a known outcome, supply `--expect` with a nonempty JSON object of regexes:
+`url_match`, `text_match`, `state_match`, and/or `frames_match`. Every supplied
+condition must match before DONE is accepted. These conditions replace the model
+completion judgment, so include all outcomes that matter. They do not constrain
+which actions the agent can take. For example:
+
+```bash
+node bundled/cli.mjs --url https://example.com --goal 'Read the example page' \
+  --expect '{"text_match":"Example Domain"}'
+```
+
+`--stop-at-challenge` stops as `blocked/verification_required` when visible
+verification is detected. Goals explicitly saying to stop at a challenge or not
+to interact with verification also enable this behavior. Hidden widget markup
+does not count as visible verification. Results include `challenge_reasons`.
+MCP callers can supply the equivalent `expect` and `stop_at_challenge` arguments.
+
+`final_frames` reports each visible iframe/frame's declared source, readable
+current document URL and ready state, accessibility, observed load event, and
+nearest `data-loaded` or `data-ready` attribute. `load_event: unknown` means the
+observer did not see a load event; it does not mean the frame failed. An
+inaccessible document remains unknown. A page-provided readiness attribute is
+reported as evidence from that page, not proof of embedded application behavior.
+
+Completion stability compares semantic controls, text, URLs, readiness, and
+challenge evidence. It ignores CSS class-name hints such as a temporary `copied`
+class; action freshness continues to compare those hints before dispatch.
+Explicit completion conditions remain in every decision prompt until satisfied.

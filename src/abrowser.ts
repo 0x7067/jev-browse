@@ -1,3 +1,4 @@
+import { targetDetails } from "./target-details.ts";
 
 import { execFile } from "node:child_process";
 import { homedir } from "node:os";
@@ -184,6 +185,10 @@ export class AgentBrowser implements BrowserDriver {
     return parsed as T | undefined;
   }
 
+  async inspectTarget(node: number): Promise<JsonValue> {
+    return this.evaluate(targetDetails(node));
+  }
+
   async observe(): Promise<PageState> {
     if (this.afterInput) {
       const action = this.afterInput;
@@ -236,7 +241,7 @@ export class AgentBrowser implements BrowserDriver {
   async fresh(
     page: PageState,
     action?: ObservedAction,
-    level: "full" | "page" | "structure" = "full",
+    level: "full" | "page" | "structure" | "completion" = "full",
   ): Promise<boolean> {
     if (action && (action.kind === "click" || action.kind === "select")) {
       const node = action.node;

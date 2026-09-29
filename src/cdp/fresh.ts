@@ -9,7 +9,7 @@ const READ_STATE = loadSnapshotJs();
 const MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
 
 export interface FreshHost {
-  evaluate<T>(expression: string, awaitPromise?: boolean): Promise<T | undefined>;
+  evaluate<T>(expression: string, awaitPromise?: boolean, purpose?: string): Promise<T | undefined>;
 }
 
 export async function settle(
@@ -24,6 +24,7 @@ export async function settle(
 
         return w.quiet(${Math.min(quietMs, budgetMs)}, ${budgetMs}).then(() => true);})()`,
       true,
+      "settle",
     )
     .catch(() => false);
 
@@ -34,7 +35,7 @@ export async function fresh(
   host: FreshHost,
   page: PageState,
   action?: ObservedAction,
-  level: "full" | "page" | "structure" = "full",
+  level: "full" | "page" | "structure" | "completion" = "full",
 ): Promise<boolean> {
   if (action && (action.kind === "click" || action.kind === "select")) {
     const node = action.node;
@@ -43,6 +44,8 @@ export async function fresh(
 
     const current = await host.evaluate(
       `(() => { const c=window.__jevFast; return c ? [c.pageKey(),c.guard(c.node(${node}))] : null; })()`,
+      false,
+      "freshness",
     );
 
     return JSON.stringify(current) === JSON.stringify([page.page_key, page.guards[String(node)]]);
@@ -51,10 +54,12 @@ export async function fresh(
   if (level === "page") {
     const current = await host.evaluate(
       `(() => { const c=window.__jevFast; return c ? c.pageKey() : null; })()`,
+      false,
+      "freshness",
     );
 
     return JSON.stringify(current) === JSON.stringify(page.page_key);
   }
 
-  return markerMatches(level, await host.evaluate<JsonValue>(MARKER), page.marker);
+  return markerMatches(level, await host.evaluate<JsonValue>(MARKER, false, "freshness"), page.marker);
 }
