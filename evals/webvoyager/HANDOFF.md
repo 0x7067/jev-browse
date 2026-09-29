@@ -30,6 +30,18 @@ implemented and committed in the follow-up commit.
 rerun fx-iframe on both engines, rerun the agent-browser full suite, then rerun
 ArXiv--24. After that, continue with the open issues below.
 
+### Evidence retention (implemented, NOT yet eval-verified)
+
+`rememberObservation` now evicts the observation with the least unique evidence
+(normalized text lines, tables and URL not present in any other retained one).
+The first and newest observations are always kept. Before, it dropped the oldest
+middle entries. `scripts/check-evidence-retention.mjs` is a deterministic
+counterexample: unique pricing evidence followed by 12 low-novelty doc scrolls,
+plus a 3-page cycle. The old policy fails it (pricing lost); the new one passes.
+This is a synthetic check only. AGENTS requires a suite run: once credit
+returns, run the full fixture suites on both engines and Huggingface--36 before
+treating it as shipped, and revert if verified tasks regress.
+
 The user explicitly requested: “pause and write a handoff.” The active goal is
 **paused**, not complete: “fix these issues, without overfitting / address all
 shortcomings.” Resume only when requested. Initial task was benchmarking

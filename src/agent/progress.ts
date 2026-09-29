@@ -88,7 +88,39 @@ export function rememberObservation(observations: ProgressObservation[], page: P
   if (previous && JSON.stringify(previous) === JSON.stringify(next)) return;
   observations.push(next);
 
-  if (observations.length > 8) observations.splice(1, observations.length - 8);
+  while (observations.length > OBSERVATION_LIMIT) observations.splice(leastNovel(observations), 1);
+}
+
+export const OBSERVATION_LIMIT = 8;
+
+function evidenceUnits(observation: ProgressObservation): string[] {
+  const lines = observation.text.split("\n").map(line => line.trim().replace(/\s+/g, " ").toLowerCase()).filter(Boolean);
+  const tables = observation.tables.map(table => `table:${JSON.stringify(table)}`);
+
+  return [`url:${observation.url}`, ...lines, ...tables];
+}
+
+function leastNovel(observations: ProgressObservation[]): number {
+  const units = observations.map(observation => new Set(evidenceUnits(observation)));
+  const counts = new Map<string, number>();
+
+  for (const set of units) for (const unit of set) counts.set(unit, (counts.get(unit) ?? 0) + 1);
+
+  let selected = 1;
+  let lowest = Infinity;
+
+  for (let index = 1; index < observations.length - 1; index++) {
+    let unique = 0;
+
+    for (const unit of units[index]) if (counts.get(unit) === 1) unique += unit.length;
+
+    if (unique < lowest) {
+      lowest = unique;
+      selected = index;
+    }
+  }
+
+  return selected;
 }
 
 export function progressHint(assessment: GoalAssessment | null): string {
