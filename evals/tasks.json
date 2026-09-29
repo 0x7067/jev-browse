@@ -902,7 +902,7 @@
     "max_steps": 20,
     "expect": {
       "answer_match": "\\b14\\b",
-      "text_match": "Plan guide chapter 12"
+      "action_match": "CLICK:Pricing(?:[\\s\\S]*SCROLL_DOWN){11}"
     }
   }
 ]
