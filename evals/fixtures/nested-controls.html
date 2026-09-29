@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Nested controls</title>
+<body><h1>Nested controls</h1><p id="result">No submission</p><iframe id="outer" title="Outer panel" style="width:600px;height:220px"></iframe><div id="host"></div>
+<script>
+const outer = document.getElementById('outer');
+outer.addEventListener('load', () => {
+  outer.contentDocument.getElementById('inner').srcdoc = `<label>Access code <input id="code" aria-label="Access code"></label><label>Priority <select id="priority" aria-label="Priority"><option>Low</option><option>High</option></select></label><button onclick="top.document.getElementById('result').textContent='Submitted '+document.getElementById('code').value+' '+document.getElementById('priority').value">Apply settings</button>`;
+}, { once: true });
+outer.srcdoc = '<iframe id="inner" title="Settings panel" style="width:550px;height:160px"></iframe>';
+const shadow = document.getElementById('host').attachShadow({ mode: 'open' });
+shadow.innerHTML = '<label>Shadow note <input aria-label="Shadow note"></label><button>Save note</button>';
+shadow.querySelector('button').onclick = () => { document.getElementById('result').textContent = 'Saved '+shadow.querySelector('input').value; };
+</script></body></html>

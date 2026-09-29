@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Styled inventory sorter</title>
+<style>
+.wrapper { position: relative; width: 260px; height: 36px; }
+select, .presentation { position: absolute; inset: 0; width: 100%; height: 100%; }
+.presentation { background: #ddd; display: grid; place-items: center; }
+</style>
+<label for="sort">Sort inventory</label>
+<div class="wrapper">
+<select id="sort"><option value="featured">Featured</option><option value="price">Price: Low to High</option></select>
+<span class="presentation" aria-hidden="true">Featured</span>
+</div>
+<output id="result">Inventory uses featured order</output>
+<script>
+document.querySelector('#sort').addEventListener('change', event => {
+  document.querySelector('.presentation').textContent = event.target.selectedOptions[0].textContent;
+  document.querySelector('#result').textContent = event.target.value === 'price' ? 'Inventory sorted by ascending price' : 'Inventory uses featured order';
+});
+</script>
+</html>

@@ -32,8 +32,14 @@ export async function decideStep(a: Agent): Promise<void> {
       return;
     }
 
-    if (!(await a.browser.fresh(a.page))) {
+    if (!(await a.browser.fresh(a.page, undefined, "structure"))) {
       throw new StalePage("Page changed since the last observation. Choose again.");
+    }
+
+    if (a.domFingerprint !== a.page.fingerprint) {
+      a.domFingerprint = a.page.fingerprint;
+      a.domRetried.clear();
+      a.domDead.clear();
     }
 
     a.decision = null;
@@ -73,8 +79,7 @@ export async function decideStep(a: Agent): Promise<void> {
       }
     }
 
-    const toggle = a.toggleHint();
-    const repair = a.repairHint ?? toggle;
+    const repair = a.repairHint;
     a.repairHint = null;
 
     const conditions = Object.keys(a.expectation).length
@@ -98,16 +103,7 @@ export async function decideStep(a: Agent): Promise<void> {
             ),
           };
 
-    const page = toggle
-      ? {
-          ...live,
-          actions: live.actions.filter(
-            (el) =>
-              el.label !==
-              a.history[a.history.length - 1]?.action.replace(/ \(dom\)$/, ""),
-          ),
-        }
-      : live;
+    const page = live;
 
     a.decision = await choose(a.client, page, goal, a.history, a.progressObservations);
     a.decisions.push(a.decision);
@@ -142,6 +138,11 @@ export async function actStep(a: Agent): Promise<void> {
     const page = a.page;
 
     if (!decision) throw new Error("Choose before acting");
+
+    if (!(await a.browser.fresh(page, undefined, "structure"))) {
+      throw new StalePage("Page changed since the decision. Choose again.");
+    }
+
     a.decision = null;
     const selected = decision.choice;
 
@@ -152,10 +153,6 @@ export async function actStep(a: Agent): Promise<void> {
     }
 
     if (selected === "DONE" || selected === "BLOCKED") {
-      if (!(await a.browser.fresh(page, undefined, "structure"))) {
-        throw new StalePage("Page changed since the decision. Choose again.");
-      }
-
       if (selected === "BLOCKED" && a.earlyWaits < 3 && !a.probeConsulted) {
         a.earlyWaits++;
 
@@ -197,6 +194,10 @@ export async function actStep(a: Agent): Promise<void> {
 
     if (!action) throw new Error(`Decision selected unknown action ${selected}`);
 
+    if (decision.operation === "DOUBLE_CLICK") {
+      action = { ...action, kind: "double_click" };
+    }
+
     if (decision.operation === "CONTEXT_CLICK") {
       action = { ...action, kind: "context" };
     }
@@ -232,7 +233,7 @@ export async function actStep(a: Agent): Promise<void> {
         throw new StalePage("Page changed before text generation. Choose again.");
       }
 
-      const context = fieldContext(a.goal, action, page, a.history);
+      const context = fieldContext(a.goal, action, page, a.history, a.progressObservations);
 
       if (a.pendingText && JSON.stringify(a.pendingText[0]) === JSON.stringify(context)) {
         [, text, helper] = a.pendingText;
@@ -316,14 +317,6 @@ export async function settleStep(a: Agent): Promise<void> {
     a.page = await a.browser.observe();
     entry.page_changed = a.page.fingerprint !== page.fingerprint || a.page.dialog !== undefined;
 
-    const doc = String(Array.isArray(page.page_key) ? page.page_key[0] : page.page_key);
-
-    if (a.domDoc !== doc) {
-      a.domDoc = doc;
-      a.domRetried.clear();
-      a.domDead.clear();
-    }
-
     if (
       entry.page_changed === false &&
       (action.kind === "click" ||
@@ -395,4 +388,3 @@ export async function settleStep(a: Agent): Promise<void> {
       a.phase = "blocked";
     }
   }
-

@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Staff directory</title>
+<table id="current"><caption>Current staff</caption><thead><tr><th>Family name</th><th><button id="sort">Given name ascending</button></th><th>Team</th></tr></thead><tbody><tr><td>Hart</td><td>Milo</td><td>Support</td></tr><tr><td>Vale</td><td>Zoe</td><td>Research</td></tr><tr><td>Quinn</td><td>Azra</td><td>Engineering</td></tr></tbody></table>
+<table><caption>Archived staff</caption><thead><tr><th>Family name</th><th>Given name</th></tr></thead><tbody><tr><td>Stone</td><td>Aaron</td></tr></tbody></table>
+<script>
+document.querySelector('#sort').addEventListener('click', () => {
+  const body = document.querySelector('#current tbody');
+  [...body.rows].sort((a,b) => a.cells[1].textContent.localeCompare(b.cells[1].textContent)).forEach(row => body.append(row));
+  document.querySelector('#sort').parentElement.setAttribute('aria-sort','ascending');
+});
+</script>
+</html>

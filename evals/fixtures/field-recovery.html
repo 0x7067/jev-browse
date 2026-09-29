@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Inspection desk</title>
+<h1>Inspection desk</h1><p>Enter the inspection code from the sealed report to verify this inspection.</p>
+<button id="reveal">Read sealed report</button><p id="report">Report closed</p>
+<label>Inspection code <input id="code"></label><button id="verify">Verify inspection</button><p id="result">Inspection pending</p>
+<script>
+const missing=location.search.includes('missing');
+if(missing){document.getElementById('reveal').remove();document.getElementById('report').textContent='The required inspection code is unavailable. No report or code can be retrieved here.'}
+document.getElementById('reveal')?.addEventListener('click',()=>{document.getElementById('report').textContent='Inspection code: LARCH-73'});
+document.getElementById('verify').onclick=()=>{document.getElementById('result').textContent=document.getElementById('code').value==='LARCH-73'?'Inspection verified':'Incorrect inspection code'};
+</script></html>

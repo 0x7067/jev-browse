@@ -6,6 +6,7 @@ export type ElementChoice = {
   label: string;
   operations: string[];
   role?: string;
+  href?: string;
   value?: string;
   checked?: string;
   selected?: string;
@@ -54,7 +55,7 @@ export function actionSpace(
         operations: [],
       };
 
-      for (const k of ["role", "value", "checked", "selected", "expanded", "position"] as const) {
+      for (const k of ["role", "href", "value", "checked", "selected", "expanded", "position"] as const) {
         const v = action[k];
 
         if (v !== undefined) element[k] = v;
@@ -127,6 +128,14 @@ export function actionSpace(
       const element = elements[Number(index) - 1];
 
       if (!element.operations.includes("CONTEXT_CLICK")) element.operations.push("CONTEXT_CLICK");
+    }
+  }
+
+  if (targets.CLICK) {
+    targets.DOUBLE_CLICK = targets.CLICK;
+
+    for (const element of elements) {
+      if (element.operations.includes("CLICK")) element.operations.push("DOUBLE_CLICK");
     }
   }
 

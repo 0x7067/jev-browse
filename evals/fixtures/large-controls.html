@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Operations dashboard</title>
+<style>button { margin: 3px; } nav { max-width: 1000px; }</style>
+<nav id="navigation"></nav>
+<button id="export">Export quarterly report</button>
+<output id="result"></output>
+<script>
+const navigation = document.querySelector('#navigation');
+for (let i = 1; i <= 75; i++) {
+  const button = document.createElement('button');
+  button.textContent = `Inspect equipment ${i}`;
+  button.addEventListener('click', () => {
+    document.querySelector('#result').textContent = `Equipment ${i} inspected`;
+  });
+  navigation.append(button);
+}
+document.querySelector('#export').addEventListener('click', () => {
+  document.querySelector('#result').textContent = 'Quarterly report exported';
+});
+</script>
+</html>

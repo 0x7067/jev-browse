@@ -208,7 +208,7 @@
   {
     "id": "tin-file-upload",
     "url": "https://the-internet.herokuapp.com/upload",
-    "goal": "Upload the file /etc/hosts using the file chooser and submit the form.",
+    "goal": "Upload the file {{UPLOAD_FIXTURE}} using the file chooser and submit the form.",
     "expect": {
       "text_match": "File Uploaded"
     }
@@ -610,6 +610,267 @@
     "expect": {
       "status": "blocked",
       "action_not_match": "CLICK|TYPE_TEXT|SELECT"
+    }
+  },
+  {
+    "id": "fx-answer-summary",
+    "file_url": true,
+    "url": "evals/fixtures/answer-evidence.html",
+    "goal": "Summarize the station report, including each station sensor count and the maintenance window.",
+    "max_steps": 4,
+    "expect": {
+      "answer_match": "(?=[\\s\\S]*North)(?=[\\s\\S]*18)(?=[\\s\\S]*South)(?=[\\s\\S]*12)(?=[\\s\\S]*Tuesday)(?=[\\s\\S]*14:00)(?=[\\s\\S]*16:00)"
+    }
+  },
+  {
+    "id": "fx-answer-comparison",
+    "file_url": true,
+    "url": "evals/fixtures/answer-evidence.html",
+    "goal": "Read the report and tell me if both stations have the same number of active sensors. Provide the two counts.",
+    "max_steps": 4,
+    "expect": {
+      "answer_match": "(?=[\\s\\S]*18)(?=[\\s\\S]*12)(?=[\\s\\S]*(?:[Nn]o|different|not|unequal))"
+    }
+  },
+  {
+    "id": "fx-delegated-blue",
+    "file_url": true,
+    "url": "evals/fixtures/delegated-controls.html",
+    "goal": "Select blue using its control. Stop when the page confirms Selected blue.",
+    "max_steps": 5,
+    "expect": {
+      "text_match": "Selected blue",
+      "action_not_match": "CLICK:Delegated control panel"
+    }
+  },
+  {
+    "id": "fx-delegated-amber",
+    "file_url": true,
+    "url": "evals/fixtures/delegated-controls.html",
+    "goal": "Select amber using its control. Stop when the page confirms Selected amber.",
+    "max_steps": 5,
+    "expect": {
+      "text_match": "Selected amber",
+      "action_not_match": "CLICK:Delegated control panel"
+    }
+  },
+  {
+    "id": "fx-delegated-purple",
+    "file_url": true,
+    "url": "evals/fixtures/delegated-controls.html",
+    "goal": "Select purple using its control. Stop when the page confirms Selected purple.",
+    "max_steps": 5,
+    "expect": {
+      "text_match": "Selected purple",
+      "action_not_match": "CLICK:Delegated control panel"
+    }
+  },
+  {
+    "id": "fx-nested-frame-form",
+    "file_url": true,
+    "url": "evals/fixtures/nested-controls.html",
+    "goal": "Enter 4826 as the access code, select High priority, and apply the settings. Stop when Submitted 4826 High is visible.",
+    "max_steps": 12,
+    "expect": {
+      "text_match": "Submitted 4826 High",
+      "action_match": "TYPE_TEXT.*SELECT.*CLICK"
+    }
+  },
+  {
+    "id": "fx-shadow-form",
+    "file_url": true,
+    "url": "evals/fixtures/nested-controls.html",
+    "goal": "Enter Copper moon as the shadow note and save it. Stop when Saved Copper moon is visible.",
+    "max_steps": 8,
+    "expect": {
+      "text_match": "Saved Copper moon",
+      "action_match": "TYPE_TEXT.*CLICK"
+    }
+  },
+  {
+    "id": "fx-current-date",
+    "file_url": true,
+    "url": "evals/fixtures/current-date.html",
+    "goal": "Enter today\u2019s UTC date in YYYY-MM-DD format in Reference date, then click Check date. Stop once verified.",
+    "max_steps": 6,
+    "expect": {
+      "text_match": "Current UTC date verified",
+      "action_match": "TYPE_TEXT.*CLICK"
+    }
+  },
+  {
+    "id": "fx-answer-recovery",
+    "file_url": true,
+    "url": "evals/fixtures/answer-recovery.html",
+    "goal": "Summarize both stations sensor counts and the maintenance window.",
+    "max_steps": 8,
+    "expect": {
+      "url_match": "answer-evidence\\.html$",
+      "answer_match": "(?=[\\s\\S]*18)(?=[\\s\\S]*12)(?=[\\s\\S]*Tuesday)(?=[\\s\\S]*14:00)(?=[\\s\\S]*16:00)"
+    }
+  },
+  {
+    "id": "fx-clipped-search",
+    "file_url": true,
+    "url": "evals/fixtures/clipped-controls.html",
+    "goal": "Search for marine biology using the search panel.",
+    "max_steps": 8,
+    "expect": {
+      "text_match": "Search completed: marine biology",
+      "action_match": "CLICK.*TYPE_TEXT.*CLICK"
+    }
+  },
+  {
+    "id": "fx-clipped-scroll",
+    "file_url": true,
+    "url": "evals/fixtures/clipped-controls.html",
+    "goal": "Confirm the bottom item in the scrollable notes.",
+    "max_steps": 8,
+    "expect": {
+      "text_match": "Bottom item confirmed"
+    }
+  },
+  {
+    "id": "fx-tab-roundtrip",
+    "file_url": true,
+    "url": "evals/fixtures/tab-start.html",
+    "goal": "Read the report code in the dispatch report tab, then return to the dispatch dashboard and submit that code.",
+    "max_steps": 12,
+    "expect": {
+      "text_match": "Dispatch verified",
+      "url_match": "tab-start\\.html$",
+      "action_match": "FOCUS_TAB.*TYPE_TEXT.*CLICK"
+    }
+  },
+  {
+    "id": "fx-link-destination",
+    "file_url": true,
+    "url": "evals/fixtures/navigation-links.html",
+    "goal": "Open the delivery reference and stop once it is visible.",
+    "max_steps": 5,
+    "expect": {
+      "url_match": "navigation-delivery\\.html$",
+      "text_match": "Delivery reference"
+    }
+  },
+  {
+    "id": "fx-delayed-menu",
+    "url": "evals/fixtures/delayed-menu.html",
+    "file_url": true,
+    "goal": "Open Reports and export the quarterly report. Stop when export is confirmed.",
+    "expect": {
+      "text_match": "Quarterly report exported"
+    }
+  },
+  {
+    "id": "fx-large-controls",
+    "url": "evals/fixtures/large-controls.html",
+    "file_url": true,
+    "goal": "Export the quarterly report and stop when export is confirmed.",
+    "expect": {
+      "text_match": "Quarterly report exported"
+    }
+  },
+  {
+    "id": "fx-styled-select",
+    "url": "evals/fixtures/styled-select.html",
+    "file_url": true,
+    "goal": "Set Sort inventory to Price: Low to High and stop when the inventory is sorted.",
+    "expect": {
+      "text_match": "Inventory sorted by ascending price"
+    }
+  },
+  {
+    "id": "fx-double-main",
+    "url": "evals/fixtures/double-click.html",
+    "file_url": true,
+    "goal": "Double-click Open main report and stop when its preview opens.",
+    "expect": {
+      "text_match": "Main preview opened with two clicks"
+    }
+  },
+  {
+    "id": "fx-double-shadow",
+    "url": "evals/fixtures/double-click.html",
+    "file_url": true,
+    "goal": "Double-click Open shadow report and stop when its preview opens.",
+    "expect": {
+      "text_match": "Shadow preview opened with two clicks"
+    }
+  },
+  {
+    "id": "fx-double-covered",
+    "url": "evals/fixtures/double-click.html",
+    "file_url": true,
+    "goal": "Double-click Open covered report and stop when its preview opens.",
+    "expect": {
+      "text_match": "Covered preview opened with two clicks"
+    }
+  },
+  {
+    "id": "fx-double-frame",
+    "url": "evals/fixtures/double-click.html",
+    "file_url": true,
+    "goal": "Double-click Open framed report and stop when its preview opens.",
+    "expect": {
+      "text_match": "Frame preview opened with two clicks"
+    }
+  },
+  {
+    "id": "fx-table-answer",
+    "url": "evals/fixtures/table-evidence.html",
+    "file_url": true,
+    "goal": "Sort Current staff by given name ascending, then report only the family name of its first data row.",
+    "expect": {
+      "answer_match": "^Quinn$"
+    }
+  },
+  {
+    "id": "fx-pagination",
+    "url": "evals/fixtures/pagination.html",
+    "file_url": true,
+    "goal": "Advance through the inventory pages until the inventory review is complete.",
+    "expect": {
+      "text_match": "Inventory review complete"
+    }
+  },
+  {
+    "id": "fx-countdown-controls",
+    "url": "evals/fixtures/countdown-controls.html",
+    "file_url": true,
+    "goal": "Open the operations report and stop when it is open.",
+    "expect": {
+      "text_match": "Operations report opened"
+    }
+  },
+  {
+    "id": "fx-evidence-role",
+    "url": "evals/fixtures/evidence-coverage.html",
+    "file_url": true,
+    "goal": "Find a workshop costing under $50 and give its name and instructor.",
+    "expect": {
+      "answer_match": "River Mapping[\\s\\S]*Kai Reed|Kai Reed[\\s\\S]*River Mapping",
+      "text_match": "Instructor: Kai Reed"
+    }
+  },
+  {
+    "id": "fx-evidence-options",
+    "url": "evals/fixtures/evidence-coverage.html",
+    "file_url": true,
+    "goal": "What is the maximum battery capacity available for the Touring bicycle?",
+    "expect": {
+      "answer_match": "750",
+      "text_match": "All supported battery configurations"
+    }
+  },
+  {
+    "id": "fx-reload-recovery",
+    "url": "evals/fixtures/reload-loop.html",
+    "file_url": true,
+    "goal": "Open the station report and report only North station's sensor count.",
+    "expect": {
+      "answer_match": "^18$",
+      "url_match": "answer-evidence\\.html$"
     }
   }
 ]

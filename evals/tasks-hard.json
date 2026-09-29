@@ -101,9 +101,9 @@
   {
     "id": "demoqa-upload",
     "url": "https://demoqa.com/upload-download",
-    "goal": "Upload the file /etc/hostname using the Choose File input and stop when the uploaded path shows.",
+    "goal": "Upload the file {{UPLOAD_FIXTURE}} using the Choose File input and stop when the uploaded path shows.",
     "expect": {
-      "text_match": "hostname"
+      "text_match": "upload.txt"
     }
   },
   {

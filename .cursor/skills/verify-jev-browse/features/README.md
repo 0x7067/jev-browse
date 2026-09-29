@@ -78,6 +78,7 @@ handles, required state, commands, and observable proof.
 
 - [File URL gate](./file-url-gate.md) covers refusing `file://` without opt-in.
 - [Fixture modal](./fixture-modal.md) covers the deterministic modal confirm path.
+- [Fixture double-click](./fixture-double-click.md) covers report previews on both engines.
 - [Fixture hover menu](./fixture-hover-menu.md) covers CSS hover-reveal menus.
 - [Fixture type and redeem](./fixture-type-redeem.md) covers TYPE_TEXT + enable.
 - [CLI missing key](./cli-missing-key.md) covers the error when no provider key is set.

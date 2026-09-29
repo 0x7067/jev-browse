@@ -1,4 +1,6 @@
-import { OUTCOME_CRITERIA, type ProgressObservation } from "../agent/progress.ts";
+import { shortlistActions } from "./shortlist.ts";
+import { clockContext } from "./clock.ts";
+import { compactObservations, observationViewport, OBSERVED_TEXT_SCOPE, OUTCOME_CRITERIA, type ProgressObservation } from "../agent/progress.ts";
 import { trace } from "../trace.ts";
 
 import type { TypeSafeClient, Questions, ChoiceCriteria } from "@typesafe-ai/sdk";
@@ -62,17 +64,6 @@ export interface Decision {
   latency_ms: number;
 }
 
-function shrunkState(state: PageState, textCap: number, actionCap: number): PageState {
-  const elements = state.actions.filter((a) => a.node !== undefined);
-  const controls = state.actions.filter((a) => a.node === undefined);
-
-  return {
-    ...state,
-    text: state.text.slice(0, textCap),
-    actions: [...elements.slice(0, actionCap), ...controls],
-  };
-}
-
 export async function choose(
   client: TypeSafeClient,
   state: PageState,
@@ -80,12 +71,15 @@ export async function choose(
   history: HistoryEntry[],
   observations: ProgressObservation[] = [],
 ): Promise<Decision> {
-  const attempts = [state, shrunkState(state, 2500, 40), shrunkState(state, 1000, 20)];
+  const started = performance.now();
+  let candidateState = state;
   let invalidRetried = false;
 
-  for (let i = 0; i < attempts.length; i++) {
+  for (let i = 0; i < 2; i++) {
     try {
-      return await chooseOnce(client, attempts[i], goal, history, i === 0 ? observations : observations.slice(-2));
+      const decision = await chooseOnce(client, candidateState, goal, history, i === 0 ? observations : observations.slice(-2));
+
+      return { ...decision, latency_ms: Math.round(performance.now() - started) };
     } catch (error) {
       const msg = String(error);
 
@@ -95,7 +89,11 @@ export async function choose(
         continue;
       }
 
-      if (/max_tokens|context|too (large|long|many)/i.test(msg) && i + 1 < attempts.length) continue;
+      if (/max_tokens|context|too (large|long|many)/i.test(msg) && i === 0) {
+        trace("decision_context_fallback", { error: msg, actions: state.actions.length });
+        candidateState = { ...state, text: state.text.slice(0, 2000), actions: await shortlistActions(client, state, goal, history) };
+        continue;
+      }
 
       throw error;
     }
@@ -141,6 +139,7 @@ async function chooseOnce(
 
   const labels = new Map([
     ["CLICK", "Click an element, button, menu option, autocomplete suggestion, or calendar day."],
+    ["DOUBLE_CLICK", "Double-click an observed element with two consecutive clicks."],
     [
       "CONTEXT_CLICK",
       "Right-click an element to open a context menu or trigger its right-click handler.",
@@ -190,7 +189,7 @@ async function chooseOnce(
         element: `[${index}] ${a.label}`,
         current_value: a.current_value ?? a.value ?? "",
         ...Object.fromEntries(
-          ["role", "checked", "selected", "expanded", "cls", "draggable", "dropZone", "below"].flatMap(
+          ["role", "href", "checked", "selected", "expanded", "cls", "draggable", "dropZone", "below"].flatMap(
             (k) => (k in a ? [[k, a[k]]] : []),
           ),
         ),
@@ -201,12 +200,13 @@ async function chooseOnce(
   };
 
   for (const [operation, candidates] of Object.entries(targets)) {
+    if (operation === "DOUBLE_CLICK") continue;
     const pool = operation === "DRAG" ? dragDestinations : candidates;
 
     questions[`${operation.toLowerCase()}_target`] = {
       type: "choice",
       criteria: criteriaFor(pool),
-      instructions: { goal, operation, rules: [NEXT_ACTION, TARGET] },
+      instructions: { goal, operation: operation === "CLICK" ? "CLICK or DOUBLE_CLICK" : operation, rules: [NEXT_ACTION, TARGET] },
     };
   }
 
@@ -259,6 +259,10 @@ async function chooseOnce(
     url: state.url,
     title: state.title,
     text: state.text,
+    text_scope: OBSERVED_TEXT_SCOPE,
+    viewport: observationViewport(state),
+    tables: state.tables ?? [],
+    omitted_tables: state.omitted_tables ?? 0,
     ...(state.frames && { frames: state.frames.map(frame => ({ ...frame })) }),
     ...(state.challenge_reasons && { challenge_reasons: state.challenge_reasons }),
     ...(state.pending_nav === true && { pending_nav: true }),
@@ -272,13 +276,13 @@ async function chooseOnce(
   };
 
   const request = {
-    state: {
+    state: { ...clockContext(),
       page,
-      observed_progress: observations,
+      observed_progress: compactObservations(observations, state.tables),
       elements,
       recent_actions: history
         .slice(-10)
-        .map(({ action, kind, text, page_changed }) => ({ action, kind, text, page_changed })),
+        .map(({ action, kind, text, page_changed, url }) => ({ action, kind, text, page_changed, url })),
     },
     questions,
   };
@@ -305,7 +309,7 @@ async function chooseOnce(
   if (operation in targets) {
     const pool = operation === "DRAG" ? dragDestinations : targets[operation];
 
-    const answer = answers[`${operation.toLowerCase()}_target`] ?? {};
+    const answer = answers[`${operation === "DOUBLE_CLICK" ? "click" : operation.toLowerCase()}_target`] ?? {};
     validateChoice(answer, new Set(Object.keys(pool)));
     target = answer.choice;
     targetProbabilities = answer.probabilities;

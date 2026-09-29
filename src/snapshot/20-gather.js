@@ -18,6 +18,8 @@
 
   const actions=[];
 
+  const tableRoots=new Set();
+
   const deepHit=cache.deepHit=(doc,x,y)=>{
     let hit=doc.elementFromPoint(x,y);
 
@@ -40,6 +42,7 @@
 
   const gather=(root,fx,fy,depth)=>{
     if (depth>4) return;
+    tableRoots.add(root);
 
     for (const e of root.querySelectorAll('*')) {
       if (e.shadowRoot) gather(e.shadowRoot,fx,fy,depth+1);
@@ -52,15 +55,19 @@
 
       const dropZone=hasDropProp(e);
 
-      const clickCapable = dropZone || e.matches(selector) || hasHandlerProp(e) ||
-          listenedClick(e) || e.matches(tabindexSel);
+      const delegatedContainer = !dropZone &&
+        !e.matches(INTERACTIVE+','+tabindexSel+','+hoverSel+','+dragHandleSel+',[contenteditable="true"]') &&
+        Boolean(e.querySelector(INTERACTIVE));
 
-      const isCandidate = dropZone || e.matches(selector) || hasHandlerProp(e) ||
+      const clickCapable = !delegatedContainer && (dropZone || e.matches(selector) || hasHandlerProp(e) ||
+          listenedClick(e) || e.matches(tabindexSel));
+
+      const isCandidate = !delegatedContainer && (dropZone || e.matches(selector) || hasHandlerProp(e) ||
           listenedClick(e) || listenedHover(e) ||
           (e.matches(tabindexSel) &&
             (e.matches('[onclick],[onkeydown],[onkeypress],[onmousedown],[jsaction]') ||
               (e.ownerDocument.defaultView||window).getComputedStyle(e).cursor==='pointer' ||
-              e.querySelector(INTERACTIVE)));
+              e.querySelector(INTERACTIVE))));
 
       if (!isCandidate && panes.size < 10 && e.scrollHeight > e.clientHeight + 60 &&
           e.clientHeight >= 80 && e.clientHeight < innerHeight * 0.95 &&
@@ -147,7 +154,7 @@
         if (at>=0 && sibs.length>1) base.position=(at+1)+' of '+sibs.length;
       }
 
-      if (e.hasAttribute('oncontextmenu') || e.oncontextmenu) base.contextMenu=true;
+      if (contextCapable(e)) base.contextMenu=true;
 
       if (dropZone) base.dropZone=true;
 

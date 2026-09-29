@@ -13,6 +13,7 @@ export type JsonObject = { [key: string]: JsonValue };
 
 export type ActionKind =
   | "click"
+  | "double_click"
   | "context"
   | "drag"
   | "fill"
@@ -31,6 +32,7 @@ export type ObservedAction = {
   label: string;
   node?: number;
   role?: string;
+  href?: string;
   value?: string;
   current_value?: string;
   delta?: number;
@@ -59,6 +61,13 @@ export interface FrameState {
   app_readiness: { attribute: string; value: string; source: string } | null;
 }
 
+export type ObservedTable = {
+  label: string;
+  document_url: string;
+  rows: { row: number; cells: { text: string; kind: "header" | "data"; row_span: number; column_span: number; scope: string; sort: string }[] }[];
+  truncated: boolean;
+};
+
 export interface PageState {
   url: string;
   title: string;
@@ -80,6 +89,8 @@ export interface PageState {
   challenge?: boolean;
   challenge_reasons?: string[];
   frames?: FrameState[];
+  tables?: ObservedTable[];
+  omitted_tables?: number;
   busy?: boolean;
   delegatedContextmenu?: boolean;
   tabs?: { title: string; url: string; current?: boolean }[];

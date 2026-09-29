@@ -35,6 +35,8 @@
 
       if (rel) base.rel=rel;
 
+      if (contextCapable(e)) base.contextMenu=true;
+
       const href=e.getAttribute('href');
 
       if (rname==='link' && href && href!=='#' && !href.startsWith('javascript:'))

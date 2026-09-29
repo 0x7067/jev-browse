@@ -71,7 +71,7 @@ let node,length=0;
   const busy=!!document.querySelector('[aria-busy="true"]');
 
   const marker=[performance.timeOrigin,location.href,scrollX,scrollY,innerWidth,innerHeight,
-    document.title,text,semantics,page_key[6],busy,frames,challenge_reasons];
+    document.title,text,semantics,page_key[6],busy,frames,challenge_reasons,tables,omitted_tables];
 
   const omitted_actions=Math.max(0,actions.length-MAX_ACTIONS);
 
@@ -124,7 +124,7 @@ let node,length=0;
     .some(e=>e && listenSet(e)?.has('contextmenu'));
 
   const state={url:location.href,title:document.title,w:innerWidth,h:innerHeight,text,
-    scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused,frames};
+    scroll:{y:scrollY,height},actions,marker,page_key,guards,omitted_actions,focused,frames,tables,omitted_tables};
 
   if (challenge) { state.challenge=true; state.challenge_reasons=[...new Set(challenge_reasons)]; }
 

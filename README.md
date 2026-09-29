@@ -27,7 +27,7 @@ Each observation builds a fresh element table:
 ...
 ```
 
-The operations are `CLICK`, `TYPE_TEXT`, `SELECT`, `SCROLL_UP`, `SCROLL_DOWN`,
+The operations are `CLICK`, `DOUBLE_CLICK`, `TYPE_TEXT`, `SELECT`, `SCROLL_UP`, `SCROLL_DOWN`,
 `WAIT`, `DONE`, and `BLOCKED`. There are also `HOVER`, `CONTEXT_CLICK`, `DRAG`,
 `GO_BACK`, `GO_FORWARD`, and `PRESS_*` for Enter, Tab, Escape, Backspace,
 Delete, the arrows, Home, End, PageUp, PageDown, and Space. Key presses are
@@ -190,11 +190,15 @@ flags, split like a shell would: quotes group words, `\` escapes.
 | Deps | Chrome only | agent-browser binary |
 
 Both engines implement `BrowserDriver` (`observe / fresh / act / close`) on
-top of the same `snapshot.js`, action space, and freshness checks. `cdp` is
-the default for two reasons. It reached more correct final states when the two
-were compared, and it's the only engine that reaches into iframes and shadow
-DOM. CSS selectors can't cross those boundaries, so the agent-browser engine
-drops those actions from the table instead of offering targets it can't hit.
+top of the same `snapshot.js`, action space, and freshness checks. `cdp` remains
+the default. Both engines follow new tabs and expose explicit tab switching.
+Field-value generation retains observed page history for cross-page tasks.
+Agent-browser uses validated native mouse/keyboard input for click,
+hover, and text entry inside open shadow roots and accessible same-origin frames,
+and native select values with input/change events. Nested frame and shadow form
+fixtures cover these paths. Cross-origin frame contents remain inaccessible to
+the shared DOM snapshot. File uploads across shadow/frame boundaries are not yet
+verified; ordinary top-level upload behavior is unchanged.
 
 ## Code map
 
@@ -375,3 +379,18 @@ revision. Page timer throttling cannot prolong the scheduled wait; an unresponsi
 CDP call remains subject to the separate protocol timeout. Run
 `node scripts/check-settle-budget.mjs` to check quiet and continuously mutating
 pages with deliberately delayed page timers.
+
+Double-click uses two native click pairs with CDP. Agent-browser dispatches
+the corresponding pointer/mouse events and `dblclick` in the target document;
+these synthetic events have `isTrusted=false`. Its installed `dblclick` command
+emitted only one click event in verification, so it is not used.
+
+Answer delivery uses a separate review call. With an OpenRouter text endpoint,
+`ANSWER_REVIEW_MODEL` defaults to `anthropic/claude-opus-5.5`; other text endpoints use
+`TEXT_MODEL`. Set `ANSWER_REVIEW_MODEL` to override it. Jev still selects browser
+actions and determines whether a written answer is requested. Action-only goals
+do not require text-model credentials. Review calls add latency and cost.
+If answer generation returns empty or malformed content, its second attempt uses
+the configured answer-review model. Valid null answers, refusals, and unsupported
+claims do not trigger this fallback. Generated answers still require evidence
+review, and traces record the actual models and reported usage.

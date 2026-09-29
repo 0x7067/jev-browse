@@ -135,7 +135,7 @@ function runOnce(task, env, engine, traceEnabled) {
       [
         cliEntryPath(ROOT),
         "--url", url,
-        "--goal", expandDates(task.goal, new Date()),
+        "--goal", expandDates(task.goal, new Date()).replaceAll("{{UPLOAD_FIXTURE}}", join(ROOT, "evals/fixtures/upload.txt")),
         ...(task.completion ? ["--expect", JSON.stringify(task.completion)] : []),
         ...(traceFile ? ["--trace", traceFile] : []),
         ...(task.max_steps ? ["--max-steps", String(task.max_steps)] : []),
@@ -294,7 +294,7 @@ async function main() {
   mkdirSync(RESULTS_DIR, { recursive: true });
 
   const isInfra = (r) =>
-    (r.status === "error" && (r.steps ?? 0) === 0) || /TypeSafe API credits/.test(r.error ?? "");
+    r.status === "error" && /TypeSafe API credits|(?:OPENROUTER_API_KEY|TYPESAFE_API_KEY|TEXT_MODEL_API_KEY) is not set/.test(r.error ?? "");
 
   for (const task of tasks) {
     const runs = [];
@@ -380,7 +380,7 @@ async function main() {
     }
   }
 
-  if (totals.failed > 0) process.exit(1);
+  if (totals.failed > 0 || totals.infra_errors > 0) process.exit(1);
 }
 
 main().catch((e) => {

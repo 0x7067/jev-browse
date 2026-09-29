@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Delayed report menu</title>
+<button id="reports" aria-expanded="false" aria-controls="menu">Reports</button>
+<div id="menu" hidden></div>
+<output id="result"></output>
+<script>
+const reports = document.querySelector('#reports');
+const menu = document.querySelector('#menu');
+let pending;
+reports.addEventListener('click', () => {
+  const open = reports.getAttribute('aria-expanded') !== 'true';
+  reports.setAttribute('aria-expanded', String(open));
+  clearTimeout(pending);
+  menu.hidden = true;
+  menu.replaceChildren();
+  if (open) pending = setTimeout(() => {
+    const exportButton = document.createElement('button');
+    exportButton.textContent = 'Export quarterly report';
+    exportButton.addEventListener('click', () => {
+      document.querySelector('#result').textContent = 'Quarterly report exported';
+    });
+    menu.append(exportButton);
+    menu.hidden = false;
+  }, 400);
+});
+</script>
+</html>
