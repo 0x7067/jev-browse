@@ -1,0 +1,14 @@
+scripts/check-field-recovery.mjs
+  h_29be57c0addd47 46,48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "06f1e25ddc8519cce02c847bfd8ad255223aa1ad",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
