@@ -1,0 +1,19 @@
+src/agent/progress.ts
+  s_4f9d5361ef19c2::t_ffcb3cf22bbb8d 91-123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "435d129b5dc177fcb1cbe6b7afb48921429c0929",
+  "prompts": {},
+  "sessions": {
+    "s_4f9d5361ef19c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6eaaef07-df18-419d-8b34-a51c346beeb4",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
