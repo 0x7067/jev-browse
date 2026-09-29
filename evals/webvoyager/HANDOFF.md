@@ -1,4 +1,41 @@
-# Handoff — paused September 29, 2026 (updated 19:50 -03:00)
+# Handoff — paused September 29, 2026 (updated 20:52 -03:00)
+
+## Update 2: runs after credit top-up (key limit raised to $120)
+
+- Targeted rerun of the 7 tasks that got 402s, plus field/retention tasks:
+  `targeted-cdp-1790722817759.json` 8/0/2, `targeted-agent-browser-1790722960242.json`
+  9/0/1. None of the former 402 tasks fail on either engine.
+- Full fixture suites with the field and retention changes:
+  `retention-full-cdp-1790724313816.json` 91/0/7 and
+  `retention-full-agent-browser-1790725197791.json` 91/0/7. CDP-only
+  failures, rerun 3x (`rerun-cdp-1790725269020.json`): fx-disabled-redeem 3/3
+  pass (flake); fx-iframe 2/3; jqueryui-datepicker 0/3. The datepicker also
+  fails 0/3 at pre-change commit 6f15cb3 (`base-datepicker-1790725315112.json`),
+  so it is a live-site change, not a regression from this work.
+- fx-iframe is flaky on CDP before and after: pre-retention worktree
+  (06f1e25) was 1/3, current build 1/3 then 2/3. agent-browser 3/3. Cause:
+  at scroll 624 the CDP snapshot drops the same-origin iframe's inner button
+  (49 -> 22 actions; the frame is still listed), so the agent loops. It is an
+  existing CDP frame-candidacy bug, not yet fixed. Look at
+  `src/snapshot/20-gather.js` frame recursion and the cdp observe path.
+- fx-evidence-retention A/B (3x per engine): pre-retention build 0/3 CDP and
+  0/3 agent-browser (step budget, never answers). Current build: agent-browser
+  3/3. CDP answered 14 in all 3 runs, but GO_BACK after the final scroll broke
+  the old terminal-text expectation. The expectation now checks the executed
+  path (`CLICK:Pricing` + 11 scrolls) plus the answer. Recorded runs pass it
+  on both engines.
+- Live `webvoyager-field-retention-2026-09-29`: Huggingface--28 verified;
+  Huggingface--36 unverifiable (plans correct, extra pay-as-you-go items
+  flagged by the judge); ArXiv--24 failed (blocked/no_progress).
+- ArXiv--24: the field fix works (no helper failure). The remaining failure is
+  planning. The affiliation is not on the abstract page. "View PDF" and "HTML
+  (experimental)" are offered, but the planner oscillates on the self-link /
+  Search. Two generic fixes were tried and reverted, each with 2 live reruns
+  and no gain: (a) naming repeated actions in the fuse hint
+  (`webvoyager-arxiv-hint-{1,2}`), (b) hiding click targets whose identical
+  transition repeated twice (`webvoyager-arxiv-transition-{1,2}`); the loop just
+  moved to other targets. Treat this as a decision-model limit on choosing an
+  unexplored evidence source.
 
 ## Update: field recovery implemented, blocked on OpenRouter credit
 
