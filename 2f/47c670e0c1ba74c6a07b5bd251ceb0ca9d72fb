@@ -1,0 +1,28 @@
+bundled/cli.mjs
+  h_29be57c0addd47 844-847,1235-1240,1243,1356-1365,2165
+bundled/mcp.mjs
+  h_29be57c0addd47 850-853,1241-1246,1249,1362-1371,2171
+evals/tasks.json
+  h_29be57c0addd47 875-895
+evals/webvoyager/HANDOFF.md
+  h_29be57c0addd47 1-31
+scripts/check-field-recovery.mjs
+  h_29be57c0addd47 21-25,27-78
+src/agent.ts
+  h_29be57c0addd47 50
+src/agent/steps.ts
+  h_29be57c0addd47 96-101,103,108-110,262-276
+src/model/text.ts
+  h_29be57c0addd47 134,150-155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2f47c670e0c1ba74c6a07b5bd251ceb0ca9d72fb",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
