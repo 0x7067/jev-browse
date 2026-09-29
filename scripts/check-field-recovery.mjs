@@ -43,7 +43,9 @@ for (const [engine, Driver] of [["cdp", CdpBrowser], ["agent-browser", AgentBrow
           const target = Object.entries(request.questions.type_text_target?.criteria ?? {}).find(([, value]) => value.element?.endsWith("] Inspection code"));
 
           if (!target || agent.page.text.includes("Inspection code:")) return response;
+
           if (!variant.always && forced > 0) return response;
+
           forced++;
           trace("controlled_unavailable_field", { engine, variant: variant.name, forced, target: target[0] });
           response.answers.goal_progress = choice(request.questions.goal_progress, "INCOMPLETE");
