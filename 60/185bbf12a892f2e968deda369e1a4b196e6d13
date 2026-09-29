@@ -1,0 +1,75 @@
+.cursor/skills/verify-jev-browse/features/README.md
+  s_b4aa746b515b2b::t_a3fa5b754da92d 86-87
+.cursor/skills/verify-jev-browse/features/replay-diagnostics.md
+  s_b4aa746b515b2b::t_d9257e39b433e0 1-37
+README.md
+  s_879982f9b55d6a::t_9e0cf36821a2c6 303-359
+evals/README.md
+  s_b4aa746b515b2b::t_6a8b09bc6a7aca 106-137
+evals/fixtures/replay.html
+  s_b4aa746b515b2b::t_9d2ab509a635e3 1-14
+evals/fixtures/replay.js
+  s_879982f9b55d6a::t_1b33acd7a9c37a 1-51
+evals/tasks-hard.json
+  s_879982f9b55d6a::t_25db8355b0a871 165-208,210
+evals/tasks.json
+  s_b4aa746b515b2b::t_6d982948f23ea2 477-557
+scripts/check-cdp-trace.mjs
+  s_b4aa746b515b2b::t_6e3969d3254880 1-38
+scripts/eval.mjs
+  s_b4aa746b515b2b::t_5296a4c5393962 3,25,47,62,101-112,124,128,139-141,157-162,168,220,227-228,244,303,313
+scripts/trace-summary.mjs
+  s_b4aa746b515b2b::t_fee7ff9be7f241 1-33
+src/abrowser.ts
+  s_879982f9b55d6a::t_24c9b48435816d 1,188-191,244
+src/agent.ts
+  s_b4aa746b515b2b::t_8ba63d9ce62353 1,3-4,32-33,62-64,85-86,104,154-155,186-187,202,208,228-229,244-245,294,343-344
+src/agent/completion.ts
+  s_879982f9b55d6a::t_42f1203e0745f8 1-80
+src/agent/consults.ts
+  s_879982f9b55d6a::t_b6fcc859484be8 16,27,52
+src/agent/steps.ts
+  s_879982f9b55d6a::t_67c57afff6d35e 1,17-24,45,79-83,178,250-256,258,331,334,341-342
+src/cdp/browser.ts
+  s_879982f9b55d6a::t_4dc78561db1b40 1-3,17,137,173-174,227-230,259,266,319,367
+src/cdp/evaluate.ts
+  s_b4aa746b515b2b::t_53a8836a955aa7 1-71
+src/cdp/events.ts
+  s_b4aa746b515b2b::t_a35819d4122a46 1,34-35,44-45,49-50,59-60
+src/cdp/fresh.ts
+  s_879982f9b55d6a::t_70b1ec56a3d009 12,27,38,47-48,57-58,64
+src/cdp/socket.ts
+  s_b4aa746b515b2b::t_73abc6db7b9119 4,32,72-73,108-111,114-119,121-123,126-133,137,141,145-152,159-161
+src/cdp/stop.ts
+  s_b4aa746b515b2b::t_07fccd03dafd21 1-15
+src/json.ts
+  s_879982f9b55d6a::t_1a527f894ee803 1,31-32,38,43,49,52-53,55-59
+src/questions.ts
+  s_b4aa746b515b2b::t_e548721b9c9776 31,50-52
+src/types.ts
+  s_879982f9b55d6a::t_49a9e2ba10f651 50-60,80-81,103,108,146-147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "60185bbf12a892f2e968deda369e1a4b196e6d13",
+  "prompts": {},
+  "sessions": {
+    "s_879982f9b55d6a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0edf6-ef4c-7950-a2ae-62a839c29d57",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    },
+    "s_b4aa746b515b2b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f479b117-f243-49ed-a4cd-dc1d6f2dcb75",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
