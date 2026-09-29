@@ -1,0 +1,32 @@
+HANDOFF.md
+  h_29be57c0addd47 81-90
+README.md
+  h_29be57c0addd47 360-365
+bundled/cli.mjs
+  h_29be57c0addd47 2764-2782
+bundled/mcp.mjs
+  h_29be57c0addd47 2770-2788
+bundled/snapshot.js
+  h_29be57c0addd47 6
+evals/unresolved-findings.md
+  h_29be57c0addd47 1-69
+scripts/check-settle-budget.mjs
+  h_29be57c0addd47 1-42
+src/cdp/fresh.ts
+  h_29be57c0addd47 20-41
+src/snapshot.js
+  h_29be57c0addd47 6
+src/snapshot/00-core.js
+  h_29be57c0addd47 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e26320939427130149a85e6a2c2a554975ab1055",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
