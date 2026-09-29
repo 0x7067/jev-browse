@@ -1,0 +1,20 @@
+evals/fixtures/evidence-retention.html
+  h_29be57c0addd47 1-14
+evals/tasks.json
+  h_29be57c0addd47 896-906
+evals/webvoyager/HANDOFF.md
+  h_29be57c0addd47 45-56
+scripts/check-evidence-retention-browser.mjs
+  h_29be57c0addd47 1-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9e7afbde972b5f1ec53b23b5da00e03d67eb471a",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
