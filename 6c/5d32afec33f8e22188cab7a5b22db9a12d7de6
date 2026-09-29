@@ -1,0 +1,29 @@
+.cursor/skills/verify-jev-browse/features/replay-diagnostics.md
+  s_6cc6de7afd2887::t_d58a4459ede062 38-45
+README.md
+  s_6cc6de7afd2887::t_129f5f904a8254 328-341
+src/agent/completion.ts
+  s_6cc6de7afd2887::t_59f623bb10ee26 7,23,26,33,36,39-48,53-56,65-75,85-87
+src/agent/progress.ts
+  s_6cc6de7afd2887::t_bb038dba363307 1-51
+src/model/decide.ts
+  s_6cc6de7afd2887::t_c877115b599671 1,49,81,88,112,173-177,277,291-292,342
+src/questions.ts
+  s_6cc6de7afd2887::t_15525ee838fbb6 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6c5d32afec33f8e22188cab7a5b22db9a12d7de6",
+  "prompts": {},
+  "sessions": {
+    "s_6cc6de7afd2887": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0de49-6b39-7373-86fc-b8f77f056fe2",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
