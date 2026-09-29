@@ -35,3 +35,11 @@ sandboxed frame's inaccessible status. Run those shared-observation cases with
 Optional live comparison: `guide-anchor-broad,guide-anchor-precise` from
 `tasks-hard.json`. Both preserve the historical goals. Inspect the broad trace's
 final URL and matching visible heading; a URL regex alone does not prove it.
+
+## Open-ended goal tracking
+
+Run `--tasks fx-goal-open-ended,fx-goal-already-satisfied,fx-goal-history,fx-goal-action-only,fx-goal-unobservable --trace`.
+These cover a broad quiz goal without answering, zero-action completion, multiple
+requirements, an action-only stopping boundary, and unavailable approval evidence.
+Inspect `goal_assessment` trace events and the `goal_progress` decision head.
+No task supplies agent completion regexes; eval expectations remain independent.

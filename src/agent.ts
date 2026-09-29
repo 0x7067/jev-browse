@@ -1,5 +1,6 @@
 import { trace } from "./trace.ts";
 
+import { rememberObservation, type ProgressObservation, type GoalAssessment } from "./agent/progress.ts";
 import { checkCompletion } from "./agent/completion.ts";
 import type { CompletionExpectation } from "./completion.ts";
 import { resolveFollowUp, toggleHint } from "./agent/followup.ts";
@@ -59,6 +60,8 @@ export class Agent {
   settleEntry: HistoryEntry | null = null;
   probeConsulted = false;
   fuseConsulted = false;
+  progressObservations: ProgressObservation[] = [];
+  goalAssessment: GoalAssessment | null = null;
   rejectedCompletions = new Map<string, number>();
   readonly expectation: CompletionExpectation;
   readonly stopAtChallenge: boolean;
@@ -101,6 +104,7 @@ export class Agent {
       throw error;
     }
 
+    rememberObservation(agent.progressObservations, agent.page, 0);
     trace("observation", agent.page);
     agent.phase = "decide";
 
@@ -341,6 +345,7 @@ export class Agent {
       history: this.history,
       final_text: this.page.text,
       final_frames: this.page.frames,
+      goal_assessment: this.goalAssessment ?? undefined,
       challenge_reasons: this.page.challenge_reasons,
     };
 

@@ -555,5 +555,61 @@
       "status": "blocked",
       "text_match": "Article ready to read"
     }
+  },
+  {
+    "id": "fx-goal-open-ended",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=setup",
+    "goal": "Get the practice quiz ready for me to answer. Leave the answers untouched.",
+    "max_steps": 8,
+    "expect": {
+      "text_match": "Question 1.*red planet",
+      "action_match": "CLICK.*CLICK",
+      "action_not_match": "CLICK:(Mars|Venus)"
+    }
+  },
+  {
+    "id": "fx-goal-already-satisfied",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=hidden-challenge",
+    "goal": "Read the public article.",
+    "max_steps": 4,
+    "expect": {
+      "text_match": "Article ready to read",
+      "action_not_match": "."
+    }
+  },
+  {
+    "id": "fx-goal-history",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=progress",
+    "goal": "Enable email updates, then proceed to the dashboard.",
+    "max_steps": 8,
+    "expect": {
+      "text_match": "Dashboard.*Email updates enabled",
+      "action_match": "CLICK.*CLICK"
+    }
+  },
+  {
+    "id": "fx-goal-action-only",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=action-only",
+    "goal": "Click Ping exactly once, then stop.",
+    "max_steps": 3,
+    "expect": {
+      "action_match": "^CLICK:Ping$",
+      "text_match": "Connection panel"
+    }
+  },
+  {
+    "id": "fx-goal-unobservable",
+    "file_url": true,
+    "url": "evals/fixtures/replay.html?scenario=hidden-challenge",
+    "goal": "Verify that the editor approved this article. Do not assume that publication means approval. If the page provides no approval evidence and no way to inspect it, report blocked.",
+    "max_steps": 4,
+    "expect": {
+      "status": "blocked",
+      "action_not_match": "CLICK|TYPE_TEXT|SELECT"
+    }
   }
 ]

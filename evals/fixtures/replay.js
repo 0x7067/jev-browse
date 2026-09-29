@@ -49,3 +49,15 @@ if (scenario === 'anchors') {
     };
   }
 }
+
+if (scenario === 'progress') {
+  app.innerHTML = '<h1>Preferences</h1><label><input type="checkbox">Email updates</label><button>Continue to dashboard</button>';
+  app.querySelector('button').onclick = () => {
+    const enabled = app.querySelector('input').checked;
+    app.innerHTML = '<h1>Dashboard</h1><p>' + (enabled ? 'Email updates enabled' : 'Email updates disabled') + '</p>';
+  };
+}
+
+if (scenario === 'action-only') {
+  app.innerHTML = '<h1>Connection panel</h1><button>Ping</button>';
+}

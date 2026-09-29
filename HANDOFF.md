@@ -88,3 +88,26 @@ Subsequent investigation and the retained host-clock settling fix are documented
 in `evals/unresolved-findings.md`. Experimental model-only completion changes were
 discarded after regressions. General model-only completion and the historical
 intermittent CDP timeout remain open; do not describe them as solved.
+
+## Default goal tracking (September 29 follow-up)
+
+Added bounded observed progress (initial plus seven recent observations), a
+pre-action goal assessment in the existing decision request, and completion
+review with satisfied/incomplete/uncertain outcomes and an evidence basis.
+Rejected assessments persist in decision context. Explicit expectations remain
+optional. Result `goal_assessment` and trace events expose the review.
+
+The first broad quiz fixture exposed an extra answer click after preparation;
+the pre-action assessment fixed this in two repeated runs using general
+preparation instructions. This is measured improvement, not proof that arbitrary
+goals are solved. History is bounded, and the same model can still misjudge both
+progress and evidence. No new text-model dependency or fixed success strings.
+
+TypeSafe baseline could not run (402, exhausted credits). Evaluations used the
+existing OpenRouter route. `goal-general-1790700932572.json`: 8 verified, 0
+unverifiable, 2 failed because the unavailable-evidence assertion incorrectly
+forbade WAIT. Corrected it to prohibit state-changing actions;
+`goal-uncertain-1790700925488.json`: 1 verified, 0 unverifiable, 0 failed.
+Typecheck, lint, and bundle consistency checks passed.
+
+Final acceptance: `evals/results/goal-acceptance-1790700995682.json`: 12 verified, 0 unverifiable, 0 failed. Evidence copied to verification artifacts `20260929-135016-89789/goal-tracking`. Not released.

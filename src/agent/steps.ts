@@ -1,3 +1,4 @@
+import { progressHint, rememberObservation } from "./progress.ts";
 import { trace, tracing } from "../trace.ts";
 import type { Agent } from "../agent.ts";
 import { choose } from "../model/decide.ts";
@@ -80,7 +81,8 @@ export async function decideStep(a: Agent): Promise<void> {
       ? `Required completion evidence (all patterns must match the current observation): ${JSON.stringify(a.expectation)}. Continue toward this evidence; a setup screen is not a completed result.`
       : "";
 
-    const goal = [a.goal, conditions, repair].filter(Boolean).join("\n\n");
+    rememberObservation(a.progressObservations, a.page, a.history.length);
+    const goal = [a.goal, conditions, progressHint(a.goalAssessment), repair].filter(Boolean).join("\n\n");
 
     const dead = new Set(
       [...a.domDead].flatMap(([node, n]) => (n >= 2 ? [node] : [])),
@@ -107,7 +109,7 @@ export async function decideStep(a: Agent): Promise<void> {
         }
       : live;
 
-    a.decision = await choose(a.client, page, goal, a.history);
+    a.decision = await choose(a.client, page, goal, a.history, a.progressObservations);
     a.decisions.push(a.decision);
     reportDecision(a, page, Boolean(repair));
     a.lastOperation = a.decision.operation;
@@ -142,6 +144,12 @@ export async function actStep(a: Agent): Promise<void> {
     if (!decision) throw new Error("Choose before acting");
     a.decision = null;
     const selected = decision.choice;
+
+    if (selected !== "DONE" && decision.goal_status === "SATISFIED") {
+      if (await a.confirmDone(a.history.at(-1)?.kind)) a.phase = "done";
+
+      return;
+    }
 
     if (selected === "DONE" || selected === "BLOCKED") {
       if (!(await a.browser.fresh(page, undefined, "structure"))) {

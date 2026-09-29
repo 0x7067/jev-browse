@@ -1,3 +1,4 @@
+import type { GoalAssessment } from "./agent/progress.ts";
 
 export type JsonValue =
   | string
@@ -142,6 +143,7 @@ export interface RunResult {
   decisions: number;
   elapsed_ms: number;
   history: HistoryEntry[];
+  goal_assessment?: GoalAssessment;
   final_text?: string;
   final_frames?: FrameState[];
   challenge_reasons?: string[];

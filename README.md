@@ -325,8 +325,20 @@ scheduling delays. A call still pending after five seconds triggers one
 An error names the stalled method, purpose, session, and call ID.
 
 Every DONE claim, including a predicted DONE_AFTER, now checks its outcome on a
-fresh observation. Without explicit expectations, this uses a separate model
-completion check and remains a model judgment. Two rejected claims on the same
+fresh observation. Default goal tracking keeps the initial observation and seven
+recent observations, with bounded text and control summaries. Decisions assess
+whether the goal is already satisfied before executing another action. A satisfied
+assessment triggers the completion check even when the proposed action is not DONE.
+
+The completion review distinguishes satisfied, incomplete, and uncertain outcomes
+and checks the evidence basis: current state, observed history, or an action the
+user explicitly requested as the stopping boundary. It supports already-satisfied
+goals and intermediate outcomes that disappear after navigation. Rejected reviews
+stay in subsequent decision context; uncertainty calls for inspection, not blind
+repetition of an irreversible action. No regex or fixed success banner is required.
+`goal_assessment` in the result records the latest completion review; traces retain
+the supporting observation history. These are model judgments, not independent
+proofs. Bounded history can omit evidence, and both model assessments can be wrong. Two rejected claims on the same
 observation end as `blocked/completion_unverified`.
 
 For a known outcome, supply `--expect` with a nonempty JSON object of regexes:
