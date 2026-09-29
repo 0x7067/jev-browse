@@ -13,11 +13,10 @@
   fails 0/3 at pre-change commit 6f15cb3 (`base-datepicker-1790725315112.json`),
   so it is a live-site change, not a regression from this work.
 - fx-iframe is flaky on CDP before and after: pre-retention worktree
-  (06f1e25) was 1/3, current build 1/3 then 2/3. agent-browser 3/3. Cause:
-  at scroll 624 the CDP snapshot drops the same-origin iframe's inner button
-  (49 -> 22 actions; the frame is still listed), so the agent loops. It is an
-  existing CDP frame-candidacy bug, not yet fixed. Look at
-  `src/snapshot/20-gather.js` frame recursion and the cdp observe path.
+  (06f1e25) was 1/3, current build 1/3 then 2/3. agent-browser 3/3. The
+  button sits at page y≈418. After CDP's 624px scroll it is above the viewport
+  (624..1404), so dropping it is correct candidacy, not a bug. The flake is the
+  planner scrolling past the section and not scrolling back to click.
 - fx-evidence-retention A/B (3x per engine): pre-retention build 0/3 CDP and
   0/3 agent-browser (step budget, never answers). Current build: agent-browser
   3/3. CDP answered 14 in all 3 runs, but GO_BACK after the final scroll broke
