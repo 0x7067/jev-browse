@@ -78,3 +78,13 @@ was identified in freshness traces and excluded from completion stability only.
 The strict quiz replay now supplies persistent explicit completion evidence and
 stops at visible verification. New local diagnostic traces replace the temporary
 WebSocket probe. Source and committed bundles are updated together.
+
+## Release and follow-up
+
+Published v0.14.4 from 2c567e3:
+https://github.com/0x7067/jev-browse/releases/tag/v0.14.4
+
+Subsequent investigation and the retained host-clock settling fix are documented
+in `evals/unresolved-findings.md`. Experimental model-only completion changes were
+discarded after regressions. General model-only completion and the historical
+intermittent CDP timeout remain open; do not describe them as solved.

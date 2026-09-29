@@ -3,30 +3,12 @@
 
   const cache = window.__jevFast ||= {ids:new WeakMap(), nodes:new Map(), next:1};
 
-  const wake = cache.wake ||= {rev:0, listeners:new Set()};
+  const wake = cache.wake ||= {rev:0};
 
   if (!wake.observer) {
-    wake.quiet = (quietMs, budgetMs) => new Promise(resolve => {
-      const deadline = Date.now() + budgetMs;
-      let timer;
-
-      const off = () => {wake.listeners.delete(bump); clearTimeout(timer);};
-
-      const done = () => {off(); resolve(wake.rev);};
-
-      const arm = () => {timer = setTimeout(done, Math.max(0, Math.min(quietMs, deadline - Date.now())));};
-
-      const bump = () => {clearTimeout(timer); arm();};
-
-      wake.listeners.add(bump);
-      arm();
-    });
-
     wake.observer = new MutationObserver(records => {
       if (records.every(r => r.type === 'attributes' && r.attributeName === 'data-jev-node')) return;
       wake.rev++;
-
-      for (const listener of wake.listeners) listener();
     });
 
     wake.observer.observe(document.documentElement,

@@ -357,3 +357,9 @@ Completion stability compares semantic controls, text, URLs, readiness, and
 challenge evidence. It ignores CSS class-name hints such as a temporary `copied`
 class; action freshness continues to compare those hints before dispatch.
 Explicit completion conditions remain in every decision prompt until satisfied.
+
+Settling measures the quiet period with Node's clock and polls the page's mutation
+revision. Page timer throttling cannot prolong the scheduled wait; an unresponsive
+CDP call remains subject to the separate protocol timeout. Run
+`node scripts/check-settle-budget.mjs` to check quiet and continuously mutating
+pages with deliberately delayed page timers.

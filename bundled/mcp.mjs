@@ -2767,15 +2767,25 @@ async function domDispatch(host, action, text) {
 var READ_STATE = loadSnapshotJs();
 var MARKER = `(() => { const state=${READ_STATE}; return state?.marker ?? null; })()`;
 async function settle(host, budgetMs, quietMs = QUIET_MS) {
-  const quiet = await host.evaluate(
-    `(() => {const w = window.__jevFast && window.__jevFast.wake;
-        if (!w || !w.quiet) return false;
-
-        return w.quiet(${Math.min(quietMs, budgetMs)}, ${budgetMs}).then(() => true);})()`,
-    true,
-    "settle"
-  ).catch(() => false);
-  if (quiet !== true) await sleep(budgetMs);
+  const deadline = performance.now() + budgetMs;
+  let quietSince = performance.now();
+  let previous;
+  while (performance.now() < deadline) {
+    const revision = await host.evaluate(
+      "window.__jevFast?.wake?.rev",
+      false,
+      "settle"
+    ).catch(() => void 0);
+    if (revision === void 0) {
+      await sleep(Math.max(0, deadline - performance.now()));
+      return;
+    }
+    if (previous !== revision) quietSince = performance.now();
+    previous = revision;
+    const now = performance.now();
+    if (now - quietSince >= quietMs) return;
+    await sleep(Math.max(0, Math.min(50, deadline - now, quietMs - (now - quietSince))));
+  }
 }
 async function fresh(host, page, action, level = "full") {
   if (action && (action.kind === "click" || action.kind === "select")) {

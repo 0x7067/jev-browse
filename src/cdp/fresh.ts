@@ -17,18 +17,28 @@ export async function settle(
   budgetMs: number,
   quietMs: number = QUIET_MS,
 ): Promise<void> {
-  const quiet = await host
-    .evaluate<boolean>(
-      `(() => {const w = window.__jevFast && window.__jevFast.wake;
-        if (!w || !w.quiet) return false;
+  const deadline = performance.now() + budgetMs;
+  let quietSince = performance.now();
+  let previous: number | undefined;
 
-        return w.quiet(${Math.min(quietMs, budgetMs)}, ${budgetMs}).then(() => true);})()`,
-      true,
-      "settle",
-    )
-    .catch(() => false);
+  while (performance.now() < deadline) {
+    const revision = await host.evaluate<number>(
+      "window.__jevFast?.wake?.rev", false, "settle",
+    ).catch(() => undefined);
 
-  if (quiet !== true) await sleep(budgetMs);
+    if (revision === undefined) {
+      await sleep(Math.max(0, deadline - performance.now()));
+
+      return;
+    }
+
+    if (previous !== revision) quietSince = performance.now();
+    previous = revision;
+    const now = performance.now();
+
+    if (now - quietSince >= quietMs) return;
+    await sleep(Math.max(0, Math.min(50, deadline - now, quietMs - (now - quietSince))));
+  }
 }
 
 export async function fresh(
