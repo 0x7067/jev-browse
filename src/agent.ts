@@ -47,6 +47,7 @@ export class Agent {
   fingerprints: string[] = [];
   domRetried = new Set<number>();
   domDead = new Map<number, number>();
+  unavailableFields = new Map<number, { fingerprint: string; step: number }>();
   domFingerprint: string | undefined;
   followUp: { type: string; text: string | null; prevNodes: Set<number> } | null = null;
   textCalls: any[] = [];

@@ -131,7 +131,7 @@ export async function helperJson(
 
 export async function fieldText(
   context: JsonValue,
-): Promise<{ text: string; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
+): Promise<{ text: string | null; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
   let output: JsonObject;
   let helper: { model: string; latency_ms: number; usage: JsonValue };
 
@@ -146,6 +146,12 @@ export async function fieldText(
   }
 
   const value: JsonValue = output.text;
+
+  if (Object.keys(output).join() === "text" && value === null) {
+    trace("text_helper_unavailable", { model: helper.model });
+
+    return { text: null, helper };
+  }
 
   if (
     Object.keys(output).join() !== "text" ||

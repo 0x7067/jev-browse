@@ -872,5 +872,26 @@
       "answer_match": "^18$",
       "url_match": "answer-evidence\\.html$"
     }
+  },
+  {
+    "id": "fx-field-recovery",
+    "url": "evals/fixtures/field-recovery.html",
+    "file_url": true,
+    "goal": "Verify this inspection using the code from its sealed report.",
+    "max_steps": 8,
+    "expect": {
+      "text_match": "Inspection verified"
+    }
+  },
+  {
+    "id": "fx-field-unavailable",
+    "url": "evals/fixtures/field-recovery.html?missing",
+    "file_url": true,
+    "goal": "Verify this inspection using the code from its sealed report.",
+    "max_steps": 8,
+    "expect": {
+      "status": "blocked",
+      "text_match": "Inspection pending"
+    }
   }
 ]

@@ -841,6 +841,10 @@ async function fieldText(context) {
     throw new Error(`Text helper returned no valid field value; nothing typed. ${msg}`);
   }
   const value = output.text;
+  if (Object.keys(output).join() === "text" && value === null) {
+    trace("text_helper_unavailable", { model: helper.model });
+    return { text: null, helper };
+  }
   if (Object.keys(output).join() !== "text" || !isString(value) || !value.trim() || value.length > 2e3) {
     throw new Error("Text helper returned no valid field value; nothing typed.");
   }
@@ -1228,10 +1232,15 @@ async function decideStep(a) {
   const dead = new Set(
     [...a.domDead].flatMap(([node, n]) => n >= 2 ? [node] : [])
   );
-  const live = dead.size === 0 ? a.page : {
+  const unavailable = new Set(
+    [...a.unavailableFields].flatMap(
+      ([node, seen]) => seen.fingerprint === a.page.fingerprint || seen.step === a.history.length ? [node] : []
+    )
+  );
+  const live = dead.size === 0 && unavailable.size === 0 ? a.page : {
     ...a.page,
     actions: a.page.actions.filter(
-      (a2) => !(a2.kind === "click" && a2.node !== void 0 && dead.has(a2.node))
+      (a2) => a2.node === void 0 || !(a2.kind === "click" && dead.has(a2.node) || a2.kind === "fill" && unavailable.has(a2.node))
     )
   };
   const page = live;
@@ -1344,6 +1353,16 @@ async function actStep(a) {
       }
       text = generated.text;
       helper = generated.helper;
+      if (text === null) {
+        a.textCalls.push({ ...helper, field: action.label, value: null });
+        if (action.node !== void 0) {
+          a.unavailableFields.set(action.node, { fingerprint: page.fingerprint, step: a.history.length });
+        }
+        trace("field_value_unavailable", { action, fingerprint: page.fingerprint });
+        a.repairHint = `Nothing was typed into "${action.label}": its required value is not in the goal or the observed evidence. Obtain that value first with another action that reveals it, such as opening or reading the relevant content. If no available action can supply it, claim BLOCKED. Do not guess a value.`;
+        a.phase = "decide";
+        return;
+      }
       a.pendingText = [context, text, helper];
       a.textCalls.push({ ...helper, field: action.label, value: text });
     }
@@ -2143,6 +2162,7 @@ var Agent = class _Agent {
   fingerprints = [];
   domRetried = /* @__PURE__ */ new Set();
   domDead = /* @__PURE__ */ new Map();
+  unavailableFields = /* @__PURE__ */ new Map();
   domFingerprint;
   followUp = null;
   textCalls = [];

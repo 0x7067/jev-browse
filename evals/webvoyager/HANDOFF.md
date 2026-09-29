@@ -1,4 +1,34 @@
-# Handoff — paused September 29, 2026
+# Handoff — paused September 29, 2026 (updated 19:50 -03:00)
+
+## Update: field recovery implemented, blocked on OpenRouter credit
+
+All prior work was committed (`6f15cb3`). The unavailable-field fix below is
+implemented and committed in the follow-up commit.
+
+- `fieldText` returns `text: null` for the valid `{ "text": null }` schema;
+  malformed output still throws and retries as before.
+- `actStep` records the field in `Agent.unavailableFields` (node, fingerprint,
+  step), types nothing, sets a repair hint (obtain the value or claim BLOCKED)
+  and returns to decide. `decideStep` hides that fill target while the
+  fingerprint is unchanged and no action has executed since; new evidence
+  restores eligibility.
+- `check-field-recovery.mjs` now covers recovery and `?missing` on both engines:
+  `evals/results/field-recovery-1790719886563/` all 4 pass (missing variant:
+  blocked, zero fills, field offered once).
+- New tasks `fx-field-recovery`, `fx-field-unavailable`: 2/0/0 on both engines
+  (`field-cdp-1790719846096.json`, `field-agent-browser-1790719869884.json`).
+- Full `tasks.json` CDP `field-full-cdp-1790720961928.json`: 91/0/6. The failures
+  are live-site ones (tin-hovers, tin-infinite-scroll, demoqa-autocomplete,
+  europa-consent, mdn-search) plus fx-iframe. fx-iframe passed in the prior
+  baseline, never hit the new code path and wandered before clicking the frame
+  button. Rerun before calling it a regression.
+- Full agent-browser `field-full-agent-browser-1790722104895.json`: 82/0/15.
+  7 are HTTP 402 errors: the OpenRouter key hit its $80 limit (about $0.008
+  left) mid-run. Those results are invalid and do not show behavior.
+
+**Blocker:** OpenRouter credit is exhausted. Next, once the user adds credit:
+rerun fx-iframe on both engines, rerun the agent-browser full suite, then rerun
+ArXiv--24. After that, continue with the open issues below.
 
 The user explicitly requested: “pause and write a handoff.” The active goal is
 **paused**, not complete: “fix these issues, without overfitting / address all

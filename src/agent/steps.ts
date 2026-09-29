@@ -93,13 +93,21 @@ export async function decideStep(a: Agent): Promise<void> {
       [...a.domDead].flatMap(([node, n]) => (n >= 2 ? [node] : [])),
     );
 
+    const unavailable = new Set(
+      [...a.unavailableFields].flatMap(([node, seen]) =>
+        seen.fingerprint === a.page.fingerprint || seen.step === a.history.length ? [node] : [],
+      ),
+    );
+
     const live =
-      dead.size === 0
+      dead.size === 0 && unavailable.size === 0
         ? a.page
         : {
             ...a.page,
             actions: a.page.actions.filter(
-              (a) => !(a.kind === "click" && a.node !== undefined && dead.has(a.node)),
+              (a) =>
+                a.node === undefined ||
+                !((a.kind === "click" && dead.has(a.node)) || (a.kind === "fill" && unavailable.has(a.node))),
             ),
           };
 
@@ -251,6 +259,21 @@ export async function actStep(a: Agent): Promise<void> {
 
         text = generated.text;
         helper = generated.helper;
+
+        if (text === null) {
+          a.textCalls.push({ ...helper, field: action.label, value: null });
+
+          if (action.node !== undefined) {
+            a.unavailableFields.set(action.node, { fingerprint: page.fingerprint, step: a.history.length });
+          }
+
+          trace("field_value_unavailable", { action, fingerprint: page.fingerprint });
+          a.repairHint = `Nothing was typed into "${action.label}": its required value is not in the goal or the observed evidence. Obtain that value first with another action that reveals it, such as opening or reading the relevant content. If no available action can supply it, claim BLOCKED. Do not guess a value.`;
+          a.phase = "decide";
+
+          return;
+        }
+
         a.pendingText = [context, text, helper];
         a.textCalls.push({ ...helper, field: action.label, value: text });
       }
