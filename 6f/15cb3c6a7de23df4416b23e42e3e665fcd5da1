@@ -1,0 +1,29 @@
+scripts/eval.mjs
+  s_7ed50b64afcb5d::t_bb25a0559f8266 138,297,383
+src/model/choice-request.ts
+  s_f13d82b8901ef7::t_abc1c0fa2139fd 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6f15cb3c6a7de23df4416b23e42e3e665fcd5da1",
+  "prompts": {},
+  "sessions": {
+    "s_7ed50b64afcb5d": {
+      "agent_id": {
+        "tool": "windsurf",
+        "id": "succinct-chalk",
+        "model": "unknown"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    },
+    "s_f13d82b8901ef7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0ee70-f86b-7531-96ce-0de148046040",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
