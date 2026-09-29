@@ -42,6 +42,18 @@ This is a synthetic check only. AGENTS requires a suite run: once credit
 returns, run the full fixture suites on both engines and Huggingface--36 before
 treating it as shipped, and revert if verified tasks regress.
 
+Real-browser check, no model calls: `scripts/check-evidence-retention-browser.mjs`
+opens `evals/fixtures/evidence-retention.html` on both engines, clicks Pricing,
+then runs 14 real page scrolls, feeding each real `PageState` to
+`rememberObservation`. With `RETENTION_BASELINE=<copy of HEAD~1 progress.ts>`, the
+old policy lost the pricing evidence on both engines (kept 0,9..15). The new
+policy kept it (cdp kept 0,1,7,10,11,12,14,15; agent-browser 0,1,7,9,10,11,14,15).
+Evidence: `evals/results/evidence-retention-browser-1790722484808/`. New eval task
+`fx-evidence-retention` (answer 14 after scrolling to chapter 12) has not run
+yet (credit). This covers the observation layer only. Whether decision,
+completion and answer models make use of the retained evidence is still
+unproven.
+
 The user explicitly requested: “pause and write a handoff.” The active goal is
 **paused**, not complete: “fix these issues, without overfitting / address all
 shortcomings.” Resume only when requested. Initial task was benchmarking

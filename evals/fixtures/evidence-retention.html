@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Plans and guides</title>
+<nav>Models · Datasets · Spaces · Docs · <a href="?plans">Pricing</a> · Log in</nav>
+<section id="pricing"></section>
+<main id="guides"></main>
+<script>
+if(location.search.includes('plans')){
+document.title='Plans';
+document.getElementById('pricing').innerHTML='<h1>Plans</h1><p>Team plan costs 14 dollars per seat each month.</p><p>Studio plan costs 41 dollars per seat each month.</p>';
+const main=document.getElementById('guides');
+for(let i=0;i<40;i++){const s=document.createElement('section');s.style.minHeight='700px';s.innerHTML=`<h2>Plan guide chapter ${i}</h2><p>Chapter ${i} explains workspace setup step ${i}.</p><p>Read the next chapter to continue.</p>`;main.appendChild(s)}
+}else{
+document.getElementById('guides').innerHTML='<h1>The platform where teams collaborate</h1><p>Browse trending models and datasets.</p>';
+}
+</script></html>

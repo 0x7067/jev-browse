@@ -893,5 +893,16 @@
       "status": "blocked",
       "text_match": "Inspection pending"
     }
+  },
+  {
+    "id": "fx-evidence-retention",
+    "url": "evals/fixtures/evidence-retention.html",
+    "file_url": true,
+    "goal": "Open Pricing, then scroll down to Plan guide chapter 12 and read it. Finally report the Team plan price per seat.",
+    "max_steps": 20,
+    "expect": {
+      "answer_match": "\\b14\\b",
+      "text_match": "Plan guide chapter 12"
+    }
   }
 ]
