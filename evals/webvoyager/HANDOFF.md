@@ -324,3 +324,25 @@ JEV_PROVIDER=openrouter node scripts/webvoyager.mjs --tasks ArXiv--24 --out eval
 ```
 
 No work should continue until the user resumes the paused goal.
+
+## 2026-09-30 Challenge grace (2 actions) landed
+
+Commit 330ed63: the decision loop no longer blocks at the first sight of a
+challenge. A clearing challenge (checkbox, press-and-hold) gets up to two
+actions; a third action while the challenge is still active blocks with
+`verification_required`. The fixture `action_not_match` regex was tightened to
+the exact checkbox label.
+
+Evidence:
+- `evals/results/challenge-after2-*.json` (cdp) and
+  `evals/results/challenge-after-ab-*.json` (agent-browser): fx-persistent-challenge
+  blocked with zero challenge clicks, fx-clearing-challenge cleared and finished,
+  4/4 verified per engine.
+- Full suites post-change: cdp 94 verified / 6 failed, agent-browser 92/8. Compared
+  with the pre-change retention baselines (91/7 each): no task regressed on cdp;
+  on agent-browser the failures overlap the pre-existing flaky set (tin-hovers,
+  tin-infinite-scroll, demoqa-autocomplete, tin-slow, tin-context-menu, tin slow
+  pages, europa-consent, mdn-search, demoqa) and jqueryui-datepicker flipped the
+  other way on cdp, so it reads as live-site flake, not a diff effect.
+- Live WebVoyager Google Search--7 now blocks with `verification_required` on the
+  recaptcha interstitial (previously it burned steps clicking the checkbox).
