@@ -1,0 +1,19 @@
+README.md
+  s_67f50493aa8da5::t_e7043b992d55c4 162-164
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0c11df8d9b4e47d8ddd9cbedacae7125d08707ad",
+  "prompts": {},
+  "sessions": {
+    "s_67f50493aa8da5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4a5ca8ef-39fc-41af-9b6e-7bf6e9751318",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
