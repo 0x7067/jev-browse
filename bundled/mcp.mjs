@@ -878,8 +878,11 @@ async function fieldText(context) {
   }
   return { text: value, helper };
 }
+function answerElements(page) {
+  return actionSpace(page.actions).elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = ")).join("\n").slice(0, 2e3);
+}
 async function extractAnswer(goal, page, observations = [], feedback, fallbackModel) {
-  const elements = actionSpace(page.actions).elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = ")).join("\n").slice(0, 2e3);
+  const elements = answerElements(page);
   const context = {
     ...clockContext(),
     goal,
@@ -957,8 +960,8 @@ async function reviewAnswer(context) {
 }
 
 // src/agent/answer.ts
-function answerReviewContext(goal, answer, current, observedProgress) {
-  return { ...clockContext(), user_goal: goal, proposed_answer: answer, current, observed_progress: compactObservations(observedProgress, current.tables) };
+function answerReviewContext(goal, answer, current, observedProgress, elements = "") {
+  return { ...clockContext(), user_goal: goal, proposed_answer: answer, current: { ...current, elements }, observed_progress: compactObservations(observedProgress, current.tables) };
 }
 async function prepareAnswer(agent) {
   if (!await requiresAnswer(agent.client, agent.goal)) return { status: "not_requested" };
@@ -973,7 +976,7 @@ async function prepareAnswer(agent) {
       generationError = String(error);
     }
     if (generationError) return { status: "unverified", reason: generationError };
-    const context = answerReviewContext(agent.goal, answer, outcomeObservation(agent.page), agent.progressObservations);
+    const context = answerReviewContext(agent.goal, answer, outcomeObservation(agent.page), agent.progressObservations, answerElements(agent.page));
     trace("answer_review_request", context);
     const response = await reviewAnswer(context);
     trace("answer_review_verdict", response);
@@ -1136,7 +1139,19 @@ async function checkCompletion(agent, lastKind) {
   }
   let answerRejection;
   agent.preparedAnswer = null;
-  if (complete) {
+  if (!complete && !checks.length && assessment.status === "UNCERTAIN") {
+    const prepared = await prepareAnswer(agent);
+    trace("uncertain_answer_review", { status: prepared.status });
+    if (prepared.status === "supported") {
+      agent.preparedAnswer = prepared;
+      agent.answerNote = void 0;
+      complete = true;
+      assessment = { ...assessment, status: "SATISFIED", basis: "CURRENT_STATE" };
+    } else if (prepared.status === "missing_evidence") {
+      answerRejection = prepared.reason;
+      agent.answerNote = prepared.reason;
+    }
+  } else if (complete) {
     const prepared = await prepareAnswer(agent);
     if (prepared.status === "supported" || prepared.status === "not_requested") {
       agent.preparedAnswer = prepared;

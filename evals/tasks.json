@@ -26,7 +26,7 @@
   {
     "id": "wikipedia-godel",
     "url": "https://en.wikipedia.org/wiki/Main_Page",
-    "goal": "Find and open the Wikipedia article about G\u00f6del's incompleteness theorems.",
+    "goal": "Find and open the Wikipedia article about Gödel's incompleteness theorems.",
     "expect": {
       "url_match": "incompleteness"
     }
@@ -691,7 +691,7 @@
     "id": "fx-current-date",
     "file_url": true,
     "url": "evals/fixtures/current-date.html",
-    "goal": "Enter today\u2019s UTC date in YYYY-MM-DD format in Reference date, then click Check date. Stop once verified.",
+    "goal": "Enter today’s UTC date in YYYY-MM-DD format in Reference date, then click Check date. Stop once verified.",
     "max_steps": 6,
     "expect": {
       "text_match": "Current UTC date verified",
@@ -925,6 +925,17 @@
     "max_steps": 12,
     "expect": {
       "answer_match": "17\\.1"
+    }
+  },
+  {
+    "id": "fx-control-label-answer",
+    "url": "evals/fixtures/control-label-answer.html",
+    "file_url": true,
+    "goal": "Report the lowest listed price for this 2 year protection plan.",
+    "max_steps": 6,
+    "expect": {
+      "status": "done",
+      "answer_match": "37\\.49"
     }
   }
 ]

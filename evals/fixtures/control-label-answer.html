@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Protection Plan</title></head>
+<body>
+<h1>2 Year Console Protection Plan</h1>
+<p>Covers accidental damage and mechanical failures for consoles priced $400 to $449.99.</p>
+<div id="nav"></div>
+<div style="height:2400px"></div>
+<button type="button">Add to Cart</button>
+<button type="button">New (3) from <span>$37.49</span> &amp; free shipping</button>
+<button type="button">Add to List</button>
+<script>
+const nav = document.getElementById("nav");
+for (let i = 1; i <= 80; i++) {
+  const a = document.createElement("a");
+  a.href = "#c" + i;
+  a.textContent = "Category " + i;
+  a.style.marginRight = "6px";
+  nav.appendChild(a);
+}
+</script>
+</body>
+</html>

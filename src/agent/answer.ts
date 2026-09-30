@@ -2,7 +2,7 @@ import { requiresAnswer } from "../model/answer-scope.ts";
 import { clockContext } from "../model/clock.ts";
 import { answerReviewModel, reviewAnswer } from "../model/answer-review.ts";
 import type { Agent } from "../agent.ts";
-import { extractAnswer } from "../model/text.ts";
+import { answerElements, extractAnswer } from "../model/text.ts";
 import { trace } from "../trace.ts";
 import { type ProgressObservation, outcomeObservation, compactObservations } from "./progress.ts";
 
@@ -12,8 +12,8 @@ export type AnswerResult =
   | { status: "missing_evidence"; reason: string }
   | { status: "unverified"; reason: string };
 
-export function answerReviewContext(goal: string, answer: string | null, current: ReturnType<typeof outcomeObservation>, observedProgress: ProgressObservation[]) {
-  return { ...clockContext(), user_goal: goal, proposed_answer: answer, current, observed_progress: compactObservations(observedProgress, current.tables) };
+export function answerReviewContext(goal: string, answer: string | null, current: ReturnType<typeof outcomeObservation>, observedProgress: ProgressObservation[], elements = "") {
+  return { ...clockContext(), user_goal: goal, proposed_answer: answer, current: { ...current, elements }, observed_progress: compactObservations(observedProgress, current.tables) };
 }
 
 export async function prepareAnswer(agent: Agent): Promise<AnswerResult> {
@@ -32,7 +32,7 @@ export async function prepareAnswer(agent: Agent): Promise<AnswerResult> {
     }
 
     if (generationError) return { status: "unverified", reason: generationError };
-    const context = answerReviewContext(agent.goal, answer, outcomeObservation(agent.page), agent.progressObservations);
+    const context = answerReviewContext(agent.goal, answer, outcomeObservation(agent.page), agent.progressObservations, answerElements(agent.page));
 
     trace("answer_review_request", context);
     const response = await reviewAnswer(context);

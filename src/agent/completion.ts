@@ -80,7 +80,20 @@ export async function checkCompletion(agent: Agent, lastKind?: string): Promise<
   let answerRejection: string | undefined;
   agent.preparedAnswer = null;
 
-  if (complete) {
+  if (!complete && !checks.length && assessment.status === "UNCERTAIN") {
+    const prepared = await prepareAnswer(agent);
+    trace("uncertain_answer_review", { status: prepared.status });
+
+    if (prepared.status === "supported") {
+      agent.preparedAnswer = prepared;
+      agent.answerNote = undefined;
+      complete = true;
+      assessment = { ...assessment, status: "SATISFIED", basis: "CURRENT_STATE" };
+    } else if (prepared.status === "missing_evidence") {
+      answerRejection = prepared.reason;
+      agent.answerNote = prepared.reason;
+    }
+  } else if (complete) {
     const prepared = await prepareAnswer(agent);
 
     if (prepared.status === "supported" || prepared.status === "not_requested") {

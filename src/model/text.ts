@@ -165,6 +165,13 @@ export async function fieldText(
   return { text: value, helper };
 }
 
+export function answerElements(page: PageState): string {
+  return actionSpace(page.actions)
+    .elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = "))
+    .join("\n")
+    .slice(0, 2000);
+}
+
 export async function extractAnswer(
   goal: string,
   page: PageState,
@@ -172,10 +179,7 @@ export async function extractAnswer(
   feedback?: string,
   fallbackModel?: string,
 ): Promise<{ answer: string | null; helper: { model: string; latency_ms: number } }> {
-  const elements = actionSpace(page.actions)
-    .elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = "))
-    .join("\n")
-    .slice(0, 2000);
+  const elements = answerElements(page);
 
   const context = {
     ...clockContext(),
