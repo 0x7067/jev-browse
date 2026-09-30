@@ -4,6 +4,6 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "install": "npm ci",
+  "install": "npm ci --include=dev",
   "chromeExecutablePath": "/usr/bin/google-chrome-stable"
 }
