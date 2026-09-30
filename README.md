@@ -86,7 +86,7 @@ installing machine.
 ### Configure
 
 ```bash
-JEV_PROVIDER=...            # typesafe or openrouter; default picks the provider whose key is set
+JEV_PROVIDER=...            # typesafe or openrouter; default prefers openrouter when its key is set
 TYPESAFE_API_KEY=...        # typesafe provider — console.typesafe.ai/settings/keys
 OPENROUTER_API_KEY=...      # openrouter provider — openrouter.ai/settings/keys
 TYPESAFE_MODEL=jev-latest   # default
