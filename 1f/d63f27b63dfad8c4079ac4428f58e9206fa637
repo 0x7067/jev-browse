@@ -1,0 +1,19 @@
+plugin.json
+  s_b1134115a829bc::t_f82cec62237e4e 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1fd63f27b63dfad8c4079ac4428f58e9206fa637",
+  "prompts": {},
+  "sessions": {
+    "s_b1134115a829bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "405a5bce-9dd3-4994-8874-c471a7e27dfc",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
