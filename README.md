@@ -159,8 +159,9 @@ With `--expect`, you supply regexes (`url_match`, `text_match`, `state_match`,
 so list every outcome you care about:
 
 ```bash
-node bundled/cli.mjs --url https://example.com --goal 'Read the example page' \
-  --expect '{"text_match":"Example Domain"}'
+node bundled/cli.mjs --url https://example.com \
+  --goal "Open the 'Learn more' link and stop on the iana.org page." \
+  --expect '{"url_match":"iana\\.org"}'
 ```
 
 Without it, a separate review decides whether the goal is satisfied,
