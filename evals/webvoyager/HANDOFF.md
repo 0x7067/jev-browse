@@ -345,3 +345,30 @@ Evidence:
   (`datepicker-recheck-1790772524981.json`), so it is live-site flake.
 - Live WebVoyager Google Search--7 now blocks with `verification_required` on the
   recaptcha interstitial (previously it burned steps clicking the checkbox).
+
+## 2026-09-30 Control-label evidence and uncertain-answer arbitration (977b6c1)
+
+Diagnosis from the fresh pilot: in Amazon--10, the reviewer rejected "$42.99" as
+unsupported. The price existed only in a button label ("New (2) from $42.99"), and
+the reviewer saw page text plus the first 60 action labels, while the generator
+saw a 2000-char element list. Fix: the reviewer now gets the same `elements`
+list. Also, when the completion model says UNCERTAIN on a goal with no explicit
+checks, the strict answer reviewer arbitrates instead of blocking outright.
+
+Evidence:
+- New task `fx-control-label-answer`: cdp 0/3 before (`ctl-before-1790773179514`),
+  3/3 after (`ctl-after2-1790773286525`), agent-browser 3/3.
+- Answer calibration 20/20 (`answer-calibration-1790773296706`).
+- Full suites: cdp 94/7 (`uncertain-full-cdp-1790774257892`), agent-browser 92/9
+  (`uncertain-full-agent-browser-1790775634095`). New failures versus the last run:
+  fx-iframe and tin-infinite-scroll. Both fail 0/3 on the pre-change build too
+  (`uncertain-pre-cdp-1790775812144`), so the change did not cause them.
+  tin-entry-ad passed 3/3 on rerun.
+- Live (`webvoyager-uncertain-2026-09-30`): both tasks still fail, now for
+  legitimate evidence reasons. On Amazon--10 the reviewer now sees tier prices
+  but the agent opened the wrong tier and nothing ties a PS4 to one. On Google
+  Map--1 no distance evidence is shown. The next target is navigation/strategy,
+  not the review plumbing.
+
+Still open: fx-iframe and tin-infinite-scroll fail consistently on cdp, and are
+worth their own investigation. Adjudicated audit of the fresh run is still not done.
