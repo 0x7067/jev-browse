@@ -1,0 +1,37 @@
+bundled/cli.mjs
+  s_fa5c88535018b9::t_073fddfc4eb27d 1199,1202,1399,2189
+bundled/mcp.mjs
+  s_fa5c88535018b9::t_bd526d8b3058bc 1205,1208,1405,2195
+evals/fixtures/persistent-challenge.html
+  s_83369a26ea7f43::t_9c269ee115190c 1-9
+evals/tasks.json
+  s_fa5c88535018b9::t_cbc6bc556c3be6 907-928
+src/agent.ts
+  s_fa5c88535018b9::t_ad66b36181b2ab 51
+src/agent/steps.ts
+  s_fa5c88535018b9::t_01f8c615284d0c 18,21,291
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "330ed6359cf793406dfab856333e161b95774e25",
+  "prompts": {},
+  "sessions": {
+    "s_83369a26ea7f43": {
+      "agent_id": {
+        "tool": "windsurf",
+        "id": "crawling-mammal",
+        "model": "unknown"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    },
+    "s_fa5c88535018b9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0efad-5ae9-73c8-8611-251aea8e451c",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
