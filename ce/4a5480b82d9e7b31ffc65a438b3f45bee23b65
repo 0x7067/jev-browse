@@ -1,0 +1,20 @@
+README.md
+  h_29be57c0addd47 89
+bundled/cli.mjs
+  h_29be57c0addd47 1855
+bundled/mcp.mjs
+  h_29be57c0addd47 1861
+src/env.ts
+  h_29be57c0addd47 70-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ce4a5480b82d9e7b31ffc65a438b3f45bee23b65",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
