@@ -1,0 +1,14 @@
+README.md
+  h_29be57c0addd47 5-9,11-12,18-21,27,34,38-39,42-44,46-47,49-50,53-57,66,69-70,72-76,78-80,82,84,86-120,123-186,194-252,256,260-269,271,273-278,284-285,287-289,292-295,297,305-307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2acc71756f8ee0cba192486947d488ce9c2de01b",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
