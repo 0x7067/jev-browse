@@ -1,0 +1,14 @@
+evals/webvoyager/HANDOFF.md
+  h_29be57c0addd47 48-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3333eff0d60c46d56acc0e48648a94f26247cfba",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
