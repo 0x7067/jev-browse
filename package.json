@@ -1,6 +1,6 @@
 {
   "name": "jev-browse",
-  "version": "0.14.5",
+  "version": "0.15.0",
   "description": "Jev drives a real browser: one goal, an indexed action space, one systemOne decision per step.",
   "type": "module",
   "keywords": [
@@ -17,6 +17,9 @@
   "bin": {
     "jev-browse": "bundled/cli.mjs",
     "jev-browse-mcp": "bundled/mcp.mjs"
+  },
+  "exports": {
+    ".": "./integrations/opencode/index.ts"
   },
   "scripts": {
     "compile": "node scripts/build-snapshot.mjs && tsc && cp src/snapshot.js dist/snapshot.js && npm run build:bundle",

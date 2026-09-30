@@ -67,9 +67,9 @@ function selectProvider(): Provider {
   const named = process.env.JEV_PROVIDER;
 
   if (named === undefined || named === "") {
-    return process.env.TYPESAFE_API_KEY || !process.env.OPENROUTER_API_KEY
-      ? "typesafe"
-      : "openrouter";
+    return process.env.OPENROUTER_API_KEY || !process.env.TYPESAFE_API_KEY
+      ? "openrouter"
+      : "typesafe";
   }
 
   if (!isProvider(named)) {

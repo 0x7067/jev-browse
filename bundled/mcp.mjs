@@ -2156,7 +2156,7 @@ function isProvider(name) {
 function selectProvider() {
   const named = process.env.JEV_PROVIDER;
   if (named === void 0 || named === "") {
-    return process.env.TYPESAFE_API_KEY || !process.env.OPENROUTER_API_KEY ? "typesafe" : "openrouter";
+    return process.env.OPENROUTER_API_KEY || !process.env.TYPESAFE_API_KEY ? "openrouter" : "typesafe";
   }
   if (!isProvider(named)) {
     throw new Error(

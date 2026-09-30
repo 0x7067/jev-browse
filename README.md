@@ -6,7 +6,7 @@ jev-browse is a TypeScript browser agent. You give it one goal and a start URL.
 On every step, [TypeSafe's Jev](https://docs.typesafe.ai) picks an operation
 and an element from a numbered list of what's on the page. A small LLM only
 comes in when the operation is `TYPE_TEXT`, to write the text. It ships with
-two browser engines and installs on Pi, Claude Code, Codex, and any MCP client.
+two browser engines and installs on Pi, OpenCode, Claude Code, Codex, and any MCP client.
 
 Here it searches Google Flights for one-way flights from Zürich to London. The
 video plays at real speed. The bar at the bottom shows each action as it runs.
@@ -75,7 +75,7 @@ You need Node 22 or later and Chrome. The repo root is an
 | Pi | `pi install git:github.com/0x7067/jev-browse` (registers the `jev_browse` tool and skill) |
 | Claude Code | `claude plugin marketplace add 0x7067/jev-browse`, then `claude plugin install jev-browse@jev-browse` |
 | Codex / ChatGPT | `codex plugin marketplace add 0x7067/jev-browse`, then `codex plugin install jev-browse` |
-| OpenCode | `opencode mcp add jev --global -- npx -y -p github:0x7067/jev-browse jev-browse-mcp` |
+| OpenCode | `opencode plugin add github:0x7067/jev-browse` (registers the `jev_browse` tool natively — remove any `jev` MCP server entry afterwards) |
 | Any MCP client | stdio command `npx -y -p github:0x7067/jev-browse jev-browse-mcp` |
 | CLI only | `npm install -g github:0x7067/jev-browse`, or `npx -y -p github:0x7067/jev-browse jev-browse` |
 
@@ -86,7 +86,7 @@ installing machine.
 ### Configure
 
 ```bash
-JEV_PROVIDER=...            # typesafe or openrouter; default picks the provider whose key is set
+JEV_PROVIDER=...            # typesafe or openrouter; default prefers openrouter when its key is set
 TYPESAFE_API_KEY=...        # typesafe provider — console.typesafe.ai/settings/keys
 OPENROUTER_API_KEY=...      # openrouter provider — openrouter.ai/settings/keys
 TYPESAFE_MODEL=jev-latest   # default
@@ -115,9 +115,14 @@ for one adult in economy. Stop when matching flight options are visible." \
 Step events stream to stderr as JSONL. Stdout carries only the final result
 JSON. The exit code is 0 on `done`, 2 on `blocked`, and 1 on error.
 
-Harnesses talk to the MCP server instead. It runs `node bundled/mcp.mjs` on
-stdio and exposes one tool, `jev_browse`; `mcp.json` points at
-`${PLUGIN_ROOT}/bundled/mcp.mjs`. For local work, run from source with
+Harnesses without a native integration talk to the MCP server instead. It runs
+`node bundled/mcp.mjs` on stdio and exposes one tool, `jev_browse`; `mcp.json`
+points at `${PLUGIN_ROOT}/bundled/mcp.mjs`. (OpenCode users who prefer MCP over
+the native plugin can run `opencode mcp add jev --global -- npx -y -p
+github:0x7067/jev-browse jev-browse-mcp`.) The OpenCode plugin registers the same
+`jev_browse` inputs without an MCP server; each call runs the committed bundle
+in a `node` subprocess, because OpenCode's plugin sandbox cannot import files
+outside the plugin directory. For local work, run from source with
 `npm run run`, or rebuild `bundled/` with `npm run compile` (see Development).
 
 Start URLs must be `http` or `https`. Page text goes to outside model APIs, so
@@ -230,6 +235,7 @@ with oxlint's `max-lines` rule.
 | [src/cli.ts](src/cli.ts) | Headless entry point that every adapter runs |
 | [src/mcp.ts](src/mcp.ts) | stdio MCP server exposing `jev_browse` |
 | [integrations/pi](integrations/pi/index.ts) | Pi extension: `jev_browse` tool and skill |
+| [integrations/opencode](integrations/opencode/index.ts) | OpenCode V2 plugin: native `jev_browse` tool (same inputs as the MCP server) |
 | [bundled](bundled/) | Committed esbuild bundles; installs run these |
 | [plugin.json](plugin.json) · [mcp.json](mcp.json) | Agent Plugins manifest and MCP wiring |
 | [scripts/eval.mjs](scripts/eval.mjs) + [evals/](evals/) | Real-world task suite and results |
