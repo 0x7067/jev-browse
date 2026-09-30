@@ -30,6 +30,8 @@ export function fingerprint(state: PageState): string {
     scroll: state.scroll,
     frames: state.frames?.map(frame => ({ ...frame })),
     challenge_reasons: state.challenge_reasons,
+    tables: state.tables,
+    omitted_tables: state.omitted_tables,
   };
 
   return createHash("sha256").update(JSON.stringify(canonicalize(content))).digest("hex");
@@ -40,13 +42,13 @@ export function structureOf(marker: JsonValue, completion = false): JsonValue {
 
   const strip = (a: JsonValue) =>
     isJsonObject(a)
-      ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id" && !(completion && k === "cls")))
+      ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== "node" && k !== "id" && !(completion && k === "cls")).map(([k, v]) => [k, k === "label" && isString(v) ? v.replace(/\b\d{1,3}:\d{2}:\d{2}\b/g, "<clock>") : v]))
       : a;
 
   const controls = Array.isArray(marker[8]) ? marker[8].map(strip) : marker[8];
   const text = isString(marker[7]) ? marker[7].replace(/\p{N}+/gu, "#") : marker[7];
 
-  return [marker[0], marker[1], marker[6], controls, marker[9], text, marker[10], marker[11], marker[12]];
+  return [marker[0], marker[1], marker[6], controls, marker[9], text, marker[10], marker[11], marker[12], marker[13], marker[14]];
 }
 
 export function markerMatches(level: "full" | "structure" | "completion", current: JsonValue, observed: JsonValue): boolean {

@@ -64,6 +64,8 @@
     return w.__jevListeners?.get(e);
   };
 
+  const contextCapable=e=>e.hasAttribute('oncontextmenu') || Boolean(e.oncontextmenu) || Boolean(listenSet(e)?.has('contextmenu'));
+
   const CLICK_EVENTS=['click','dblclick','mousedown','mouseup','contextmenu'];
 
   const HOVER_EVENTS=['mouseover','mouseenter'];

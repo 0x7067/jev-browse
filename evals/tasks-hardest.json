@@ -69,15 +69,15 @@
     "url": "https://demoqa.com/date-picker",
     "goal": "Set the first 'Date' field to January 15, 1990.",
     "expect": {
-      "action_match": "01/15/1990|1/15/1990|Jan"
+      "state_match": "Choose Monday, January 15th, 1990 selected=true"
     }
   },
   {
     "id": "demoqa-double-click",
     "url": "https://demoqa.com/buttons",
-    "goal": "Double-click the 'Double Click Me' button. If double-click is unsupported, press Enter on it twice.",
+    "goal": "Double-click the 'Double Click Me' button and stop when the page confirms a double click.",
     "expect": {
-      "text_match": "double click|Double Click"
+      "text_match": "You have done a double click"
     }
   },
   {
@@ -85,7 +85,7 @@
     "url": "https://demoqa.com/buttons",
     "goal": "Right-click the 'Right Click Me' button.",
     "expect": {
-      "text_match": "right click|Right Click"
+      "text_match": "You have done a right click"
     }
   },
   {

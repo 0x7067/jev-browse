@@ -1,9 +1,16 @@
+import { clockContext } from "./clock.ts";
+import { compactObservations, observationViewport, OBSERVED_TEXT_SCOPE, type ProgressObservation } from "../agent/progress.ts";
+import { trace } from "../trace.ts";
 
 import { isJsonObject, isString } from "../json.ts";
 import { ANSWER_VALUE, TEXT_VALUE } from "../questions.ts";
 import { sleep } from "../sleep.ts";
 import type { JsonObject, JsonValue, ObservedAction, PageState } from "../types.ts";
 import { actionSpace } from "./space.ts";
+
+class InvalidTextResponse extends Error {}
+
+class TextModelRefusal extends Error {}
 
 async function postJson(url: string, key: string, body: JsonValue): Promise<any> {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -14,6 +21,7 @@ async function postJson(url: string, key: string, body: JsonValue): Promise<any>
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
       });
     } catch {
       throw new Error("Model connection failed; no action executed.");
@@ -34,15 +42,17 @@ async function postJson(url: string, key: string, body: JsonValue): Promise<any>
   throw new Error("Model unavailable");
 }
 
-export function fieldContext(goal: string, action: ObservedAction, page: PageState, history: any[]) {
+export function fieldContext(goal: string, action: ObservedAction, page: PageState, history: any[], observations: ProgressObservation[] = []) {
   return {
+    ...clockContext(),
     goal,
     field: { label: action.label, role: action.role, value: action.value },
+    observed_history: compactObservations(observations, []),
     other_fields: page.actions
       .filter((a) => a.kind === "fill" && a.node !== action.node)
       .slice(0, 20)
       .map((a) => ({ label: a.label, value: a.value ?? "" })),
-    page: { title: page.title, text: page.text.slice(0, 6000) },
+    page: { title: page.title, url: page.url, text: page.text.slice(0, 6000), text_scope: OBSERVED_TEXT_SCOPE, viewport: observationViewport(page), excerpt_truncated: page.text.length > 6000 },
     recent_actions: history
       .slice(-6)
       .map((h) =>
@@ -51,11 +61,12 @@ export function fieldContext(goal: string, action: ObservedAction, page: PageSta
   };
 }
 
-async function helperJson(
+export async function helperJson(
   systemPrompt: string,
   context: JsonValue,
   requireKey: boolean,
   reason: boolean,
+  modelOverride?: string,
 ): Promise<{ output: JsonObject; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
   const key = process.env.TEXT_MODEL_API_KEY;
 
@@ -70,7 +81,7 @@ async function helperJson(
   }
 
   const base = (process.env.TEXT_MODEL_BASE_URL ?? "https://api.deepseek.com/v1").replace(/\/+$/, "");
-  const model = process.env.TEXT_MODEL ?? "deepseek-chat";
+  const model = modelOverride ?? process.env.TEXT_MODEL ?? "deepseek-chat";
 
   const reasoning = base.includes("api.deepseek.com/")
     ? { thinking: { type: "disabled" } }
@@ -89,9 +100,24 @@ async function helperJson(
     ],
   });
 
-  const output: JsonValue = JSON.parse(result.choices[0].message.content);
+  trace("text_helper_response", { id: result.id, model, usage: result.usage, choices: result.choices, latency_ms: Math.round(performance.now() - started) });
+  const choices: JsonValue = result.choices;
+  const first = Array.isArray(choices) ? choices[0] : undefined;
+  const message = isJsonObject(first) ? first.message : undefined;
+  const content = isJsonObject(message) ? message.content : undefined;
 
-  if (!isJsonObject(output)) throw new Error("Text helper returned a non-object.");
+  if (isJsonObject(message) && message.refusal !== undefined && message.refusal !== null) throw new TextModelRefusal("Text model refused the request");
+
+  if (!isString(content) || !content.trim()) throw new InvalidTextResponse("Text model returned no message content");
+  let output: JsonValue;
+
+  try {
+    output = JSON.parse(content);
+  } catch {
+    throw new InvalidTextResponse("Text model returned invalid JSON");
+  }
+
+  if (!isJsonObject(output)) throw new InvalidTextResponse("Text helper returned a non-object.");
 
   return {
     output,
@@ -105,7 +131,7 @@ async function helperJson(
 
 export async function fieldText(
   context: JsonValue,
-): Promise<{ text: string; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
+): Promise<{ text: string | null; helper: { model: string; latency_ms: number; usage: JsonValue } }> {
   let output: JsonObject;
   let helper: { model: string; latency_ms: number; usage: JsonValue };
 
@@ -115,10 +141,17 @@ export async function fieldText(
     const msg = String(error);
 
     if (msg.includes("TEXT_MODEL_API_KEY") || msg.includes("not configured")) throw error;
-    throw new Error("Text helper returned no valid field value; nothing typed.");
+    trace("text_helper_error", { error: msg });
+    throw new Error(`Text helper returned no valid field value; nothing typed. ${msg}`);
   }
 
   const value: JsonValue = output.text;
+
+  if (Object.keys(output).join() === "text" && value === null) {
+    trace("text_helper_unavailable", { model: helper.model });
+
+    return { text: null, helper };
+  }
 
   if (
     Object.keys(output).join() !== "text" ||
@@ -132,33 +165,55 @@ export async function fieldText(
   return { text: value, helper };
 }
 
-export async function extractAnswer(
-  goal: string,
-  page: PageState,
-): Promise<{ answer: string | null; helper: { model: string; latency_ms: number } }> {
-  const elements = actionSpace(page.actions)
+export function answerElements(page: PageState): string {
+  return actionSpace(page.actions)
     .elements.map((e) => [e.label, e.value, e.checked, e.selected].filter(Boolean).join(" = "))
     .join("\n")
     .slice(0, 2000);
+}
+
+export async function extractAnswer(
+  goal: string,
+  page: PageState,
+  observations: ProgressObservation[] = [],
+  feedback?: string,
+  fallbackModel?: string,
+): Promise<{ answer: string | null; helper: { model: string; latency_ms: number } }> {
+  const elements = answerElements(page);
 
   const context = {
+    ...clockContext(),
     goal,
-    page: { title: page.title, url: page.url, text: page.text.slice(0, 6000), elements },
+    observed_history: compactObservations(observations, page.tables),
+    review_feedback: feedback,
+    page: { title: page.title, url: page.url, text: page.text.slice(0, 6000), text_scope: OBSERVED_TEXT_SCOPE, viewport: observationViewport(page), excerpt_truncated: page.text.length > 6000, elements, tables: page.tables ?? [], omitted_tables: page.omitted_tables ?? 0 },
   };
+
+  let modelOverride: string | undefined;
 
   for (let attempt = 1; ; attempt++) {
     const lastAttempt = attempt === 2;
     let result: { output: JsonObject; helper: { model: string; latency_ms: number } };
 
     try {
-      result = await helperJson(ANSWER_VALUE, context, false, true);
+      result = await helperJson(ANSWER_VALUE, context, false, true, modelOverride);
+
+      if (Object.keys(result.output).join() !== "answer" || (result.output.answer !== null && !isString(result.output.answer))) {
+        throw new InvalidTextResponse("Text model returned an invalid answer object");
+      }
     } catch (error) {
-      if (String(error).includes("not configured") || lastAttempt) throw error;
+      if (error instanceof TextModelRefusal || String(error).includes("not configured") || lastAttempt) throw error;
+
+      if (error instanceof InvalidTextResponse && fallbackModel) {
+        modelOverride = fallbackModel;
+        trace("answer_generation_fallback", { model: fallbackModel, reason: error.message });
+      }
+
       continue;
     }
 
     const value: JsonValue = result.output.answer;
-    const text = isString(value) ? value.replace(/\s+/g, " ").trim().slice(0, 2000) : "";
+    const text = isString(value) ? value.trim() : "";
 
     if (text || lastAttempt) return { answer: text || null, helper: result.helper };
   }

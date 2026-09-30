@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Clipped search panel</title>
+<style>#panel{width:0;overflow:hidden;height:80px}input{width:250px}#scroll{width:280px;height:100px;overflow:auto}#spacer{height:150px}</style>
+<button id="open">Open search panel</button><div id="panel"><label>Search phrase <input id="query"></label><button id="find">Run search</button></div>
+<p id="result">No search yet</p><div id="scroll"><div id="spacer">Scrollable notes</div><button id="bottom">Confirm bottom item</button></div>
+<script>
+document.getElementById('open').onclick=()=>{document.getElementById('panel').style.width='300px'};
+document.getElementById('find').onclick=()=>{document.getElementById('result').textContent='Search completed: '+document.getElementById('query').value};
+document.getElementById('bottom').onclick=()=>{document.getElementById('result').textContent='Bottom item confirmed'};
+</script></html>

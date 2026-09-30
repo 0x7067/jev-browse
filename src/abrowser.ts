@@ -1,3 +1,8 @@
+import { doubleClickScript } from "./double-click.ts";
+import { parseOutput } from "./ab-output.ts";
+import { BrowserTabs } from "./ab-tabs.ts";
+import { tagTarget, clearTarget, actBoundary, type TargetProbe } from "./ab-target.ts";
+import { createListenerInit } from "./listeners.ts";
 import { targetDetails } from "./target-details.ts";
 
 import { execFile } from "node:child_process";
@@ -59,8 +64,10 @@ export class AgentBrowser implements BrowserDriver {
   private bin: string;
   private session: string;
   private launchArgs: string[];
+  private tabs = new BrowserTabs(args => this.run(args));
   private afterInput: ObservedAction | null = null;
   private opened = false;
+  private listenerInit = createListenerInit();
 
   private constructor(opts: AgentBrowserOptions) {
     this.bin = opts.bin ?? process.env.JEV_AGENT_BROWSER_BIN ?? "agent-browser";
@@ -75,9 +82,10 @@ export class AgentBrowser implements BrowserDriver {
       process.env.JEV_AB_PROFILE ?? join(homedir(), ".jev-browse", "agent-browser-profile");
 
     try {
-      await browser.run(["--profile", profile, ...browser.launchArgs, "open"]);
+      await browser.run(["--profile", profile, "--init-script", browser.listenerInit.path, ...browser.launchArgs, "open"]);
       browser.opened = true;
       await browser.run(["open", url]);
+      await browser.tabs.refresh();
     } catch (error) {
       await browser.close();
       throw error;
@@ -190,6 +198,8 @@ export class AgentBrowser implements BrowserDriver {
   }
 
   async observe(): Promise<PageState> {
+    const tabs = await this.tabs.refresh();
+
     if (this.afterInput) {
       const action = this.afterInput;
       this.afterInput = null;
@@ -225,8 +235,8 @@ export class AgentBrowser implements BrowserDriver {
         const info = await this.evaluate<PageState | null>(READ_STATE);
 
         if (info === null || info === undefined) throw new StalePage("Document is navigating");
+        this.tabs.decorate(info, tabs);
         info.fingerprint = fingerprint(info);
-        info.actions = info.actions.filter((a) => !a.frame && !a.shadow);
 
         return info;
       } catch (error) {
@@ -243,7 +253,7 @@ export class AgentBrowser implements BrowserDriver {
     action?: ObservedAction,
     level: "full" | "page" | "structure" | "completion" = "full",
   ): Promise<boolean> {
-    if (action && (action.kind === "click" || action.kind === "select")) {
+    if (action && (action.kind === "click" || action.kind === "double_click" || action.kind === "select")) {
       const node = action.node;
 
       if (node === undefined) return false;
@@ -267,6 +277,12 @@ export class AgentBrowser implements BrowserDriver {
   }
 
   async act(action: ObservedAction, page: PageState, text?: string | null): Promise<ActResult> {
+    if (action.kind === "focus_tab") {
+      await this.tabs.focus(String(action.value ?? ""));
+
+      return { executed: action.id };
+    }
+
     if (!(await this.fresh(page, action, "page"))) {
       throw new StalePage("Page changed since this decision. Observe again.");
     }
@@ -281,7 +297,19 @@ export class AgentBrowser implements BrowserDriver {
 
     if (kind === "scroll") {
       const delta = action.delta ?? SCROLL_DELTA;
-      await this.run(["scroll", delta > 0 ? "down" : "up", String(Math.abs(delta))]);
+
+      if (action.node === undefined) await this.run(["scroll", delta > 0 ? "down" : "up", String(Math.abs(delta))]);
+      else {
+        const present = await this.evaluate(`(() => {
+          const e=window.__jevFast?.node(${action.node});
+          if (!e?.isConnected) return false;
+          e.scrollBy({top:${JSON.stringify(delta)},behavior:'instant'});
+          return true;
+        })()`);
+
+        if (!present) throw new StalePage("Scroll region is gone. Observe again.");
+      }
+
       this.afterInput = action;
 
       return { executed: action.id };
@@ -305,23 +333,13 @@ export class AgentBrowser implements BrowserDriver {
 
     if (action.node === undefined) throw new Error("Invalid observed node");
 
-    const tagged = await this.evaluate<string | false>(`(() => {
-      const e=window.__jevFast?.node(${action.node});
-      // Visibility alone doesn't decide clickability — the covered check
-      // below arbitrates; opacity:0 controls win their own hit test.
-      if (!e?.isConnected || e.matches(':disabled') || e.closest('[aria-disabled="true"],[inert]')) return false;
-      if (${JSON.stringify(kind)}==='fill' && (e.readOnly || e.getAttribute('aria-readonly')==='true')) return false;
-      const r=e.getBoundingClientRect(), x=r.x+r.width/2, y=r.y+r.height/2;
-      if (!r.width || !r.height || x<0 || y<0 || x>=innerWidth || y>=innerHeight) return false;
-      if (!e.contains(document.elementFromPoint(x,y))) return false;
-      if (${JSON.stringify(kind)}==='select' &&
-          (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===${JSON.stringify(String(action.value))} &&
-              !o.disabled && !o.closest('optgroup[disabled]')))) return false;
-      e.setAttribute(${JSON.stringify(TAG_ATTR)}, ${JSON.stringify(String(action.node))});
-      return e.tagName==='INPUT' ? e.type : '';
-    })()`);
+    const tagged = await this.evaluate<TargetProbe>(tagTarget(action));
 
-    if (tagged === false || tagged === undefined) {
+    if (tagged && "blocked" in tagged && (kind === "click" || kind === "double_click" || kind === "hover" || kind === "context")) {
+      return this.dispatchDom(action, text);
+    }
+
+    if (!tagged || "blocked" in tagged) {
       if (kind === "select") {
         throw new Error("Dropdown execution was not confirmed; inspect before retrying.");
       }
@@ -332,9 +350,15 @@ export class AgentBrowser implements BrowserDriver {
     const selector = `[${TAG_ATTR}="${action.node}"]`;
 
     try {
+      if (await actBoundary(action, tagged, text, async (args) => { await this.run(args); }, async (expression) => { await this.evaluate(expression); })) {
+        this.afterInput = action;
+
+        return { executed: action.id };
+      }
+
       if (kind === "drag" && action.dragTo !== undefined) {
         await this.evaluate(`(() => {
-          const c=window.__jevFast;
+          const c=window.top.__jevFast;
           const src=c?.node(${action.node}), dst=c?.node(${action.dragTo});
           if (!src || !dst) return "stale";
           const dt=new DataTransfer();
@@ -345,7 +369,7 @@ export class AgentBrowser implements BrowserDriver {
         })()`);
       } else if (kind === "context") {
         await this.evaluate(`(() => {
-          const e=document.querySelector(${JSON.stringify(selector)});
+          const e=window.top.__jevFast?.node(${action.node});
           if (!e) return "stale";
           const r=e.getBoundingClientRect();
           const base={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2};
@@ -361,12 +385,14 @@ export class AgentBrowser implements BrowserDriver {
           for (const [t,Ev,extra] of seq) e.dispatchEvent(new Ev(t,{...base,...extra}));
           return "ok";
         })()`);
+      } else if (kind === "double_click") {
+        await this.evaluate(doubleClickScript(action.node));
       } else if (kind === "click") {
         await this.run(["click", selector]);
       } else if (kind === "hover") {
         await this.run(["hover", selector]);
       } else if (kind === "fill") {
-        if (tagged === "file") {
+        if (tagged.inputType === "file") {
           await this.run(["upload", selector, text ?? ""]);
         } else {
           await this.run(["fill", selector, text ?? ""]);
@@ -381,9 +407,7 @@ export class AgentBrowser implements BrowserDriver {
 
       throw error;
     } finally {
-      await this.evaluate(
-        `(() => { document.querySelector('[${TAG_ATTR}]')?.removeAttribute('${TAG_ATTR}'); return true; })()`,
-      ).catch(() => {});
+      await this.evaluate(clearTarget(action.node)).catch(() => {});
     }
 
     this.afterInput = action;
@@ -398,6 +422,17 @@ export class AgentBrowser implements BrowserDriver {
   ): Promise<ActResult> {
     if (!(await this.fresh(page, action)) || action.node === undefined) {
       throw new StalePage("Page changed since this decision. Observe again.");
+    }
+
+    return this.dispatchDom(action, text);
+  }
+
+  private async dispatchDom(action: ObservedAction, text?: string | null): Promise<ActResult> {
+    if (action.kind === "double_click" && action.node !== undefined) {
+      await this.evaluate(doubleClickScript(action.node));
+      this.afterInput = action;
+
+      return { executed: action.id };
     }
 
     if (action.kind === "fill") {
@@ -422,15 +457,17 @@ export class AgentBrowser implements BrowserDriver {
     const types =
       action.kind === "hover"
         ? ["mouseover", "mousemove"]
-        : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
+        : action.kind === "context"
+          ? ["pointerdown", "mousedown", "pointerup", "mouseup", "contextmenu"]
+          : ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
 
     await this.evaluate(`(() => {
       const e=window.__jevFast?.node(${action.node});
       if (!e) return "stale";
-      const r=e.getBoundingClientRect();
-      const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:0};
+      const r=e.getBoundingClientRect(), w=e.ownerDocument.defaultView;
+      const opts={bubbles:true,cancelable:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,button:${action.kind === "context" ? 2 : 0}};
       for (const t of ${JSON.stringify(types)}) {
-        const Ev = t.startsWith("pointer") ? PointerEvent : MouseEvent;
+        const Ev = t.startsWith("pointer") ? w.PointerEvent : w.MouseEvent;
         e.dispatchEvent(new Ev(t,opts));
       }
       return "ok";
@@ -441,6 +478,8 @@ export class AgentBrowser implements BrowserDriver {
   }
 
   async close(): Promise<void> {
+    this.listenerInit.dispose();
+
     if (!this.opened) return;
 
     try {
@@ -449,40 +488,5 @@ export class AgentBrowser implements BrowserDriver {
     }
 
     this.opened = false;
-  }
-}
-
-function parseOutput(stdout: string): JsonValue {
-  const text = stdout.trim();
-
-  if (!text) return null;
-
-  try {
-    const parsed = JSON.parse(text);
-
-    if (isJsonObject(parsed) && "success" in parsed) {
-      if (parsed.success === false) {
-        throw new Error(String(parsed.error ?? "agent-browser call failed").slice(0, 500));
-      }
-
-      return parsed.data;
-    }
-
-    return parsed;
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      const match = /[{[].*$/s.exec(text);
-
-      if (match) {
-        try {
-          return JSON.parse(match[0]);
-        } catch {
-        }
-      }
-
-      return text;
-    }
-
-    throw error;
   }
 }

@@ -3,7 +3,7 @@ import { trace } from "./trace.ts";
 import { rememberObservation, type ProgressObservation, type GoalAssessment } from "./agent/progress.ts";
 import { checkCompletion } from "./agent/completion.ts";
 import type { CompletionExpectation } from "./completion.ts";
-import { resolveFollowUp, toggleHint } from "./agent/followup.ts";
+import { resolveFollowUp } from "./agent/followup.ts";
 import { giveUpHint } from "./agent/fuses.ts";
 import { settleFirstObservation, stateSummary } from "./agent/observe.ts";
 import { actStep, decideStep, observeStep, settleStep } from "./agent/steps.ts";
@@ -11,7 +11,7 @@ import { makeClient } from "./env.ts";
 import { type Decision } from "./model/decide.ts";
 import { warmModelEndpoints } from "./model/endpoints.ts";
 import { actionSpace } from "./model/space.ts";
-import { extractAnswer } from "./model/text.ts";
+import type { AnswerResult } from "./agent/answer.ts";
 import { MAX_STEPS } from "./questions.ts";
 import { sleep } from "./sleep.ts";
 import {
@@ -47,7 +47,9 @@ export class Agent {
   fingerprints: string[] = [];
   domRetried = new Set<number>();
   domDead = new Map<number, number>();
-  domDoc: string | undefined;
+  unavailableFields = new Map<number, { fingerprint: string; step: number }>();
+  challengeActs = 0;
+  domFingerprint: string | undefined;
   followUp: { type: string; text: string | null; prevNodes: Set<number> } | null = null;
   textCalls: any[] = [];
   pendingText: [unknown, string, { model: string; latency_ms: number }] | null = null;
@@ -74,6 +76,8 @@ export class Agent {
   lastOperation: string | null = null;
   phase: Phase = "observe";
   terminalError: string | null = null;
+  preparedAnswer: Extract<AnswerResult, { status: "supported" | "not_requested" }> | null = null;
+  answerNote: string | undefined;
   startedAt = 0;
   maxSteps: number;
   client = makeClient();
@@ -137,10 +141,6 @@ export class Agent {
 
   private async settleStep(): Promise<void> {
     return settleStep(this);
-  }
-
-  toggleHint(): string | null {
-    return toggleHint(this.history);
   }
 
   giveUpHint(page: PageState): string {
@@ -275,7 +275,9 @@ export class Agent {
             url: this.page.url,
           });
         } else {
-          throw error;
+          this.terminalError = error instanceof Error ? error.message : String(error);
+          this.phase = "error";
+          trace("agent_error", { error: this.terminalError, after_step: this.history.length });
         }
       }
 
@@ -315,24 +317,8 @@ export class Agent {
       }
     }
 
-    let answer: string | undefined;
-    let answerNote: string | undefined;
-
-    if (this.status !== "done") {
-      answerNote = "run did not reach done";
-    } else if (!Agent.goalAsksForAnswer(this.goal)) {
-      answerNote = "goal does not ask for an answer";
-    } else {
-      try {
-        const extracted = await extractAnswer(this.goal, this.page);
-
-        answer = extracted.answer ?? undefined;
-
-        if (answer === undefined) answerNote = "helper read the page and returned no answer";
-      } catch (error) {
-        answerNote = `helper failed: ${String(error).slice(0, 160)}`;
-      }
-    }
+    const answer = this.status === "done" && this.preparedAnswer?.status === "supported" ? this.preparedAnswer.answer : undefined;
+    const answerNote = this.status === "done" && this.preparedAnswer?.status === "not_requested" ? "goal does not ask for an answer" : this.answerNote ?? "run did not reach done";
 
     const result: RunResult = {
       status: this.status === "ready" ? "blocked" : this.status,
@@ -363,12 +349,6 @@ export class Agent {
     if (this.page.downloads?.length) result.downloads = this.page.downloads;
 
     return result;
-  }
-
-  private static goalAsksForAnswer(goal: string): boolean {
-    return /\?|(?:^|[.;:!,]\s*|\b(?:tell me|find out|report)\s+)(what|which|who|whom|whose|when|where|why|how (many|much|old|tall|long|far))\b|(?:^|[.;:!,]\s*|\b(?:and|then)\s+)(name|list|report|tell me|find out|extract|read)\b[^\n]{0,80}\b(price|version|date|number|name|title|count|population|email|phone|author|score|address|link|url|size|status|message|text|error|reason|value|winner|top|latest|first|total)s?\b/i.test(
-      goal,
-    );
   }
 
   async close(): Promise<void> {

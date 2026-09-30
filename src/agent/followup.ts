@@ -1,5 +1,5 @@
 import { atWordBoundary, fold } from "../model/text.ts";
-import type { HistoryEntry, ObservedAction } from "../types.ts";
+import type { ObservedAction } from "../types.ts";
 
 export const UNDO_LABEL = /^\s*(remove|delete|clear|deselect|unselect|undo|×|✕|✖|x)\b/i;
 
@@ -33,25 +33,6 @@ export function resolveFollowUp(
     }
 
     if (appeared.length === 1) return appeared[0].id;
-  }
-
-  return null;
-}
-
-export function toggleHint(history: HistoryEntry[]): string | null {
-  const tail = history.slice(-2);
-
-  const norm = (s: string) => s.replace(/ \(dom\)$/, "");
-
-  if (
-    tail.length === 2 &&
-    tail[0].kind === "click" &&
-    tail[1].kind === "click" &&
-    norm(tail[0].action) === norm(tail[1].action) &&
-    tail[0].page_changed === true &&
-    tail[1].page_changed === true
-  ) {
-    return `"${norm(tail[1].action)}" is a toggle: clicking it again just re-closes what it opened. The items it revealed are in the table — act on one of them instead.`;
   }
 
   return null;

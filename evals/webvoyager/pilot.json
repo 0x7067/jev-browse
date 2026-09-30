@@ -1,0 +1,521 @@
+{
+  "revision": "5a7896738c10bfb8b9edccce6bb0e0411f8ae569",
+  "source": "https://github.com/MinorJerry/WebVoyager",
+  "dataset_sha256": "69b19fd86c23f1a500244a3724e039aa7ca6a1223d03e11eb10e308d4f11c488",
+  "dataset_size": 643,
+  "selection": "Two lowest SHA256(seed + id) per site; seed=jev-webvoyager-pilot-v1:",
+  "tasks": [
+    {
+      "web_name": "Allrecipes",
+      "id": "Allrecipes--18",
+      "ques": "Find a recipe for a vegetarian lasagna that has over 300 reviews and an average rating of 4.5 or higher on Allrecipes.",
+      "web": "https://www.allrecipes.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify an Allrecipes vegetarian lasagna recipe.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Establish that it has more than 300 reviews and an average rating of at least 4.5.",
+          "delivery": "browser"
+        }
+      ]
+    },
+    {
+      "web_name": "Allrecipes",
+      "id": "Allrecipes--39",
+      "ques": "Locate a recipe for sushi rolls on Allrecipes with a minimum of 20 reviews. Show the Nutrition Facts and the main ingredients. Tell me how to store these rolls.",
+      "web": "https://www.allrecipes.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify an Allrecipes sushi roll recipe.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Establish at least 20 reviews for that recipe.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r3",
+          "description": "Provide its Nutrition Facts and main ingredients.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r4",
+          "description": "Explain how to store these sushi rolls.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Amazon",
+      "id": "Amazon--23",
+      "ques": "Look for a men's waterproof digital sports watch with a heart rate monitor on Amazon. It should be priced between $50 to $100.",
+      "web": "https://www.amazon.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify a matching Amazon watch by name or link.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Establish that the identified watch is a men’s waterproof digital sports watch with a heart rate monitor.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r3",
+          "description": "Establish a price between $50 and $100 for the identified watch.",
+          "delivery": "browser"
+        }
+      ]
+    },
+    {
+      "web_name": "Amazon",
+      "id": "Amazon--10",
+      "ques": "Find the cost of a 2-year protection for PS4 on Amazon.",
+      "web": "https://www.amazon.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide the Amazon cost of 2-year protection for PS4.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Apple",
+      "id": "Apple--28",
+      "ques": "On the Apple website, find out if the Mac Mini can be configured with a GPU larger than 16-core.",
+      "web": "https://www.apple.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Answer whether the Mac Mini can be configured with a GPU larger than 16-core, using Apple configuration evidence. A standard model alone does not establish the maximum configurable GPU.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Apple",
+      "id": "Apple--12",
+      "ques": "What Apple Repair ways are mentioned on apple website, answer 2 of them.",
+      "web": "https://www.apple.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Name two Apple Repair ways mentioned on the Apple website.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "ArXiv",
+      "id": "ArXiv--38",
+      "ques": "Find the ArXiv Blog on the ArXiv website and summarize the content of its latest article.",
+      "web": "https://arxiv.org/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Find the arXiv Blog through the arXiv website and establish its latest article.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r2",
+          "description": "Summarize the content of that latest blog article.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "ArXiv",
+      "id": "ArXiv--24",
+      "ques": "Identify the most recent paper related to 'graph neural networks' on ArXiv and determine the affiliation of the first author.",
+      "web": "https://arxiv.org/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify the most recent arXiv paper related to graph neural networks.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Provide the affiliation of that paper’s first author.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "BBC News",
+      "id": "BBC News--8",
+      "ques": "Get a brief overview of the economic implications of the UK's latest trade deal posted on BBC News and the date when the article was published.",
+      "web": "https://www.bbc.com/news/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Briefly summarize the economic implications of the UK’s latest trade deal from a BBC News article.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Provide that article’s publication date.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "BBC News",
+      "id": "BBC News--5",
+      "ques": "Find the article \"What is climate change? A really simple guide\" and use it to answer what human activities are causing climate change.",
+      "web": "https://www.bbc.com/news/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Use the BBC article \"What is climate change? A really simple guide\" to answer which human activities cause climate change.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Booking",
+      "id": "Booking--35",
+      "ques": "Browse the booking website to get inspiration for your next trip, and summarize at least three places mentioned in one of the travel articles.",
+      "web": "https://www.booking.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Summarize at least three places mentioned in a single Booking.com travel article. Places need not all be cities.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Booking",
+      "id": "Booking--38",
+      "ques": "Look up Vienna hotel options with availability for a 4-night stay from October 29 to November 2, 2026, with amenities that include a Parking, breakfast included, and a rating of 8+ on Booking.com.",
+      "web": "https://www.booking.com/",
+      "original_ques": "Look up Vienna hotel options with availability for a 4-night stay from February 28 to March 4, 2024, with amenities that include a Parking, breakfast included, and a rating of 8+ on Booking.com.",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify matching Vienna hotel options on Booking.com.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Establish availability for October 29–November 2, 2026 (four nights) for those hotels.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r3",
+          "description": "Establish parking, breakfast included, and a rating of at least 8 for those hotels.",
+          "delivery": "browser"
+        }
+      ]
+    },
+    {
+      "web_name": "Cambridge Dictionary",
+      "id": "Cambridge Dictionary--15",
+      "ques": "Find the pronunciation and a sample sentence for the word \"pandemic.\"",
+      "web": "https://dictionary.cambridge.org/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide the pronunciation of pandemic from Cambridge Dictionary.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Provide a sample sentence for pandemic from Cambridge Dictionary.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Cambridge Dictionary",
+      "id": "Cambridge Dictionary--17",
+      "ques": "How many meanings of \"unblemished\" are given in Cambridge Dictionary? Please browse the page and give the number directly.",
+      "web": "https://dictionary.cambridge.org/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Directly give the number of meanings for unblemished shown on Cambridge Dictionary.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Coursera",
+      "id": "Coursera--12",
+      "ques": "Look for a Coursera course (not Specialization) that teaches Java programming basics.",
+      "web": "https://www.coursera.org/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify a matching Coursera course by name or link.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Establish that it teaches Java programming basics and is a course, not a Specialization.",
+          "delivery": "browser"
+        }
+      ]
+    },
+    {
+      "web_name": "Coursera",
+      "id": "Coursera--23",
+      "ques": "Find a course on Coursera about 'Artificial Intelligence Ethics', which has a duration of less than 5 weeks and has been rated 4.5 stars or higher. Provide the course name and the instructor's name.",
+      "web": "https://www.coursera.org/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide the name of a Coursera course about Artificial Intelligence Ethics.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Establish its duration is less than 5 weeks and its rating is at least 4.5 stars.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r3",
+          "description": "Provide the instructor’s name for that course.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "ESPN",
+      "id": "ESPN--35",
+      "ques": "Browse ESPN to find out when the next game of the Los Angeles Lakers will start. Then navigate to the ticket purchasing website from ESPN, what is the cheapest ticket available.",
+      "web": "https://www.espn.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide when the next Los Angeles Lakers game starts, based on ESPN.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Navigate from ESPN to the ticket purchasing website for that game.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r3",
+          "description": "Provide the cheapest available ticket for that game.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "ESPN",
+      "id": "ESPN--32",
+      "ques": "Review yesterday's NHL game results on ESPN, focusing on teams' performance.",
+      "web": "https://www.espn.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Review yesterday’s NHL results on ESPN, focusing on the teams’ performance.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "GitHub",
+      "id": "GitHub--3",
+      "ques": "Find out how much more package storage the Enterprise version has over Team in GitHub Pricing.",
+      "web": "https://github.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide the difference in package storage between GitHub Enterprise and Team pricing plans.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "GitHub",
+      "id": "GitHub--5",
+      "ques": "Find a Python repository on GitHub that has been updated in the past 2 days and has at least 500 stars.",
+      "web": "https://github.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify a Python repository on GitHub.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Establish that it was updated within the past 2 days and has at least 500 stars.",
+          "delivery": "browser"
+        }
+      ]
+    },
+    {
+      "web_name": "Google Flights",
+      "id": "Google Flights--37",
+      "ques": "Locate a round-trip flight from Buenos Aires to Beijing, leaving on October 29, 2026, and returning on November 2, 2026, check out one of the options and tell me if the airline for my return flight is the same as my departure flight.",
+      "web": "https://www.google.com/travel/flights/",
+      "original_ques": "Locate a round-trip flight from Buenos Aires to Beijing, leaving on February 28, 2024, and returning on March 3, 2024, check out one of the options and tell me if the airline for my return flight is the same as my departure flight.",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Find an option for a Buenos Aires–Beijing round trip departing October 29, 2026 and returning November 2, 2026.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r2",
+          "description": "State whether that option uses the same airline for the return and departure, supported by both legs.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Google Flights",
+      "id": "Google Flights--6",
+      "ques": "Search for a flight on December 19, 2026 and return on December 26, 2026 from Tel Aviv to Venice and Select First Class.",
+      "web": "https://www.google.com/travel/flights/",
+      "original_ques": "Search for a flight on December 19 and return on December 26 from Tel Aviv to Venice and Select First Class.",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Set a round-trip flight search from Tel Aviv to Venice, departing December 19, 2026 and returning December 26, 2026.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r2",
+          "description": "Select First Class for that search.",
+          "delivery": "browser"
+        }
+      ]
+    },
+    {
+      "web_name": "Google Map",
+      "id": "Google Map--39",
+      "ques": "Find a route from Miami to New Orleans, and provide the detailed route information.",
+      "web": "https://www.google.com/maps/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Find a Miami-to-New Orleans route on Google Maps and provide detailed route information.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Google Map",
+      "id": "Google Map--1",
+      "ques": "Tell me one bus stop that is nearest to the intersection of main street and Amherst street in Altavista.",
+      "web": "https://www.google.com/maps/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Name one bus stop nearest to the intersection of Main Street and Amherst Street in Altavista.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Google Search",
+      "id": "Google Search--7",
+      "ques": "Find the software requirements for iPhones that support AirDrop's ability to continue transmitting over the web when out of range.",
+      "web": "https://www.google.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide the iPhone software requirements for AirDrop transfers continuing over the internet when devices move out of range.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Google Search",
+      "id": "Google Search--15",
+      "ques": "Please try to log in to twitter with email: webagenttest@testmail.com and password: test123456. Let me know if the login was successful.",
+      "web": "https://www.google.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Report the outcome of the requested login attempt.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Huggingface",
+      "id": "Huggingface--36",
+      "ques": "Summarize all the payment plans and their advantages in huggingface pricing.",
+      "web": "https://huggingface.co/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Summarize all Hugging Face payment plans.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Summarize the advantages of those plans.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Huggingface",
+      "id": "Huggingface--28",
+      "ques": "Retrieve an example of a pre-trained model on Hugging Face that is optimized for question answering tasks and detail the languages it supports.",
+      "web": "https://huggingface.co/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify a pretrained Hugging Face model optimized for question answering.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Detail the languages supported by that model.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Wolfram Alpha",
+      "id": "Wolfram Alpha--4",
+      "ques": "Pack 24 circles in a circle radius r. Compare Densest known packing and Square packing. Then tell me the radius of the inner circles.",
+      "web": "https://www.wolframalpha.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Compare densest known packing and square packing for 24 circles inside a circle of radius r.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Provide the inner-circle radius for the compared packings.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Wolfram Alpha",
+      "id": "Wolfram Alpha--22",
+      "ques": "Determine the area of a regular hexagon with a side length of 7 cm.",
+      "web": "https://www.wolframalpha.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide the area of a regular hexagon of side length 7 cm using Wolfram Alpha.",
+          "delivery": "answer"
+        }
+      ]
+    }
+  ],
+  "date_policy": {
+    "as_of": "2026-09-29",
+    "description": "Explicit past travel dates moved to 30 days after as_of, preserving stated night count or original flight duration; yearless December dates resolve to next occurrence."
+  }
+}

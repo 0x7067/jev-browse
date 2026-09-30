@@ -1,0 +1,285 @@
+{
+  "revision": "5a7896738c10bfb8b9edccce6bb0e0411f8ae569",
+  "source": "https://github.com/MinorJerry/WebVoyager",
+  "dataset_sha256": "69b19fd86c23f1a500244a3724e039aa7ca6a1223d03e11eb10e308d4f11c488",
+  "dataset_size": 643,
+  "selection": "Third lowest SHA256(jev-webvoyager-pilot-v1: + id) per website, disjoint from pilot; frozen before execution",
+  "tasks": [
+    {
+      "web_name": "Allrecipes",
+      "id": "Allrecipes--36",
+      "ques": "Locate a recipe for an American apple pie on Allrecipes with a rating of at least 4 stars and more than 50 reviews. Note the maximum temperature mentioned in the Directions.",
+      "web": "https://www.allrecipes.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify a matching American apple pie recipe on Allrecipes by name or link.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Provide the maximum temperature mentioned in its Directions.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r3",
+          "description": "Establish that the identified recipe has at least 4 stars and more than 50 reviews.",
+          "delivery": "browser"
+        }
+      ]
+    },
+    {
+      "web_name": "Amazon",
+      "id": "Amazon--11",
+      "ques": "Find a stainless steel kitchen sink with double bowls on Amazon. Sort the results and find the cheapest one with FREE delivery.",
+      "web": "https://www.amazon.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify the matching Amazon sink by name or link.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Sort the search results.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r3",
+          "description": "Establish that the identified sink is the cheapest matching option with FREE delivery.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r4",
+          "description": "Establish that the identified sink is stainless steel with double bowls.",
+          "delivery": "browser"
+        }
+      ]
+    },
+    {
+      "web_name": "Apple",
+      "id": "Apple--19",
+      "ques": "On Apple's website, what is the slogan for the Mac and what is the slogan for the Macbook pro.",
+      "web": "https://www.apple.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide the slogan for Mac on the Apple website.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Provide the slogan for MacBook Pro on the Apple website.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "ArXiv",
+      "id": "ArXiv--15",
+      "ques": "Searching Chinese Benchmark on ArXiv, how many papers announced in December 2023 mention being accepted for AAAI 2024?",
+      "web": "https://arxiv.org/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide how many arXiv papers found by searching Chinese Benchmark were announced in December 2023 and mention acceptance for AAAI 2024.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "BBC News",
+      "id": "BBC News--6",
+      "ques": "Find the top story from BBC News in the technology section for today.",
+      "web": "https://www.bbc.com/news/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify today’s top story in the BBC News technology section.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Booking",
+      "id": "Booking--7",
+      "ques": "Find a hotel room on January 3-6, 2027 that is closest to National University of Singapore and costs less than $500",
+      "web": "https://www.booking.com/",
+      "original_ques": "Find a hotel room on January 3-6 that is closest to National University of Singapore and costs less than $500",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify a matching hotel room by name or link.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Establish that it is the closest qualifying option to National University of Singapore.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r3",
+          "delivery": "browser",
+          "description": "Establish availability for January 3–6, 2027 and a price below $500 for that room."
+        }
+      ]
+    },
+    {
+      "web_name": "Cambridge Dictionary",
+      "id": "Cambridge Dictionary--4",
+      "ques": "Look for the British English pronunciation of the word \"innovate\" and write down the International Phonetic Alphabet (IPA) notation, then find one example sentence provided in the Cambridge Dictionary that uses this word.",
+      "web": "https://dictionary.cambridge.org/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide the British English IPA pronunciation of innovate from Cambridge Dictionary.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Provide one example sentence using innovate from Cambridge Dictionary.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Coursera",
+      "id": "Coursera--13",
+      "ques": "Look for a Specialization on Coursera that teaches Python programming, and identify the skills you will learn by taking this Specialization.",
+      "web": "https://www.coursera.org/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify a Coursera Specialization that teaches Python programming.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Identify the skills learned in that Specialization.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "ESPN",
+      "id": "ESPN--30",
+      "ques": "Check out the NHL Standings 2023-24 on ESPN to see which teams are at the top and which are at the bottom in Eastern and Western Conference. What about the situation in Division.",
+      "web": "https://www.espn.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Report the top and bottom teams in the Eastern and Western Conferences for NHL 2023–24 on ESPN.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Describe the corresponding Division standings.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "GitHub",
+      "id": "GitHub--25",
+      "ques": "Search for a 'virtual reality' related repository on GitHub updated in the last 10 days with at least 200 stars and summarize its main objective.",
+      "web": "https://github.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify the matching GitHub repository by name or link.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r2",
+          "description": "Summarize its main objective.",
+          "delivery": "answer"
+        },
+        {
+          "id": "r3",
+          "description": "Establish that the identified repository is related to virtual reality, was updated within the last 10 days, and has at least 200 stars.",
+          "delivery": "browser"
+        }
+      ]
+    },
+    {
+      "web_name": "Google Flights",
+      "id": "Google Flights--3",
+      "ques": "Search for the one-way flight available from Calgary to New York on January 1, 2027 with the lowest carbon dioxide emissions.",
+      "web": "https://www.google.com/travel/flights/",
+      "original_ques": "Search for the one-way flight available from Calgary to New York on Jan. 1st with the lowest carbon dioxide emissions.",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify the one-way Calgary-to-New York flight on January 1, 2027 with the lowest carbon dioxide emissions.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Google Map",
+      "id": "Google Map--6",
+      "ques": "Find all Uniqlo locations in Chicago, IL.",
+      "web": "https://www.google.com/maps/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide all Uniqlo locations in Chicago, Illinois found on Google Maps.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Google Search",
+      "id": "Google Search--33",
+      "ques": "Find and copy the SHA of the latest commit in the TensorFlow repository on GitHub, then find a textbox to paste and tell me what the SHA is.",
+      "web": "https://www.google.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Find the SHA of the latest TensorFlow GitHub repository commit.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r2",
+          "description": "Paste that SHA into a textbox.",
+          "delivery": "browser"
+        },
+        {
+          "id": "r3",
+          "description": "Tell the user the SHA.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Huggingface",
+      "id": "Huggingface--27",
+      "ques": "Determine the most downloaded dataset related to Text Retrieval in NLP on Hugging Face.",
+      "web": "https://huggingface.co/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Identify the most downloaded Hugging Face dataset related to Text Retrieval in NLP.",
+          "delivery": "answer"
+        }
+      ]
+    },
+    {
+      "web_name": "Wolfram Alpha",
+      "id": "Wolfram Alpha--1",
+      "ques": "Give a constraint on the set of inequalities for the inner region of the pentagram.",
+      "web": "https://www.wolframalpha.com/",
+      "requirements": [
+        {
+          "id": "r1",
+          "description": "Provide a constraint on the set of inequalities for the inner region of the pentagram using Wolfram Alpha.",
+          "delivery": "answer"
+        }
+      ]
+    }
+  ],
+  "date_policy": {
+    "as_of": "2026-09-29",
+    "description": "Yearless travel dates resolve to next occurrence (January 2027). Historical research/publication and sports-season queries are preserved."
+  }
+}

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Operations portal</title>
+<a id="offer" href="#offer">Optional offer ends in 01:20:59</a>
+<button id="report">Open operations report</button>
+<output id="result">Report closed</output>
+<script>
+let remaining = 4799;
+setInterval(() => {
+  remaining--;
+  const hours = String(Math.floor(remaining / 3600)).padStart(2, '0');
+  const minutes = String(Math.floor(remaining % 3600 / 60)).padStart(2, '0');
+  const seconds = String(remaining % 60).padStart(2, '0');
+  document.querySelector('#offer').textContent = `Optional offer ends in ${hours}:${minutes}:${seconds}`;
+}, 100);
+document.querySelector('#report').addEventListener('click', () => {
+  document.querySelector('#result').textContent = 'Operations report opened';
+});
+</script>
+</html>

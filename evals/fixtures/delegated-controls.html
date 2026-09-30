@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Delegated control panel</title>
+<body><div id="shell"><h1>Delegated control panel</h1><p>Choose a color using its control.</p><button id="blue">Choose blue</button><button id="green">Choose green</button><p id="result">No color selected</p></div>
+<div id="custom" style="padding:20px;width:200px;background:#ddd">Standalone amber control</div>
+<div role="button" tabindex="0" id="semantic" aria-label="Explicit purple control"><span>Purple</span><button>Details</button></div>
+<script>
+const result = document.getElementById('result');
+document.getElementById('shell').addEventListener('click', (event) => {
+  if (event.target.id === 'blue') result.textContent = 'Selected blue';
+  else if (event.target.id === 'green') result.textContent = 'Selected green';
+  else result.textContent = 'Container clicked without a control';
+});
+document.getElementById('custom').addEventListener('click', () => { result.textContent = 'Selected amber'; });
+document.getElementById('semantic').addEventListener('click', () => { result.textContent = 'Selected purple'; });
+</script></body></html>

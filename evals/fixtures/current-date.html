@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Date entry</title>
+<label>Reference date <input id="date" type="text"></label><button id="check">Check date</button><p id="result"></p>
+<script>
+document.getElementById('check').onclick = () => {
+  document.getElementById('result').textContent = document.getElementById('date').value === new Date().toISOString().slice(0,10) ? 'Current UTC date verified' : 'Incorrect date';
+};
+</script></html>

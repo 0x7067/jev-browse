@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Report previews</title>
+<style>.covered { position:relative;width:220px;height:50px } .covered button,.overlay {position:absolute;inset:0} .overlay {background:rgba(0,0,0,.01)}</style>
+<div id="plain"></div>
+<div id="shadow"></div>
+<div id="covered" class="covered"></div>
+<iframe title="Framed preview" id="frame"></iframe>
+<output id="result">No preview opened</output>
+<script>
+const result = document.querySelector('#result');
+function mount(root, label, key) {
+  const button = document.createElement('button');
+  button.textContent = label;
+  let clicks = 0;
+  button.addEventListener('click', () => clicks++);
+  button.addEventListener('dblclick', event => {
+    result.textContent = clicks === 2 && event.detail === 2 ? `${key} preview opened with two clicks` : `Invalid ${key} sequence: clicks=${clicks}, detail=${event.detail}`;
+  });
+  root.append(button);
+}
+mount(document.querySelector('#plain'), 'Open main report', 'Main');
+mount(document.querySelector('#shadow').attachShadow({mode:'open'}), 'Open shadow report', 'Shadow');
+mount(document.querySelector('#covered'), 'Open covered report', 'Covered');
+const overlay = document.createElement('div');
+overlay.className = 'overlay';
+document.querySelector('#covered').append(overlay);
+mount(document.querySelector('#frame').contentDocument.body, 'Open framed report', 'Frame');
+</script>
+</html>

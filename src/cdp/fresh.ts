@@ -47,7 +47,7 @@ export async function fresh(
   action?: ObservedAction,
   level: "full" | "page" | "structure" | "completion" = "full",
 ): Promise<boolean> {
-  if (action && (action.kind === "click" || action.kind === "select")) {
+  if (action && (action.kind === "click" || action.kind === "double_click" || action.kind === "select")) {
     const node = action.node;
 
     if (node === undefined) return false;

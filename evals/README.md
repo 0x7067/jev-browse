@@ -135,3 +135,18 @@ inspection of the trace.
 real-Chrome diagnostic check without a model. It verifies evaluation values,
 errors, slow-call timing, method-specific timeouts, and browser liveness during
 a stalled renderer call. Use a new output filename each time.
+
+`fx-delegated-blue`, `fx-delegated-amber`, and `fx-delegated-purple` cover
+framework-style event delegation, a standalone script-listener control, and an
+explicit semantic container. Inferred containers with interactive descendants
+are not offered as buttons without their own semantic/focus/hover/drag/edit
+signal. Both engines install listener tracking before navigation; agent-browser
+requires a version supporting `--init-script`.
+
+Upload tasks use `{{UPLOAD_FIXTURE}}`, expanded by the runner to
+`evals/fixtures/upload.txt`, so runs submit a harmless repository fixture.
+
+`node --import tsx scripts/check-context-fallback.mjs` injects one provider
+context-limit rejection, then uses live OpenRouter selection and Chrome to
+verify that a control beyond the old action cutoff remains reachable.
+The ordinary `fx-large-controls` task covers the same page without injection.

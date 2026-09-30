@@ -31,8 +31,32 @@
 
   const safe = e => e.type !== 'hidden';
 
+  const unclipped = e => {
+    const r=e.getBoundingClientRect();
+    let left=r.left, right=r.right, top=r.top, bottom=r.bottom;
+
+    for (let p=e.parentElement||e.getRootNode()?.host;p;p=p.parentElement||p.getRootNode()?.host) {
+      if (p===e.ownerDocument.documentElement || p===e.ownerDocument.body) break;
+      const s=(p.ownerDocument.defaultView||window).getComputedStyle(p);
+
+      if (s.display==='inline' || s.display==='contents') continue;
+      const clipX=s.overflowX!=='visible', clipY=s.overflowY!=='visible';
+
+      if (!clipX && !clipY) continue;
+      const b=p.getBoundingClientRect();
+
+      if (clipX) { left=Math.max(left,b.left); right=Math.min(right,b.right); }
+
+      if (clipY) { top=Math.max(top,b.top); bottom=Math.min(bottom,b.bottom); }
+
+      if (right<=left || bottom<=top) return false;
+    }
+
+    return true;
+  };
+
   const visible = e => !e.closest('[aria-hidden="true"],[inert]') &&
-    e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true});
+    e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true}) && unclipped(e);
 
   const SKIP_NAME = new Set(['SCRIPT','STYLE','NOSCRIPT','TEMPLATE']);
 

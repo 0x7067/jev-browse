@@ -1,3 +1,4 @@
+import { doubleClickScript } from "../double-click.ts";
 import {
   StalePage,
   type ActResult,
@@ -196,7 +197,7 @@ export async function act(
         // boundaries, or is one of e's own shadow hosts. An unrelated overlay
         // in the same shadow root still counts as covered.
         const hosts=new Set(); for (let sr=e.getRootNode();sr instanceof ShadowRoot;sr=sr.host.getRootNode()) hosts.add(sr.host);
-        if (!c.composedContains(e,hit) && !hosts.has(hit)) return {why:'covered by '+(hit?hit.tagName.toLowerCase():'nothing')};
+        if (action.kind!=='select' && !c.composedContains(e,hit) && !hosts.has(hit)) return {why:'covered by '+(hit?hit.tagName.toLowerCase():'nothing')};
         if (action.kind==='select') {
           if (e.tagName!=='SELECT' || ![...e.options].some(o=>o.value===action.value &&
               !o.disabled && !o.closest('optgroup[disabled]'))) return {why:'no such option'};
@@ -223,7 +224,7 @@ export async function act(
       const why = String(target?.why ?? "");
 
       if (
-        (kind === "click" || kind === "context" || kind === "hover") &&
+        (kind === "click" || kind === "double_click" || kind === "context" || kind === "hover") &&
         (why === "offscreen" || why.startsWith("covered"))
       ) {
         return await domDispatch(host,action, text);
@@ -297,17 +298,20 @@ export async function act(
     }
 
     if (kind !== "select") {
+      for (const clickCount of kind === "double_click" ? [1, 2] : [1]) {
       for (const type of ["mousePressed", "mouseReleased"]) {
         await host.call("Input.dispatchMouseEvent", {
           type,
           x: target.x,
           y: target.y,
           button: kind === "context" ? "right" : "left",
-          clickCount: 1,
+          clickCount,
         });
       }
 
-      if (kind === "click" || kind === "context" || kind === "fill") {
+      }
+
+      if (kind === "click" || kind === "double_click" || kind === "context" || kind === "fill") {
         await host.evaluate(`(() => {
           const e=window.__jevFast?.node(${action.node});
           if (!e?.isConnected) return;
@@ -404,6 +408,13 @@ export async function domDispatch(
           return "ok";
         })()`,
       );
+      host.afterInput = action;
+
+      return { executed: action.id };
+    }
+
+    if (action.kind === "double_click" && action.node !== undefined) {
+      await host.evaluate(doubleClickScript(action.node));
       host.afterInput = action;
 
       return { executed: action.id };
