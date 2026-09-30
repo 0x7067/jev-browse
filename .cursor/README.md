@@ -7,6 +7,7 @@ Repository-managed setup for [jev-browse](https://github.com/0x7067/jev-browse) 
 - **Node.js 22.19** (oxlint needs `>=22.18`; see `.cursor/Dockerfile`)
 - **Google Chrome** at `/usr/bin/google-chrome-stable` (headless CDP; `findChrome()` also checks `PATH` and `CHROME_PATH`)
 - **`npm ci`** on each build (see `install` in `environment.json`)
+- **No `start` or `terminals`** — jev-browse is a bundled CLI (`bundled/cli.mjs`); Chrome is launched per invocation, not as a background daemon
 
 ## Secrets (Cursor dashboard only)
 
