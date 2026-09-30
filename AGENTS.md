@@ -65,6 +65,7 @@ for the flags, the expectation types, and the result format.
   forces `--include=dev`, which breaks `npx -p github:...` installs). The
   full local build is `npm run compile`; installed copies execute only the
   committed `bundled/`.
+- `.agents/skills/` is canonical for shared agent skills; symlink them into tool `skills/` dirs, never copy.
 
 ## Verify
 

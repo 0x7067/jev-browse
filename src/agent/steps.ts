@@ -147,14 +147,16 @@ export async function actStep(a: Agent): Promise<void> {
 
     if (!decision) throw new Error("Choose before acting");
 
-    if (!(await a.browser.fresh(page, undefined, "structure"))) {
+    const untargeted = decision.target === null && ["SCROLL_DOWN", "SCROLL_UP", "WAIT"].includes(decision.operation);
+
+    if (!untargeted && !(await a.browser.fresh(page, undefined, "structure"))) {
       throw new StalePage("Page changed since the decision. Choose again.");
     }
 
     a.decision = null;
     const selected = decision.choice;
 
-    if (selected !== "DONE" && decision.goal_status === "SATISFIED") {
+    if (selected !== "DONE" && decision.goal_status === "SATISFIED" && (decision.goal_confidence ?? 1) >= 0.6) {
       if (await a.confirmDone(a.history.at(-1)?.kind)) a.phase = "done";
 
       return;

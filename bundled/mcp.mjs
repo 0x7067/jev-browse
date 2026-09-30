@@ -715,6 +715,7 @@ async function chooseOnce(client, state, goal, history, observations = []) {
   return {
     choice,
     goal_status: progressAnswer.choice,
+    goal_confidence: progressAnswer.confidence,
     operation,
     target,
     target2,
@@ -1315,12 +1316,13 @@ async function actStep(a) {
   const decision = a.decision;
   const page = a.page;
   if (!decision) throw new Error("Choose before acting");
-  if (!await a.browser.fresh(page, void 0, "structure")) {
+  const untargeted = decision.target === null && ["SCROLL_DOWN", "SCROLL_UP", "WAIT"].includes(decision.operation);
+  if (!untargeted && !await a.browser.fresh(page, void 0, "structure")) {
     throw new StalePage("Page changed since the decision. Choose again.");
   }
   a.decision = null;
   const selected = decision.choice;
-  if (selected !== "DONE" && decision.goal_status === "SATISFIED") {
+  if (selected !== "DONE" && decision.goal_status === "SATISFIED" && (decision.goal_confidence ?? 1) >= 0.6) {
     if (await a.confirmDone(a.history.at(-1)?.kind)) a.phase = "done";
     return;
   }

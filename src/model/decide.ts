@@ -49,6 +49,7 @@ export function validateChoice(answer: RawChoiceAnswer, ids: Set<string>): asser
 export interface Decision {
   choice: string;
   goal_status?: string;
+  goal_confidence?: number;
   operation: string;
   target: string | null;
   target2?: string | null;
@@ -344,6 +345,7 @@ async function chooseOnce(
   return {
     choice,
     goal_status: progressAnswer.choice,
+    goal_confidence: progressAnswer.confidence,
     operation,
     target,
     target2,
