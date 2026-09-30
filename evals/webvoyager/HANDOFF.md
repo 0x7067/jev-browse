@@ -45,9 +45,10 @@
   so both are variance. Huggingface--36 is 0/4 on this build: the runtime Opus
   reviewer wants pay-as-you-go pricing covered, and the external judge calls
   that extra claim unverifiable. It is a reviewer/judge scope conflict on "all
-  payment plans", not an evidence-loss bug. It was already listed as failing
-  before this work. Net: no demonstrated regression and no demonstrated
-  benchmark gain. Single live runs are too noisy (±2 tasks) to rank builds;
+  payment plans", not an evidence-loss bug. The earlier raw baseline verified
+  it once, but the pre-work handoff already listed it as an open failure. Net:
+  no regression shown beyond this unresolved scope conflict, and no benchmark
+  gain shown. Single live runs are too noisy (±2 tasks) to rank builds;
   use 3x repeats per task for any future comparison.
 - Not yet done: manual adjudicated audit of the fresh run
   (`scripts/audit-webvoyager.mjs`); Allrecipes access-issue pages; ESPN--35 judge
