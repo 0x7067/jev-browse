@@ -5,7 +5,7 @@ description: Drive a real browser autonomously toward one bounded web goal (sear
 
 # jev-browse
 
-This plugin provides the `jev_browse` tool (MCP) and a CLI that let TypeSafe
+This plugin provides the `jev_browse` tool (native OpenCode/Pi tool, or MCP) and a CLI that let TypeSafe
 Jev drive a real Chrome tab end-to-end.
 
 ## When to use

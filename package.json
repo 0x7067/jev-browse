@@ -18,6 +18,9 @@
     "jev-browse": "bundled/cli.mjs",
     "jev-browse-mcp": "bundled/mcp.mjs"
   },
+  "exports": {
+    ".": "./integrations/opencode/index.ts"
+  },
   "scripts": {
     "compile": "node scripts/build-snapshot.mjs && tsc && cp src/snapshot.js dist/snapshot.js && npm run build:bundle",
     "build:bundle": "node scripts/build-snapshot.mjs && esbuild src/cli.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/cli.mjs && esbuild src/mcp.ts --bundle --format=esm --platform=node --target=node22 --outfile=bundled/mcp.mjs && cp src/snapshot.js bundled/snapshot.js",
