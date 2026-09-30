@@ -50,6 +50,18 @@
   no regression shown beyond this unresolved scope conflict, and no benchmark
   gain shown. Single live runs are too noisy (±2 tasks) to rank builds;
   use 3x repeats per task for any future comparison.
+- Loop-closing A/B, same final expectations, 2x per engine:
+  HEAD 3333eff `close-loop-{cdp,agent-browser}-*.json` 12/12 verified;
+  pre-session 846d4a0 `pre-fix-{cdp,agent-browser}-*.json` 7/12.
+  - Retention: fx-evidence-retention 4/4 on HEAD vs 0/4 before (step
+    budget, never answers). Across all runs: 10/10 vs 0/10.
+  - Field: fx-field-recovery and fx-field-unavailable also pass on the old
+    build (3/4 and 4/4; its one failure was a 120s harness timeout). The live
+    planner rarely picks the field early, so these tasks cannot tell builds
+    apart. The only discriminating evidence is the controlled check, which
+    forces the premature fill: old build status=error at 0 steps; HEAD 4/4
+    on both engines. The live effect is that ArXiv--24 no longer ends on a
+    field-helper error.
 - Not yet done: manual adjudicated audit of the fresh run
   (`scripts/audit-webvoyager.mjs`); Allrecipes access-issue pages; ESPN--35 judge
   `fetch failed` (infra, rerun judge with `--judge-only`).
