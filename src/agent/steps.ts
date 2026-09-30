@@ -15,10 +15,10 @@ export async function observeStep(a: Agent): Promise<void> {
   }
 
 export async function decideStep(a: Agent): Promise<void> {
-    if (a.stopAtChallenge && a.page.challenge) {
+    if (a.page.challenge && (a.stopAtChallenge || a.challengeActs >= 2)) {
       a.blockedCause = "verification_required";
       a.phase = "blocked";
-      trace("challenge_stop", { reasons: a.page.challenge_reasons, page: a.page });
+      trace("challenge_stop", { reasons: a.page.challenge_reasons, actions_on_challenge: a.challengeActs, page: a.page });
 
       return;
     }
@@ -288,6 +288,7 @@ export async function actStep(a: Agent): Promise<void> {
 
     await a.browser.act(action, page, text);
     trace("action_dispatched", { action });
+    a.challengeActs = page.challenge ? a.challengeActs + 1 : 0;
     a.pendingText = null;
     a.earlyWaits = 0;
     a.probeConsulted = false;

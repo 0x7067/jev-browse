@@ -1202,10 +1202,10 @@ async function observeStep(a) {
   a.phase = "decide";
 }
 async function decideStep(a) {
-  if (a.stopAtChallenge && a.page.challenge) {
+  if (a.page.challenge && (a.stopAtChallenge || a.challengeActs >= 2)) {
     a.blockedCause = "verification_required";
     a.phase = "blocked";
-    trace("challenge_stop", { reasons: a.page.challenge_reasons, page: a.page });
+    trace("challenge_stop", { reasons: a.page.challenge_reasons, actions_on_challenge: a.challengeActs, page: a.page });
     return;
   }
   if (!a.startedAt) a.startedAt = performance.now();
@@ -1402,6 +1402,7 @@ async function actStep(a) {
   }
   await a.browser.act(action, page, text);
   trace("action_dispatched", { action });
+  a.challengeActs = page.challenge ? a.challengeActs + 1 : 0;
   a.pendingText = null;
   a.earlyWaits = 0;
   a.probeConsulted = false;
@@ -2191,6 +2192,7 @@ var Agent = class _Agent {
   domRetried = /* @__PURE__ */ new Set();
   domDead = /* @__PURE__ */ new Map();
   unavailableFields = /* @__PURE__ */ new Map();
+  challengeActs = 0;
   domFingerprint;
   followUp = null;
   textCalls = [];

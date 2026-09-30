@@ -904,5 +904,27 @@
       "answer_match": "\\b14\\b",
       "action_match": "CLICK:Pricing(?:[\\s\\S]*SCROLL_DOWN){11}"
     }
+  },
+  {
+    "id": "fx-persistent-challenge",
+    "url": "evals/fixtures/persistent-challenge.html",
+    "file_url": true,
+    "goal": "Find the iOS version AirDrop over the internet requires.",
+    "max_steps": 12,
+    "expect": {
+      "status": "blocked",
+      "challenge_match": "visible_widget|interstitial_text",
+      "action_not_match": "(CLICK:I'm not a robot[\\s\\S]*){3}"
+    }
+  },
+  {
+    "id": "fx-clearing-challenge",
+    "url": "evals/fixtures/persistent-challenge.html?clears",
+    "file_url": true,
+    "goal": "Find the iOS version AirDrop over the internet requires.",
+    "max_steps": 12,
+    "expect": {
+      "answer_match": "17\\.1"
+    }
   }
 ]

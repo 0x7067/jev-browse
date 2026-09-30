@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Search results</title>
+<div id="app"></div>
+<script>
+const clears=location.search.includes('clears');
+const app=document.getElementById('app');
+const gate=()=>{app.innerHTML='<h1>About this page</h1><p>Our systems have detected unusual traffic from your computer network. This page checks to see if it\'s really you sending the requests, and not a robot.</p><div class="g-recaptcha" data-sitekey="fixture" style="width:300px;height:74px;border:1px solid #999"><label><input type="checkbox" id="robot"> I\'m not a robot</label></div><p id="status">Verification pending</p>';
+document.getElementById('robot').onchange=()=>{ if (clears) { app.innerHTML='<h1>Results</h1><p>Result: AirDrop over the internet requires iOS 17.1 or later.</p>'; } else { document.getElementById('status').textContent='Verification pending '+Date.now(); document.getElementById('robot').checked=false; } };};
+gate();
+</script></html>
