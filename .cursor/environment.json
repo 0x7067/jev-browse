@@ -1,0 +1,9 @@
+{
+  "name": "jev-browse",
+  "user": "ubuntu",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "install": "npm ci",
+  "chromeExecutablePath": "/usr/bin/google-chrome-stable"
+}
