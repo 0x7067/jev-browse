@@ -372,3 +372,26 @@ Evidence:
 
 Still open: fx-iframe and tin-infinite-scroll fail consistently on cdp, and are
 worth their own investigation. Adjudicated audit of the fresh run is still not done.
+
+## 2026-09-30 Freshness and goal-confidence gate (7177365)
+
+- Untargeted SCROLL/WAIT decisions now survive page drift between decide and act.
+  Before, an infinite scroll or live region made every scroll decision "stale",
+  so the agent never scrolled twice.
+- The decider's SATISFIED goal_progress overrides the chosen action only at
+  confidence >= 0.6.
+- tin-infinite-scroll cdp: 0/3 before (`uncertain-pre-cdp-1790775812144`), 3/3 after
+  (`goalconf-cdp-1790776376815`). On agent-browser it waits once and then scrolls once,
+  so the two-scroll check still fails 0/3 there.
+- Full suites: cdp 95/6 (`goalconf-full-cdp-1790777395604`), agent-browser 94/7
+  (`goalconf-full-agent-browser-1790779257909`), the best so far on both engines.
+  fx-new-tab's one suite failure passed 3/3 on rerun (`newtab-recheck-1790779350704`).
+- Live, 7 prior failures (`webvoyager-7177365-2026-09-30` plus
+  `webvoyager-7177365-infra-rerun-2026-09-30`): 2/7 now verified. Amazon--10
+  passed for the first time ($42.99 tier, with the control-label evidence fix).
+  Booking--35 verified. Still failing: ArXiv--24, BBC News--8 (time budget),
+  ESPN--32, Google Map--1 (no distance evidence), Huggingface--36 (reviewer/judge
+  scope conflict).
+- Infra warning: the disk hit ENOSPC mid-run, with 22 GB free (95% used).
+  `~/.jcode/scratch` is 14 GB, mostly from other projects. Check free space before
+  a full benchmark run.
