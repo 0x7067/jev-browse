@@ -35,6 +35,23 @@
   transition repeated twice (`webvoyager-arxiv-transition-{1,2}`); the loop just
   moved to other targets. Treat this as a decision-model limit on choosing an
   unexplored evidence source.
+- **Fresh full pilot on frozen clean build 7e337e5**
+  (`webvoyager-fresh-full-2026-09-29`): raw 12 verified / 17 failed /
+  0 unverifiable / 1 excluded. Earlier raw baseline
+  `webvoyager-current-review-2026-09-29` was 13/15/1/1. Comparison:
+  `compare-fresh-vs-current-review.json`. Flips: gained Amazon--23 and Google
+  Map--39; lost ArXiv--38, Booking--35 and Huggingface--36. 2x reruns
+  (`webvoyager-regress-check-{1,2}`): Booking--35 2/2 verified and ArXiv--38 1/2,
+  so both are variance. Huggingface--36 is 0/4 on this build: the runtime Opus
+  reviewer wants pay-as-you-go pricing covered, and the external judge calls
+  that extra claim unverifiable. It is a reviewer/judge scope conflict on "all
+  payment plans", not an evidence-loss bug. It was already listed as failing
+  before this work. Net: no demonstrated regression and no demonstrated
+  benchmark gain. Single live runs are too noisy (±2 tasks) to rank builds;
+  use 3x repeats per task for any future comparison.
+- Not yet done: manual adjudicated audit of the fresh run
+  (`scripts/audit-webvoyager.mjs`); Allrecipes access-issue pages; ESPN--35 judge
+  `fetch failed` (infra, rerun judge with `--judge-only`).
 
 ## Update: field recovery implemented, blocked on OpenRouter credit
 
