@@ -1,0 +1,19 @@
+evals/tasks.json
+  s_fa5c88535018b9::t_784e5256d64126 29,694,929-939
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "977b6c15dee5385c91070b12ac7132dcbb18143f",
+  "prompts": {},
+  "sessions": {
+    "s_fa5c88535018b9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0efad-5ae9-73c8-8611-251aea8e451c",
+        "model": "swe-2"
+      },
+      "human_author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
