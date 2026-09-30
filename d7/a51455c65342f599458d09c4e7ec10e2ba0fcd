@@ -1,0 +1,20 @@
+README.md
+  h_29be57c0addd47 9,78,118-125,238
+integrations/opencode/index.ts
+  h_29be57c0addd47 1-263
+package.json
+  h_29be57c0addd47 21-23
+skills/jev-browse/SKILL.md
+  h_29be57c0addd47 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d7a51455c65342f599458d09c4e7ec10e2ba0fcd",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
