@@ -1,0 +1,18 @@
+package-lock.json
+  h_29be57c0addd47 3,9
+package.json
+  h_29be57c0addd47 3
+plugin.json
+  h_29be57c0addd47 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8f7cf16d5524fc09317eaef59e766c7ecd506e07",
+  "prompts": {},
+  "humans": {
+    "h_29be57c0addd47": {
+      "author": "Pedro Guimarães <21346846+0x7067@users.noreply.github.com>"
+    }
+  }
+}
