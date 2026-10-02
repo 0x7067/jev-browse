@@ -31,9 +31,9 @@ without live model calls):**
 - `file://` start URLs are refused unless `--allow-file-urls` /
   `JEV_ALLOW_FILE_URLS=1` (CLI exits `1` with the http(s)-only error)
 
-**Out-of-band (needs a Jev provider key: `TYPESAFE_API_KEY`, or
-`OPENROUTER_API_KEY` with `JEV_PROVIDER=openrouter` or no TypeSafe key;
-TYPE_TEXT also needs `TEXT_MODEL_*`):**
+**Out-of-band (needs a Jev provider key: `OPENROUTER_API_KEY` — auto-selected
+whenever set — or `TYPESAFE_API_KEY` as the sole configured key / with
+`JEV_PROVIDER=typesafe`; TYPE_TEXT and answer goals also need `TEXT_MODEL_*`):**
 
 - Fixture `file_url` tasks in `evals/tasks.json` (`fx-*`) that call Jev and
   verify via `expect.*`

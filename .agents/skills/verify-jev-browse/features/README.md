@@ -27,7 +27,10 @@ feature file as the recipe.
 ## In-band vs out-of-band
 
 **In-band** (no TypeSafe / text-model keys): doctor checks, `file://` refusal
-without `--allow-file-urls`, missing-key error shape when keys are unset.
+without `--allow-file-urls`, missing-key error shape when keys are unset (the
+message names the selected provider — OpenRouter when `JEV_PROVIDER` is unset
+or empty and `TYPESAFE_API_KEY` is unset; `TYPESAFE_API_KEY` when
+`JEV_PROVIDER=typesafe` is pinned).
 
 **Out-of-band** (needs a Jev provider key, `TYPESAFE_API_KEY` or
 `OPENROUTER_API_KEY`; TYPE_TEXT also needs
@@ -84,5 +87,7 @@ handles, required state, commands, and observable proof.
 - [CLI missing key](./cli-missing-key.md) covers the error when no provider key is set.
 - [Jev provider](./jev-provider.md) covers choosing TypeSafe or OpenRouter with `JEV_PROVIDER`.
 - [Model-free drive paths](./model-free-drive.md) covers verifying snapshot/act behavior when the model is unreachable.
+- [Fixture answers](./fixture-answers.md) covers question goals answered via `RunResult.answer`.
+- [MCP server](./mcp-server.md) covers the `jev_browse` stdio tool surface.
 
 Replay diagnostics and completion checks: [replay-diagnostics.md](replay-diagnostics.md).

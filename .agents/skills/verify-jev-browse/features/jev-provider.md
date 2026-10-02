@@ -2,9 +2,10 @@
 
 The user picks which service answers Jev decisions: TypeSafe directly or
 OpenRouter. `JEV_PROVIDER` names it. When `JEV_PROVIDER` is unset or empty,
-jev-browse uses TypeSafe if `TYPESAFE_API_KEY` is set, otherwise OpenRouter if
-`OPENROUTER_API_KEY` is set. A drive through OpenRouter behaves like a drive
-through TypeSafe; only the key and the billing account change.
+jev-browse picks OpenRouter whenever `OPENROUTER_API_KEY` is set or
+`TYPESAFE_API_KEY` is unset — TypeSafe is the automatic choice only when
+TypeSafe is the sole configured key. A drive through OpenRouter behaves like a
+drive through TypeSafe; only the key and the billing account change.
 
 ## Sub-features
 
@@ -12,7 +13,9 @@ through TypeSafe; only the key and the billing account change.
 - `provider-auto-openrouter` drives with no provider named and only the OpenRouter key present.
 - `provider-typesafe` drives with `JEV_PROVIDER=typesafe`.
 - `provider-unknown` refuses an unknown `JEV_PROVIDER` value before any browser work.
-- `provider-missing-key` names the selected provider's key variable when it is empty.
+- `provider-missing-key` names the selected provider's key variable when it is
+  empty (with no provider named and both keys empty, that is
+  `OPENROUTER_API_KEY`).
 
 ## How to get to it (user POV)
 
