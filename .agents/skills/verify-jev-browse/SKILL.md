@@ -34,7 +34,7 @@ without live model calls):**
 **Out-of-band (needs a Jev provider key: `OPENROUTER_API_KEY` — auto-selected
 when `JEV_PROVIDER` is unset or empty and that key is set — or `TYPESAFE_API_KEY`
 as the sole configured key / with `JEV_PROVIDER=typesafe`; TYPE_TEXT and answer
-goals also need `TEXT_MODEL_*`):**
+goals also need `TEXT_MODEL_API_KEY`; `TEXT_MODEL_BASE_URL` and `TEXT_MODEL` default when unset):**
 
 - Fixture `file_url` tasks in `evals/tasks.json` (`fx-*`) that call Jev and
   verify via `expect.*`
