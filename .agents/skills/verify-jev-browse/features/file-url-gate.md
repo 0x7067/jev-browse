@@ -10,6 +10,8 @@ external model APIs. Without the opt-in, the CLI exits `1` and returns a
 - `file-url-denied` refuses `file://` without `--allow-file-urls` (exit `1`).
 - `file-url-allow-reaches-auth` with `--allow-file-urls` passes the scheme check
   and fails next on the missing-key error when no provider key is set (still in-band).
+  With both keys empty the auto-selected provider is OpenRouter, so the error names
+  `OPENROUTER_API_KEY`.
 
 ## How to get to it (user POV)
 
@@ -35,7 +37,7 @@ Preconditions:
 - **Allow reaches auth.** Run
   `TYPESAFE_API_KEY= OPENROUTER_API_KEY= JEV_PROVIDER= control-jev-browse cli -- --allow-file-urls --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" --goal "stop"`.
   Exit code `1`. Stdout `error` contains
-  `TYPESAFE_API_KEY is not set`. Save stdout as `file-url-gate/allow-nokey.json`.
+  `OPENROUTER_API_KEY is not set`. Save stdout as `file-url-gate/allow-nokey.json`.
 - **Proof.** Both artifacts show the exit and error strings above. Do not launch
   a headed browser for this feature.
 
@@ -43,5 +45,8 @@ Preconditions:
 
 - Eval fixture tasks always opt in to `file://`; they do not prove the deny path.
 - A missing key after `--allow-file-urls` is not a file-URL gate failure — it is
-  the next gate. Keep the two artifacts separate.
+  the next gate. Keep the two artifacts separate. The missing-key error names the
+  selected provider: empty keys + no `JEV_PROVIDER` picks OpenRouter, so expect
+  `OPENROUTER_API_KEY`; pin `JEV_PROVIDER=typesafe` to reach the `TYPESAFE_API_KEY`
+  variant.
 - Do not use a live http(s) URL when proving this feature.
