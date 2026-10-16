@@ -31,7 +31,7 @@ You need Node 22 or later and Chrome. The repo root is an
 | Pi | `pi install git:github.com/0x7067/jev-browse` (registers the `jev_browse` tool and skill) |
 | Claude Code | `claude plugin marketplace add 0x7067/jev-browse`, then `claude plugin install jev-browse@jev-browse` |
 | Codex / ChatGPT | `codex plugin marketplace add 0x7067/jev-browse`, then `codex plugin install jev-browse` |
-| OpenCode | `opencode plugin add github:0x7067/jev-browse` (native `jev_browse` tool, so remove any `jev` MCP entry) |
+| OpenCode | `opencode plugin add github:0x7067/jev-browse` (native `jev_browse` tool, so remove any `browser` MCP entry) |
 | Any MCP client | stdio command `npx -y -p github:0x7067/jev-browse jev-browse-mcp` |
 | CLI only | `npm install -g github:0x7067/jev-browse`, or `npx -y -p github:0x7067/jev-browse jev-browse` |
 
@@ -67,13 +67,13 @@ for one adult in economy. Stop when matching flight options are visible." \
 ```
 
 Step events stream to stderr as JSONL, and stdout gets only the final result
-JSON. Exit code 0 means `done`, 2 means `blocked`, 1 means error.
+JSON. Exit code 0 means `done`, 2 means any other RunResult status (`blocked` or `error`), and 1 means the run threw before returning a result.
 
 The MCP server (`node bundled/mcp.mjs`, stdio) exposes one tool, `jev_browse`,
 with the same inputs. The OpenCode plugin registers that tool natively and runs
 the bundle in a `node` subprocess, because OpenCode's sandbox can't import files
 outside the plugin directory. If you'd rather use MCP there:
-`opencode mcp add jev --global -- npx -y -p github:0x7067/jev-browse jev-browse-mcp`.
+`opencode mcp add browser --global -- npx -y -p github:0x7067/jev-browse jev-browse-mcp`.
 
 Start URLs must be `http` or `https`. Page text goes to outside model APIs, and
 a `file://` URL would send your local files with it. Tests opt in with

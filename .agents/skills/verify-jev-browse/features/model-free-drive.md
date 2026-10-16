@@ -37,7 +37,7 @@ Preconditions: launch + doctor per features/README.md.
 - **CLI to the decide boundary** (needs only that TYPESAFE_API_KEY is set,
   value may be dead; pin `JEV_PROVIDER=typesafe OPENROUTER_API_KEY=` so
   OpenRouter does not serve the decision):
-  `control-jev-browse cli -- --allow-file-urls --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" --goal "stop"`.
+  `JEV_PROVIDER=typesafe OPENROUTER_API_KEY= control-jev-browse cli -- --allow-file-urls --url "file://$JEV_BROWSE_ROOT/fixture-interactions.html" --goal "stop"`.
   With a credit-less key expect exit `2` and a stdout RunResult
   `status:"error"` carrying the HTTP 402 text plus populated `final_text`,
   `final_state`, and `final_frames`, and a stderr `step` event with

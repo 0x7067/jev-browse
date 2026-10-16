@@ -38,13 +38,13 @@ Preconditions:
 - `eval "$(control-jev-browse env)"`.
 
 - **Eval path.** Run
-  `control-jev-browse eval -- --tasks fx-answer-summary,fx-answer-comparison,fx-table-answer,fx-control-label-answer --trace --label verify-answers`.
+  `JEV_PROVIDER= control-jev-browse eval -- --tasks fx-answer-summary,fx-answer-comparison,fx-table-answer,fx-control-label-answer --trace --label verify-answers`.
   Require `verified:4` / `unverifiable:0` / `failed:0`. Copy the written
   `evals/results/verify-answers-*.json` into evidence as
   `fixture-answers/eval-result.json`; each detail's `answer` field must
   satisfy its `answer_match` regex.
 - **CLI path.** Run
-  `control-jev-browse cli -- --allow-file-urls --url "file://$JEV_BROWSE_ROOT/evals/fixtures/table-evidence.html" --goal 'Sort Current staff by given name ascending, then report only the family name of its first data row.'`.
+  `JEV_PROVIDER= control-jev-browse cli -- --allow-file-urls --url "file://$JEV_BROWSE_ROOT/evals/fixtures/table-evidence.html" --goal 'Sort Current staff by given name ascending, then report only the family name of its first data row.'`.
   Exit `0`; stdout `status` is `done` and `answer` is `Quinn`.
 
 ## Gotchas
@@ -55,7 +55,7 @@ Preconditions:
   why; that is honest output, not a pass — only `answer_match` verifies.
 - With `TEXT_MODEL_API_KEY` unset the run ends `blocked` with
   `blocked_cause` `answer_unverified` and `answer_note`
-  `Text helper is not configured.` — evals fail on `status` before
+  `Error: Text helper is not configured.` — evals fail on `status` before
   `answer_match` is checked.
 - Without a provider key this feature is unreachable; do not substitute
   the file-URL gate.

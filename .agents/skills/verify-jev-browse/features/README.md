@@ -33,8 +33,8 @@ or empty and `TYPESAFE_API_KEY` is unset; `TYPESAFE_API_KEY` when
 `JEV_PROVIDER=typesafe` is pinned).
 
 **Out-of-band** (needs a Jev provider key, `TYPESAFE_API_KEY` or
-`OPENROUTER_API_KEY`; TYPE_TEXT also needs
-`TEXT_MODEL_API_KEY` + `TEXT_MODEL_BASE_URL` + `TEXT_MODEL`): fixture `fx-*`
+`OPENROUTER_API_KEY`; TYPE_TEXT also needs `TEXT_MODEL_API_KEY`;
+`TEXT_MODEL_BASE_URL` and `TEXT_MODEL` default when unset): fixture `fx-*`
 eval tasks, live-site tasks, MCP `jev_browse`. Live sites flake — prefer
 fixtures for prove-once. Never count an in-band gate pass as verifying an
 out-of-band fixture or live task.

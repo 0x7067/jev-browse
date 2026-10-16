@@ -54,8 +54,9 @@ Preconditions:
 
 ## Gotchas
 
-- `tools/call` responses are JSON-RPC `result` envelopes; the RunResult is
-  a JSON string inside `content[0].text`, flagged by `isError`.
+- `tools/call` responses are JSON-RPC `result` envelopes. A finished run stores
+  the RunResult as JSON in `content[0].text`, with `isError` when `status` is
+  `error`. The missing-key path stores a plain string there, not a RunResult.
 - Calls are serialized through a queue — send requests on separate lines
   and read one response per line.
 - The packaged plugin registers the server under the `browser` key in
