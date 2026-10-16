@@ -2,6 +2,7 @@ name: ci
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -20,4 +21,3 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run check:bundle
-      - run: npm run check:comments

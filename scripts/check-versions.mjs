@@ -12,6 +12,12 @@ function readJson(file) {
 
 const expected = readJson("package.json").version;
 
+if (expected?.constructor !== String) {
+  console.error(`package.json version: ${JSON.stringify(expected)} is not a string`);
+
+  process.exit(1);
+}
+
 const mismatches = [];
 
 function check(file, field, actual) {
