@@ -8,6 +8,8 @@ export const EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
 
 export const SKIP_DIRS = new Set([
   ".git",
+  ".opencode",
+  ".pi",
   "node_modules",
   "dist",
   "bundled",
